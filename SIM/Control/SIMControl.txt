@@ -1,0 +1,16 @@
+# verbosity
+Verbose = 0
+
+# IO into separate <rank> directories
+Separate_out = 1
+
+# Data transfer parameters: verbose level, order of quadrature rules, max iterations , tolerance for iterative solver
+RFC_verb = 1
+RFC_order = 2
+RFC_iteration = 100
+RFC_tolerance = 1.e-6
+
+# Whether to use asynchronous input and output
+AsyncInput = F
+AsyncOutput = F
+
