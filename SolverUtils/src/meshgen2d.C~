@@ -110,7 +110,6 @@ std::vector<std::vector<unsigned int> > connectivityArray;
 		nCount++;
     		element.push_back(nCount+1);
 		connectivityArray.push_back(element);
-		nElem++;
 		element.clear();
 		element.push_back(nCount+1);
 		nCount=nCount-nDir1-1;
