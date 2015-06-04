@@ -1,12 +1,12 @@
 
 /** @file meshgen2d.C
- * For dynamically generating a 2d (vtk) mesh based on an input file
+ *  @brief For dynamically generating a 2d (vtk) mesh based on an input file
  */
 
-///@author Mike Cambell, Brian Weisberg, Woohyun Kim for Illinois Rocstar LLC\n 
-
-
-
+/// @author Mike Campbell
+/// @author Brian Weisberg
+/// @author Woohyun Kim 
+/// @author Illinois Rocstar LLC 
 
 #include <iostream>
 #include <string>
@@ -17,11 +17,9 @@
 
 #include "Mesh.H"
 
-/// @brief This is the src file for the meshgen2d executable that generates a mesh from an input file
-
 int main(int argc,char *argv[])
 {
-//reading the input file and making sure it exists.
+  //reading the input file and making sure it exists.
   if(!argv[1]){
     std::cerr << argv[0] << ":Error: input file required." << std::endl;
     return(1);
@@ -81,8 +79,8 @@ int main(int argc,char *argv[])
   int numberElementsZ = (nZ-1); 
 
 
-//nDirs for providing one axis for each direction.
-int nDir1 = numberElementsX;
+  //nDirs for providing one axis for each direction.
+  int nDir1 = numberElementsX;
   int nDir2 = numberElementsY;
   
 
@@ -95,11 +93,11 @@ int nDir1 = numberElementsX;
     nDir2 = numberElementsZ;
     
   }
-	int numberOfNodes=nX * nY * nZ;
+  int numberOfNodes=nX * nY * nZ;
   if (wantTriangles==2) numberOfNodes = (nX * nY * nZ)+(nDir1*nDir2);
   outStream << numberOfNodes << std::endl;
 
-//generating the nodal coordinates
+  //generating the nodal coordinates
   double xSpacing = 0;
   if(nX > 1) xSpacing = (limits[1] - limits[0])/(nX-1);
   double ySpacing = 0;
@@ -125,166 +123,155 @@ int nDir1 = numberElementsX;
 
 	
 
-std::vector<std::vector<unsigned int> > connectivityArray;
+  std::vector<std::vector<unsigned int> > connectivityArray;
 
-if (wantTriangles==1) {
-	int numberOfElements=(nDir1*nDir2)*2;
+  if (wantTriangles==1) {
+    int numberOfElements=(nDir1*nDir2)*2;
 	
 	
-	int nElem = 0;
-  	int nCount = 0;
+    int nElem = 0;
+    int nCount = 0;
 
-	while(nElem++ < numberOfElements){
-    		std::vector<unsigned int> element;
-    		element.push_back(nCount+1);
-		nCount=nCount+nDir1+1;
-    		element.push_back(nCount+1);
-		nCount++;
-    		element.push_back(nCount+1);
-		connectivityArray.push_back(element);
-		nElem++;
-		element.clear();
-		element.push_back(nCount+1);
-		nCount=nCount-nDir1-1;
-    		element.push_back(nCount+1);
-		nCount--;
-		element.push_back(nCount+1);
-		nCount++;
-    		if(!((nCount+1)%(nDir1+1))) nCount++;
-    		connectivityArray.push_back(element);
-  	}
+    while(nElem++ < numberOfElements){
+      std::vector<unsigned int> element;
+      element.push_back(nCount+1);
+      nCount=nCount+nDir1+1;
+      element.push_back(nCount+1);
+      nCount++;
+      element.push_back(nCount+1);
+      connectivityArray.push_back(element);
+      nElem++;
+      element.clear();
+      element.push_back(nCount+1);
+      nCount=nCount-nDir1-1;
+      element.push_back(nCount+1);
+      nCount--;
+      element.push_back(nCount+1);
+      nCount++;
+      if(!((nCount+1)%(nDir1+1))) nCount++;
+      connectivityArray.push_back(element);
+    }
 
-}
+  }
 
 
 
 
   if (wantTriangles==2) {
-	//creates the centroid nodal coordinates for use in breaking the quad into triangles
+    //creates the centroid nodal coordinates for use in breaking the quad into triangles
 	
-	int numberOfElements=(nDir1*nDir2)*4;
-	int nElem=0;	
+    int numberOfElements=(nDir1*nDir2)*4;
+    int nElem=0;	
 
-	double centroidX=limits[0]+xSpacing/2;
-	if (xSpacing==0) centroidX=limits[0];
-	double centroidY=limits[2]+ySpacing/2;
-	if (ySpacing==0) centroidY=limits[2];
-        double centroidZ=limits[4]+zSpacing/2;
-	if (zSpacing==0) centroidZ=limits[4];
+    double centroidX=limits[0]+xSpacing/2;
+    if (xSpacing==0) centroidX=limits[0];
+    double centroidY=limits[2]+ySpacing/2;
+    if (ySpacing==0) centroidY=limits[2];
+    double centroidZ=limits[4]+zSpacing/2;
+    if (zSpacing==0) centroidZ=limits[4];
 	
-	double startXCentroid=centroidX;
-	double startYCentroid=centroidY;
+    double startXCentroid=centroidX;
+    double startYCentroid=centroidY;
 
-	int cCount=0;
+    int cCount=0;
 	
 
-while (nElem++ < (numberOfElements/4)) {
+    while (nElem++ < (numberOfElements/4)) {
 	
-	coordinates.push_back(centroidX);
-        coordinates.push_back(centroidY);
-        coordinates.push_back(centroidZ);
-        outStream << centroidX << " " << centroidY << " " << centroidZ << std::endl;
-	cCount++;
+      coordinates.push_back(centroidX);
+      coordinates.push_back(centroidY);
+      coordinates.push_back(centroidZ);
+      outStream << centroidX << " " << centroidY << " " << centroidZ << std::endl;
+      cCount++;
 
 
-if(!((cCount)%(nDir1))){
+      if(!((cCount)%(nDir1))){
 	
 	centroidZ=centroidZ+zSpacing;
 	if (numberElementsX!=0) {
 		
-	   centroidY=centroidY+ySpacing;
-	   centroidX=startXCentroid;		
-	}
-	
-	else {
-	   centroidY=startYCentroid;
-		
+          centroidY=centroidY+ySpacing;
+          centroidX=startXCentroid;		
+	} else {
+          centroidY=startYCentroid;          
 	}	
-	
-
-}
-	else {
+      } else {
 	centroidX=centroidX+xSpacing;
-}
-	if (numberElementsX==0) {
-	   centroidY=centroidY+ySpacing;		
-	}
+      }
+      if (numberElementsX==0) {
+        centroidY=centroidY+ySpacing;		
+      } 
+    }
 	
-}
+    nElem = 0;
+    int nCount = 0;
+    int cIndex=(coordinates.size()/3)-(numberOfElements/4);
 	
-	nElem = 0;
-  	int nCount = 0;
-	int cIndex=(coordinates.size()/3)-(numberOfElements/4);
+    //specifying the connectivity of nodes to actually make the triangles
+    while(nElem < numberOfElements){
+      std::vector<unsigned int> element;
+      element.push_back(nCount+1);
+      nCount=nCount+nDir1+1;
+      element.push_back(nCount+1);
+      element.push_back(cIndex+1);
+      nElem++;
+      connectivityArray.push_back(element);
+      element.clear();
+
+      element.push_back(nCount+1);
+      nCount++;
+      element.push_back(nCount+1);
+      element.push_back(cIndex+1);
+      connectivityArray.push_back(element);
+      nElem++;
+      element.clear();
+
+      element.push_back(nCount+1);
+      nCount=nCount-nDir1-1;
+      element.push_back(nCount+1);
+      element.push_back(cIndex+1);
+      connectivityArray.push_back(element);
+      nElem++;
+      element.clear();
+
+      element.push_back(nCount+1);
+      nCount--;
+      element.push_back(nCount+1);
+      element.push_back(cIndex+1);
+      nCount++;
+      connectivityArray.push_back(element);
+      nElem++;
+      element.clear();
 	
-//specifying the connectivity of nodes to actually make the triangles
-	while(nElem < numberOfElements){
-    		std::vector<unsigned int> element;
-    		element.push_back(nCount+1);
-		nCount=nCount+nDir1+1;
-    		element.push_back(nCount+1);
-		element.push_back(cIndex+1);
-		nElem++;
-		connectivityArray.push_back(element);
-		element.clear();
+      cIndex++;
 
-		element.push_back(nCount+1);
-		nCount++;
-    		element.push_back(nCount+1);
-		element.push_back(cIndex+1);
-		connectivityArray.push_back(element);
-		nElem++;
-		element.clear();
-
-		element.push_back(nCount+1);
-		nCount=nCount-nDir1-1;
-    		element.push_back(nCount+1);
-		element.push_back(cIndex+1);
-		connectivityArray.push_back(element);
-		nElem++;
-		element.clear();
-
-		element.push_back(nCount+1);
-		nCount--;
-		element.push_back(nCount+1);
-		element.push_back(cIndex+1);
-		nCount++;
-		connectivityArray.push_back(element);
-		nElem++;
-		element.clear();
-	
-		cIndex++;
-
-    		if(!((nCount+1)%(nDir1+1))) nCount++;
+      if(!((nCount+1)%(nDir1+1))) nCount++;
     		
-  	}
+    }
 
-}
-
-
-  else {
-//does connectivity for quads
-  int numberOfElements = nDir1*nDir2;
-
-
-  int nElem = 0;
-  int nCount = 0;
-  while(nElem++ < numberOfElements){
-    std::vector<unsigned int> element;
-    element.push_back(nCount+1);
-    element.push_back((nCount++)+(nDir1+1)+1);
-    element.push_back(nCount+(nDir1+1)+1);
-    element.push_back(nCount+1);
-    if(!((nCount+1)%(nDir1+1))) nCount++;
-    connectivityArray.push_back(element);
+  } else {
+    //does connectivity for quads
+    int numberOfElements = nDir1*nDir2;
+    
+    
+    int nElem = 0;
+    int nCount = 0;
+    while(nElem++ < numberOfElements){
+      std::vector<unsigned int> element;
+      element.push_back(nCount+1);
+      element.push_back((nCount++)+(nDir1+1)+1);
+      element.push_back(nCount+(nDir1+1)+1);
+      element.push_back(nCount+1);
+      if(!((nCount+1)%(nDir1+1))) nCount++;
+      connectivityArray.push_back(element);
+    }
+    
   }
-
-  }
-
-
+  
   std::vector<std::vector<unsigned int> >::iterator conIt = connectivityArray.begin();
   outStream << connectivityArray.size() << std::endl;
 
-//writing the connectivity array to the outstream
+  //writing the connectivity array to the outstream
   while(conIt != connectivityArray.end()){
     //std::cout << "Element " << (conIt - connectivityArray.begin())+1 << ": (";
     std::vector<unsigned int>::iterator elemIt = conIt->begin();
@@ -293,7 +280,7 @@ if(!((cCount)%(nDir1))){
     outStream << std::endl;
     conIt++;
   }
-
+  
   //  std::cout << outStream.str() << std::endl;
   std::istringstream inStream(outStream.str());
   SolverUtils::Mesh::UnstructuredMesh unMesh;
@@ -301,5 +288,6 @@ if(!((cCount)%(nDir1))){
   std::ostringstream vtkOut;
   SolverUtils::Mesh::WriteVTKToStream("testMesh",unMesh,vtkOut);
   std::cout << vtkOut.str();
+
   return(0);
 }
