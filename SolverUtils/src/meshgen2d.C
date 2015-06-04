@@ -56,13 +56,28 @@ int main(int argc,char *argv[])
   int nX = (sizes[0] > 0 ? sizes[0] : 1);
   int nY = (sizes[1] > 0 ? sizes[1] : 1);
   int nZ = (sizes[2] > 0 ? sizes[2] : 1);
-  int numberOfNodes = nX * nY * nZ;
+  
 
   std::vector<double> coordinates;
   int numberElementsX = (nX-1);
   int numberElementsY = (nY-1);
-  int numberElementsZ = (nZ-1);
+  int numberElementsZ = (nZ-1); 
+
+int nDir1 = numberElementsX;
+  int nDir2 = numberElementsY;
   
+
+  if(nDir1 == 0){
+    nDir1 = numberElementsY;
+  
+   
+    nDir2 = numberElementsZ;
+  } else if(nDir2 == 0){
+    nDir2 = numberElementsZ;
+    
+  }
+
+  int numberOfNodes = (nX * nY * nZ)+(nDir1*nDir2);
   outStream << numberOfNodes << std::endl;
   double xSpacing = 0;
   if(nX > 1) xSpacing = (limits[1] - limits[0])/(nX-1);
@@ -84,42 +99,108 @@ int main(int argc,char *argv[])
     }
   } 
   
-  int nDir1 = numberElementsX;
-  int nDir2 = numberElementsY;
-  if(nDir1 == 0){
-    nDir1 = numberElementsY;
-    nDir2 = numberElementsZ;
-  } else if(nDir2 == 0){
-    nDir2 = numberElementsZ;
-  }
+ 
+
+
+	
 
 std::vector<std::vector<unsigned int> > connectivityArray;
 
   if (wantTriangles) {
-	int numberOfElements=(nDir1*nDir2)*2;
-	
-	
-	int nElem = 0;
-  	int nCount = 0;
+	int numberOfElements=(nDir1*nDir2)*4;
+	int nElem=0;	
 
-	while(nElem++ < numberOfElements){
+	double centroidX=limits[0]+xSpacing/2;
+	if (xSpacing==0) centroidX=limits[0];
+	double centroidY=limits[2]+ySpacing/2;
+	if (ySpacing==0) centroidY=limits[2];
+        double centroidZ=limits[4]+zSpacing/2;
+	if (zSpacing==0) centroidZ=limits[4];
+	
+	double startXCentroid=centroidX;
+	double startYCentroid=centroidY;
+
+	int cCount=0;
+	
+
+while (nElem++ < (numberOfElements/4)) {
+	
+	coordinates.push_back(centroidX);
+        coordinates.push_back(centroidY);
+        coordinates.push_back(centroidZ);
+        outStream << centroidX << " " << centroidY << " " << centroidZ << std::endl;
+	cCount++;
+
+
+if(!((cCount)%(nDir1))){
+	
+	centroidZ=centroidZ+zSpacing;
+	if (numberElementsX!=0) {
+		
+	   centroidY=centroidY+ySpacing;
+	   centroidX=startXCentroid;		
+	}
+	
+	else {
+	   centroidY=startYCentroid;
+		
+	}	
+	
+
+}
+	else {
+	centroidX=centroidX+xSpacing;
+}
+	if (numberElementsX==0) {
+	   centroidY=centroidY+ySpacing;		
+	}
+	
+}
+	
+	nElem = 0;
+  	int nCount = 0;
+	int cIndex=(coordinates.size()/3)-(numberOfElements/4);
+	
+
+	while(nElem < numberOfElements){
     		std::vector<unsigned int> element;
     		element.push_back(nCount+1);
 		nCount=nCount+nDir1+1;
     		element.push_back(nCount+1);
+		element.push_back(cIndex+1);
+		nElem++;
+		connectivityArray.push_back(element);
+		element.clear();
+
+		element.push_back(nCount+1);
 		nCount++;
     		element.push_back(nCount+1);
+		element.push_back(cIndex+1);
 		connectivityArray.push_back(element);
 		nElem++;
 		element.clear();
+
 		element.push_back(nCount+1);
 		nCount=nCount-nDir1-1;
     		element.push_back(nCount+1);
+		element.push_back(cIndex+1);
+		connectivityArray.push_back(element);
+		nElem++;
+		element.clear();
+
+		element.push_back(nCount+1);
 		nCount--;
 		element.push_back(nCount+1);
+		element.push_back(cIndex+1);
 		nCount++;
+		connectivityArray.push_back(element);
+		nElem++;
+		element.clear();
+	
+		cIndex++;
+
     		if(!((nCount+1)%(nDir1+1))) nCount++;
-    		connectivityArray.push_back(element);
+    		
   	}
 
 }
@@ -143,8 +224,11 @@ std::vector<std::vector<unsigned int> > connectivityArray;
   }
 
   }
+
+
   std::vector<std::vector<unsigned int> >::iterator conIt = connectivityArray.begin();
   outStream << connectivityArray.size() << std::endl;
+
   while(conIt != connectivityArray.end()){
     //std::cout << "Element " << (conIt - connectivityArray.begin())+1 << ": (";
     std::vector<unsigned int>::iterator elemIt = conIt->begin();
