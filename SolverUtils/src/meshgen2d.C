@@ -1,3 +1,13 @@
+
+/** @file meshgen2d.C
+ * For dynamically generating a 2d (vtk) mesh based on an input file
+ */
+
+///@author Mike Cambell, Brian Weisberg, Woohyun Kim for Illinois Rocstar LLC\n 
+
+
+
+
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -7,8 +17,11 @@
 
 #include "Mesh.H"
 
+/// @brief This is the src file for the meshgen2d executable that generates a mesh from an input file
+
 int main(int argc,char *argv[])
 {
+//reading the input file and making sure it exists.
   if(!argv[1]){
     std::cerr << argv[0] << ":Error: input file required." << std::endl;
     return(1);
@@ -27,11 +40,15 @@ int main(int argc,char *argv[])
   std::vector<double> limits;
   std::vector<unsigned int> sizes;
 
-  bool wantTriangles=0;
+  //reads for triangle mesh specification
+  int wantTriangles=0;
   std::getline(Inf, line);
-	
-  if (line.at(0)=='1') wantTriangles=true;
+  
+  if (line.at(0)=='1') wantTriangles=1;
 
+  if (line.at(0)=='2') wantTriangles=2;
+
+  //reads all lines to get mesh boundaries and mesh size
   while(std::getline(Inf,line)){
     std::istringstream Istr(line);
     double limit1, limit2;
@@ -63,6 +80,8 @@ int main(int argc,char *argv[])
   int numberElementsY = (nY-1);
   int numberElementsZ = (nZ-1); 
 
+
+//nDirs for providing one axis for each direction.
 int nDir1 = numberElementsX;
   int nDir2 = numberElementsY;
   
@@ -76,9 +95,11 @@ int nDir1 = numberElementsX;
     nDir2 = numberElementsZ;
     
   }
-
-  int numberOfNodes = (nX * nY * nZ)+(nDir1*nDir2);
+	int numberOfNodes=nX * nY * nZ;
+  if (wantTriangles==2) numberOfNodes = (nX * nY * nZ)+(nDir1*nDir2);
   outStream << numberOfNodes << std::endl;
+
+//generating the nodal coordinates
   double xSpacing = 0;
   if(nX > 1) xSpacing = (limits[1] - limits[0])/(nX-1);
   double ySpacing = 0;
@@ -106,7 +127,41 @@ int nDir1 = numberElementsX;
 
 std::vector<std::vector<unsigned int> > connectivityArray;
 
-  if (wantTriangles) {
+if (wantTriangles==1) {
+	int numberOfElements=(nDir1*nDir2)*2;
+	
+	
+	int nElem = 0;
+  	int nCount = 0;
+
+	while(nElem++ < numberOfElements){
+    		std::vector<unsigned int> element;
+    		element.push_back(nCount+1);
+		nCount=nCount+nDir1+1;
+    		element.push_back(nCount+1);
+		nCount++;
+    		element.push_back(nCount+1);
+		connectivityArray.push_back(element);
+		nElem++;
+		element.clear();
+		element.push_back(nCount+1);
+		nCount=nCount-nDir1-1;
+    		element.push_back(nCount+1);
+		nCount--;
+		element.push_back(nCount+1);
+		nCount++;
+    		if(!((nCount+1)%(nDir1+1))) nCount++;
+    		connectivityArray.push_back(element);
+  	}
+
+}
+
+
+
+
+  if (wantTriangles==2) {
+	//creates the centroid nodal coordinates for use in breaking the quad into triangles
+	
 	int numberOfElements=(nDir1*nDir2)*4;
 	int nElem=0;	
 
@@ -161,7 +216,7 @@ if(!((cCount)%(nDir1))){
   	int nCount = 0;
 	int cIndex=(coordinates.size()/3)-(numberOfElements/4);
 	
-
+//specifying the connectivity of nodes to actually make the triangles
 	while(nElem < numberOfElements){
     		std::vector<unsigned int> element;
     		element.push_back(nCount+1);
@@ -207,7 +262,7 @@ if(!((cCount)%(nDir1))){
 
 
   else {
-
+//does connectivity for quads
   int numberOfElements = nDir1*nDir2;
 
 
@@ -229,6 +284,7 @@ if(!((cCount)%(nDir1))){
   std::vector<std::vector<unsigned int> >::iterator conIt = connectivityArray.begin();
   outStream << connectivityArray.size() << std::endl;
 
+//writing the connectivity array to the outstream
   while(conIt != connectivityArray.end()){
     //std::cout << "Element " << (conIt - connectivityArray.begin())+1 << ": (";
     std::vector<unsigned int>::iterator elemIt = conIt->begin();
