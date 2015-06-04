@@ -1979,6 +1979,12 @@ namespace SolverUtils {
       return(0);
     }
 
+    int ReadMeshFromStream(Mesh::UnstructuredMesh &mesh,std::istream &Inf)
+    {
+      Inf >> mesh.nc >> mesh.con;
+      return(0);
+    }
+
     /// Tet Faces:      132 241 342 143
     /// Pyr Faces:      1432 251 352 453 154
     /// Prism Faces:    2541 3652 1463 132 456

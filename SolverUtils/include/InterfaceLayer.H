@@ -23,6 +23,72 @@ namespace SolverUtils {
   {
     COM_finalize();
   };
+  int PaneToUnstructuredMesh(const std::string &windowName,int paneID,
+                             Mesh::UnstructuredMesh &uMesh)
+  {
+
+    std::vector< std::pair<int,std::string> > connectivityNames;
+    connectivityNames.push_back(std::make_pair<int,std::string>(2,":b2")); // bar
+    connectivityNames.push_back(std::make_pair<int,std::string>(3,":t3")); // triangle
+    connectivityNames.push_back(std::make_pair<int,std::string>(4,":q4")); // quad
+    connectivityNames.push_back(std::make_pair<int,std::string>(4,":T4")); // tet
+    connectivityNames.push_back(std::make_pair<int,std::string>(8,":H8")); // hex
+    connectivityNames.push_back(std::make_pair<int,std::string>(5,":P5")); // pyramid
+    connectivityNames.push_back(std::make_pair<int,std::string>(6,":P6")); // prism
+
+    double *windowNodeCoords = NULL;
+    int dataStride = 0;
+    int dataCap = 0;
+    COM_get_array((windowName+".nc").c_str(),paneID,&windowNodeCoords,&dataStride,&dataCap);
+    if(!windowNodeCoords)
+      return(1);
+    int numberOfNodes = (dataStride*dataCap)/3;
+    uMesh.nc.init_copy(numberOfNodes,windowNodeCoords,dataStride);
+    std::string paneConnectivityNames;
+    int numberOfConnectivities = 0;
+    COM_get_connectivities(windowName.c_str(),paneID,&numberOfConnectivities,paneConnectivityNames);
+    std::istringstream Istr(paneConnectivityNames);
+    std::string nameToken;
+    std::vector<std::string> paneConnTableNames;
+    while(Istr >> nameToken)
+      paneConnTableNames.push_back(nameToken);
+    std::vector<std::string>::iterator pctnIt = paneConnTableNames.begin();
+    while(pctnIt != paneConnTableNames.end()){
+      std::string tableName(*pctnIt++);
+      std::vector< std::pair<int,std::string> >::iterator eti = connectivityNames.begin();
+      bool match = false;
+      while(eti != connectivityNames.end() && !match){
+        std::string::size_type x = tableName.find(eti->second);
+        if(x != std::string::npos)
+          match = true;
+        else 
+          eti++;
+      }
+      if(!match){
+        std::cerr << "SolverUtils::PaneToUnstructuredMesh:Error: Non-standard connectivity name: " << tableName << std::endl;
+        return(1);
+      }
+      int elementSize = eti->first;
+      std::string elementName(tableName);
+      int *connectivityArray = NULL;
+      int connStride = 0;
+      int connCap = 0;
+      COM_get_array((windowName+"."+elementName).c_str(),paneID,&connectivityArray,
+                    &connStride,&connCap);
+      if(connectivityArray){
+        std::vector<Mesh::IndexType> elementConnectivity;
+        int numberOfElements = (connStride*connCap)/elementSize;
+        for(int i = 0;i < numberOfElements;i++){
+          for(int j = 0;j < elementSize;j++){
+            elementConnectivity.push_back(connectivityArray[i+j*connStride]);
+          }
+          uMesh.con.AddElement(elementConnectivity);
+        }
+      }
+    }
+    uMesh.con.ShrinkWrap();
+    return(0);
+  };
   /// Creates a window pane from a Mesh object. (copy mode or use mode)
   int SurfaceMeshToPane(const std::string &wname,int pane_id,
 			Mesh::UnstructuredMesh &mesh,bool copy = true)
@@ -314,6 +380,53 @@ namespace SolverUtils {
     }
     return(0);
   };
+  inline std::vector<std::string> GetDataItemNames(const std::string &windowName){
+    std::vector<std::string> dataItemNames;
+    std::string nameString;
+    int nnames = 0;
+    COM_get_dataitems(windowName.c_str(),&nnames,nameString);
+    std::istringstream Istr(nameString);
+    std::string token;
+    while(Istr >> token)
+      dataItemNames.push_back(token);
+    return(dataItemNames);
+  }
+
+  int PopulateSolutionMetaDataFromPane(const std::string &windowName,int paneID,FEM::SolutionData &soln)
+  {
+    FEM::SolutionData::DataContainer &data(soln.Data());
+    FEM::SolutionMetaData &meta(soln.Meta());
+    std::vector<std::string> dataItemNames(GetDataItemNames(windowName));
+    std::vector<std::string>::iterator itemNameIt = dataItemNames.begin();
+    while(itemNameIt != dataItemNames.end()){
+      std::string iName(*itemNameIt++);
+      std::string aName(windowName+"."+iName);
+      char loc = 0;
+      COM_Type dataType = COM_RAWDATA;
+      FEM::FieldMetaData metaData;
+      metaData.name = iName;
+      int dataNComp = 0;
+      COM_get_dataitem(aName.c_str(),&loc,&dataType,&dataNComp,&(metaData.unit));
+      metaData.dsize = (dataType == COM_CHAR   ? 1 :
+                        dataType == COM_INT    ? 4 :
+                        dataType == COM_DOUBLE ? 8 : 
+                        dataType == COM_CHARACTER ? 1 :
+                        dataType == COM_INTEGER   ? 4 :
+                        dataType == COM_REAL      ? 8 :
+                        dataType == COM_DOUBLE_PRECISION ? 9 : 0);
+      if(metaData.dsize == 0)
+        continue;
+      metaData.ncomp = dataNComp;
+      metaData.loc = (loc == 'w' ? 's' :
+                      loc == 'p' ? 'm' :
+                      loc == 'e' ? 'c' :
+                      loc == 'n' ? 'n' : '0');
+      if(metaData.loc == '0')
+        continue;
+      meta.push_back(metaData);
+    }
+    return(0);
+  };
 
   int AgentToPane(const std::string &name,int pane_id,FEM::SolverAgent &agent,bool copy = false)
   {
@@ -485,6 +598,83 @@ namespace SolverUtils {
     int pane_id = 101; // default - arbitrary, shouldnt be zero
     AgentToPane(name,pane_id,agent);
     COM_window_init_done(name);
+    return(0);
+  };
+  int UpdateAgentCoordinatesFromPane(const std::string &windowName,int paneID,FEM::SolverAgent &solverAgent)
+  {
+    Mesh::UnstructuredMesh &uMesh(solverAgent.Mesh());
+    double *windowNodeCoords = NULL;
+    int dataStride = 0;
+    int dataCap = 0;
+    COM_get_array((windowName+".nc").c_str(),paneID,&windowNodeCoords,&dataStride,&dataCap);
+    if(!windowNodeCoords)
+      return(1);
+    int numberOfNodes = (dataStride*dataCap)/3;
+    uMesh.nc.init_copy(numberOfNodes,windowNodeCoords,dataStride);
+    return(0);
+  } 
+  int PopulateSolutionDataFromPane(const std::string &windowName,int paneID,FEM::SolutionData &solutionData,bool copyMode = false)
+  {
+    FEM::SolutionData::DataContainer &data(solutionData.Data());
+    FEM::SolutionMetaData &meta(solutionData.Meta());
+    FEM::SolutionMetaData::iterator mdi = meta.begin();
+    while(mdi != meta.end()){
+      Mesh::IndexType dataIndex = mdi - meta.begin();
+      FEM::FieldMetaData &metaData(*mdi++);
+      std::string dataItemName(windowName+"."+metaData.name);
+      int getPaneID = paneID;
+      if(metaData.loc == 's')
+        getPaneID = 0;
+      Mesh::IndexType bufferSize = data[dataIndex].size();
+      int dataStride = 0;
+      void *dataArray = NULL;
+      COM_get_array(dataItemName.c_str(),getPaneID,&dataArray,&dataStride);
+      if(!dataArray)
+        continue;
+      if(copyMode){
+        std::memcpy(const_cast<char *>(reinterpret_cast<const char *>(data[dataIndex].data())),
+                    dataArray,bufferSize);
+      } else {
+        solutionData.SetFieldBuffer(metaData.name,dataArray);
+      }
+    }
+    return(0);
+  };
+  int CreateSolutionFromPane(const std::string &windowName,int paneID,FEM::SolverAgent &solverAgent,bool copyMode = false)
+  {
+    FEM::SolutionData &solutionData(solverAgent.Solution());
+    if(PopulateSolutionMetaDataFromPane(windowName,paneID,solutionData))
+      return(1);
+    solutionData.Create(solverAgent.Mesh());
+    if(PopulateSolutionDataFromPane(windowName,paneID,solutionData,copyMode))
+      return(2);
+  };
+  int PaneToAgent(const std::string &windowName,int paneID,FEM::SolverAgent &solverAgent,bool copyMode = false)
+  {
+    int returnCode = PaneToUnstructuredMesh(windowName,paneID,solverAgent.Mesh());
+    if(returnCode)
+      return(returnCode);
+    returnCode = CreateSolutionFromPane(windowName,paneID,solverAgent,copyMode);
+    if(returnCode)
+      return(returnCode+2);
+  };
+  int PopulateSolverAgentFromWindow(const std::string &windowName,FEM::SolverAgent &solverAgent,bool copyMode = false)
+  {
+
+    // First, check that the window exists, if not, return an error = 1
+    int windowHandle = COM_get_window_handle(windowName);
+    if(!(windowHandle > 0))
+      return(1); 
+    // Next, check to make sure there is only one pane. Multi-pane windows are not
+    // yet supported. Returns 2 on this error.
+    std::vector<int> paneIDs;
+    COM_get_panes(windowName.c_str(),paneIDs);
+    if(paneIDs.size() > 1)
+      return(2);
+    int returnCode = PaneToAgent(windowName,paneIDs[0],solverAgent,copyMode);
+    if(returnCode)
+      return(returnCode+2);
+    
     return(0);
   };
 

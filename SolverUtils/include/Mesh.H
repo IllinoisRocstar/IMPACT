@@ -580,6 +580,8 @@ namespace SolverUtils {
 
     int ReadMesh(const std::string &path,Mesh::UnstructuredMesh &mesh);
 
+    int ReadMeshFromStream(Mesh::UnstructuredMesh &mesh,std::istream &Inf);
+
     // Class to encapsulate all the element specific methods
     // Should be renamed to generic cell
     class GenericCell_2 {
