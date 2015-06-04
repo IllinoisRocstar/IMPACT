@@ -100,7 +100,7 @@ include_directories(include ./COM/include ./SIM/include)
 
 
 # Add target to build the documentation
-option(BUILD_DOCUMENTATION "Create and install the HTML based API documentation (requires Doxygen)" OFF)
+option(BUILD_DOCUMENTATION "Create and install the HTML based API documentation (requires Doxygen)" ON)
 IF(BUILD_DOCUMENTATION)
 
   FIND_PACKAGE(Doxygen)
