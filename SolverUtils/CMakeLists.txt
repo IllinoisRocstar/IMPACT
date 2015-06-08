@@ -19,7 +19,7 @@ mark_as_advanced (LIBRARY_OUTPUT_PATH EXECUTABLE_OUTPUT_PATH)
 file(GLOB CPP_SRCS "src/*.C")
 set (ALL_SRCS "${F90_SRCS} ${CPP_SRCS}" )
 set_source_files_properties(${ALL_SRCS} PROPERTIES COMPILE_FLAGS "-fPIC" )
-set (LIB_SRCS src/GeoPrimitives.C src/PGeoPrim.C src/Mesh.C src/PMesh.C src/BSMesh.C src/MeshVTK.C src/FEM.C)
+set (LIB_SRCS src/GeoPrimitives.C src/PGeoPrim.C src/Mesh.C src/PMesh.C src/BSMesh.C src/MeshVTK.C src/FEM.C src/MeshUtils.C)
 # rpath settings
 SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)

@@ -25,8 +25,9 @@
 #include <cstdlib>
 #include <algorithm>
 #include <time.h>
-#include "Mesh.H"
+#include "MeshUtils.H"
 #include "UnixUtils.H"
+#include "SolverAgent.H"
 
 COM_EXTERN_MODULE( COMTESTMOD );
 COM_EXTERN_MODULE( COMFTESTMOD );
@@ -63,6 +64,19 @@ namespace COM {
   /// output when used with outstreams.
   ///
   typedef IRAD::Util::TestResults TestResults;
+
+  class TestSolver : public SolverUtils::FEM::SolverAgent
+  {
+  public:
+    void Init(const std::string &filename);
+  protected:
+    std::string name;                  // string at solver
+    std::vector<int>    id;            // scalar at mesh
+    std::vector<double> nodeCoordinates1; // vector at nodes
+    std::vector<double> nodeCoordinates2; // vector at nodes
+    std::vector<double> cellCoordinates1; // vector at nodes
+    std::vector<double> cellCoordinates2; // vector at nodes
+  };
 
   /// 
   /// Project-specific testing object.
@@ -102,7 +116,10 @@ namespace COM {
     ///
     /// An unstructured mesh for testing mesh-associated data
     ///
-    SolverUtils::Mesh::UnstructuredMesh mesh;
+    TestSolver testSolver1;
+    TestSolver testSolver2;
+    TestSolver testSolver3;
+
   public:
     /// 
     /// Default constructor.
@@ -128,32 +145,65 @@ namespace COM {
       ExampleTestFixture.assign("ExampleTestData");
       for(int i = 10;i < 10000000;i*=10) N.push_back(i);
 
+
+
       // Generates a triangulated rectangle with 25 nodes, 32 elements
-      mesh.nc.init(25);
-      int nodes = 1;
-      for(int j = 0;j < 5;j++){
-        double y = j*1.25;
-        for(int i = 0;i < 5;i++){
-          double x = i*1.25;
-          mesh.nc.x(nodes) = x;
-          mesh.nc.y(nodes) = y;
-          mesh.nc.z(nodes) = 0;
-          nodes++;
-        }
-      }
-      for(int j = 0;j < 4;j++){
-        unsigned int r = j*5;
-        for(int i = 1;i <= 4;i++){
-          unsigned int f = i + r;
-          mesh.con.AddElement(f,f+1,f+5);
-          mesh.con.AddElement(f+1,f+6,f+5);
-        }
-      }
+      std::ostringstream meshTemplateOut;
+      meshTemplateOut << "0 5 5" << std::endl
+                      << "0 5 5" << std::endl
+                      << "0 5 0" << std::endl;
+      std::ostringstream meshOut;
+      meshOut << "1" << std::endl << meshTemplateOut.str();
+      std::istringstream meshStream(meshOut.str());
+      SolverUtils::Mesh::UnstructuredMesh &unMesh1(testSolver1.Mesh());
+      SolverUtils::MeshUtils::meshgen2d(meshStream,unMesh1);
+
       // Write the test mesh to test.mesh
       std::ofstream Ouf;
       Ouf.open("test.mesh");
-      Ouf << mesh.nc << std::endl << mesh.con << std::endl;
+      Ouf << unMesh1.nc << std::endl << unMesh1.con << std::endl;
       Ouf.close();
+      std::ofstream vtkOut;
+      vtkOut.open("testMesh.vtk");
+      SolverUtils::Mesh::WriteVTKToStream("testMesh",unMesh1,vtkOut);
+      vtkOut.close();
+
+
+      // Generate a square element mesh
+      meshOut.str("");
+      meshOut.clear();
+      meshOut << "0" << std::endl << meshTemplateOut.str();
+      meshStream.clear();
+      meshStream.str(meshOut.str());
+      
+      SolverUtils::Mesh::UnstructuredMesh &unMesh2(testSolver2.Mesh());
+      SolverUtils::MeshUtils::meshgen2d(meshStream,unMesh2);
+      Ouf.clear();
+      Ouf.open("test_square.mesh");
+      Ouf << unMesh2.nc << std::endl << unMesh2.con << std::endl;
+      vtkOut.clear();
+      vtkOut.open("testSquareMesh.vtk");
+      SolverUtils::Mesh::WriteVTKToStream("testMesh",unMesh2,vtkOut);
+      vtkOut.close();
+
+      // Generate a second triangle element mesh with 64 elements
+      meshOut.str("");
+      meshOut.clear();
+      meshOut << "2" << std::endl << meshTemplateOut.str();
+      meshStream.clear();
+      meshStream.str(meshOut.str());
+      SolverUtils::Mesh::UnstructuredMesh &unMesh3(testSolver3.Mesh());
+      SolverUtils::MeshUtils::meshgen2d(meshStream,unMesh3);
+      Ouf.clear();
+      Ouf.open("test_triangles.mesh");
+      Ouf << unMesh3.nc << std::endl << unMesh3.con << std::endl;
+      vtkOut.clear();
+      vtkOut.open("testTriangleMesh.vtk");
+      SolverUtils::Mesh::WriteVTKToStream("testMesh",unMesh3,vtkOut);
+      vtkOut.close();
+
+      
+      
     }
     ///
     /// Simple test function fixture returns \f$2x\f$.
