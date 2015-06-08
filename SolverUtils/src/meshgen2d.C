@@ -8,13 +8,6 @@
 /// @author Woohyun Kim 
 /// @author Illinois Rocstar LLC 
 
-#include <iostream>
-#include <string>
-#include <sstream>
-#include <vector>
-#include <fstream>
-#include <cassert>
-
 #include "Mesh.H"
 
 int main(int argc,char *argv[])
