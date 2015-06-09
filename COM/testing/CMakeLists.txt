@@ -141,6 +141,12 @@ ADD_TEST(COM::GetSize:Works ${TESTRESULT} COM::GetSize:Works com_testresults.txt
 ADD_TEST(COM::GetDataItem:Works ${TESTRESULT} COM::GetDataItem:Works com_testresults.txt)
 ADD_TEST(COM::GetNonLocalDataItem:Works ${TESTRESULT} COM::GetNonLocalDataItem:Works com_testresults.txt)
 
+
+#
+# Data Transfer Tests
+#
+ADD_TEST(COM::DataTransferTest:Runs ${TESTRESULT} COM::DataTransferTest:Runs com_testresults.txt)
+
 IF(MPI_CXX_COMPILER)
   # The parallel tests are actually run by this command
   ADD_TEST(COM::RunParallelPlatformTests ${RUNTEST} -p ${PROJECT_SOURCE_DIR}/platforms/parallel_platforms -s ${PROJECT_SOURCE_DIR} -b ${CMAKE_BINARY_DIR}/bin -v 3 -o com_testresults.txt)

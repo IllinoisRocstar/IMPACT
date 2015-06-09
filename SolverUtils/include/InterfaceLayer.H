@@ -582,7 +582,25 @@ namespace SolverUtils {
     COM_delete_window(name);
     return(0);
   };
-  int RegisterSolver(const std::string &name,FEM::SolverAgent &agent)
+  // int RegisterSolver(const std::string &name,FEM::SolverAgent &agent)
+  // {
+
+    
+  //   // First, pass through the metadata and create new dataitems.  For
+  //   // solver-global dataitems, go ahead and set the size and array.
+  //   // For other, non solver-global dataitems, delay processing until
+  //   // "pane" setup.
+  //   COM_new_window(name);
+  //   CreateDataItemsFromSolution(name,agent.Solution());
+  //   // Now that the solver global data is handled, we work on 
+  //   // the mesh-specific or Window Pane-specific data.
+  //   //
+  //   int pane_id = 101; // default - arbitrary, shouldnt be zero
+  //   AgentToPane(name,pane_id,agent);
+  //   COM_window_init_done(name);
+  //   return(0);
+  // };
+  int RegisterSolver(const std::string &name,FEM::SolverAgent &agent,int pane_id=101)
   {
 
     
@@ -595,7 +613,6 @@ namespace SolverUtils {
     // Now that the solver global data is handled, we work on 
     // the mesh-specific or Window Pane-specific data.
     //
-    int pane_id = 101; // default - arbitrary, shouldnt be zero
     AgentToPane(name,pane_id,agent);
     COM_window_init_done(name);
     return(0);

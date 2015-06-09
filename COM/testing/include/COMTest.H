@@ -27,7 +27,7 @@
 #include <time.h>
 #include "MeshUtils.H"
 #include "UnixUtils.H"
-#include "SolverAgent.H"
+#include "InterfaceLayer.H"
 
 COM_EXTERN_MODULE( COMTESTMOD );
 COM_EXTERN_MODULE( COMFTESTMOD );
@@ -114,11 +114,40 @@ namespace COM {
     /// 
     std::vector<int> N;
     ///
-    /// An unstructured mesh for testing mesh-associated data
+    /// Some solver objects to hold testing data
     ///
     TestSolver testSolver1;
     TestSolver testSolver2;
     TestSolver testSolver3;
+    ///
+    /// Vectors to store "solver" solution data for testing
+    ///
+    std::vector<double> nodeCoordinates1_1;
+    std::vector<double> nodeCoordinates1_2;
+    std::vector<double> cellCoordinates1_1;
+    std::vector<double> cellCoordinates1_2;
+    std::vector<double> nodeFunction1_1;
+    std::vector<double> nodeFunction1_2;
+    std::vector<double> cellFunction1_1;
+    std::vector<double> cellFunction1_2;
+
+    std::vector<double> nodeCoordinates2_1;
+    std::vector<double> nodeCoordinates2_2;
+    std::vector<double> cellCoordinates2_1;
+    std::vector<double> cellCoordinates2_2;
+    std::vector<double> nodeFunction2_1;
+    std::vector<double> nodeFunction2_2;
+    std::vector<double> cellFunction2_1;
+    std::vector<double> cellFunction2_2;
+
+    std::vector<double> nodeCoordinates3_1;
+    std::vector<double> nodeCoordinates3_2;
+    std::vector<double> cellCoordinates3_1;
+    std::vector<double> cellCoordinates3_2;
+    std::vector<double> nodeFunction3_1;
+    std::vector<double> nodeFunction3_2;
+    std::vector<double> cellFunction3_1;
+    std::vector<double> cellFunction3_2;
 
   public:
     /// 
@@ -157,6 +186,7 @@ namespace COM {
       std::istringstream meshStream(meshOut.str());
       SolverUtils::Mesh::UnstructuredMesh &unMesh1(testSolver1.Mesh());
       SolverUtils::MeshUtils::meshgen2d(meshStream,unMesh1);
+      SolverUtils::FEM::SolutionData &solution1(testSolver1.Solution());
 
       // Write the test mesh to test.mesh
       std::ofstream Ouf;
@@ -167,6 +197,40 @@ namespace COM {
       vtkOut.open("testMesh.vtk");
       SolverUtils::Mesh::WriteVTKToStream("testMesh",unMesh1,vtkOut);
       vtkOut.close();
+      solution1.Meta().AddField("nodeCoordinates1",'n',3,8,"m");
+      solution1.Meta().AddField("nodeCoordinates2",'n',3,8,"m");
+      solution1.Meta().AddField("cellCoordinates1",'c',3,8,"m");
+      solution1.Meta().AddField("cellCoordinates2",'c',3,8,"m");
+      solution1.Meta().AddField("cellFunction1",'c',1,8,"m");
+      solution1.Meta().AddField("cellFunction2",'c',1,8,"m");
+      solution1.Meta().AddField("nodeFunction1",'n',1,8,"m");
+      solution1.Meta().AddField("nodeFunction2",'n',1,8,"m");
+      testSolver1.CreateSoln();
+      unsigned int nNodes1 = unMesh1.nc.NNodes();
+      unsigned int nElem1  = unMesh1.con.Nelem();
+
+      // Step (3) allocate our own local buffers for the data
+      nodeCoordinates1_1.resize(3*nNodes1);
+      nodeCoordinates1_2.resize(3*nNodes1);
+      cellCoordinates1_1.resize(3*nElem1);
+      cellCoordinates1_2.resize(3*nElem1);
+      nodeFunction1_1.resize(nNodes1);
+      cellFunction1_1.resize(nElem1);
+      nodeFunction1_2.resize(nNodes1);
+      cellFunction1_2.resize(nElem1);
+      
+      // Step (4) reset the buffers created above to be our own local buffers
+      solution1.SetFieldBuffer("nodeCoordinates1",nodeCoordinates1_1);
+      solution1.SetFieldBuffer("nodeCoordinates2",nodeCoordinates1_2);
+      solution1.SetFieldBuffer("cellCoordinates1",cellCoordinates1_1);
+      solution1.SetFieldBuffer("cellCoordinates2",cellCoordinates1_2);
+      solution1.SetFieldBuffer("nodeFunction1",nodeFunction1_1);
+      solution1.SetFieldBuffer("nodeFunction2",nodeFunction1_2);
+      solution1.SetFieldBuffer("cellFunction1",cellFunction1_1);
+      solution1.SetFieldBuffer("cellFunction2",cellFunction1_2);
+     
+      SolverUtils::RegisterSolver("transSolver1",testSolver1,101);
+
 
 
       // Generate a square element mesh
@@ -186,6 +250,42 @@ namespace COM {
       SolverUtils::Mesh::WriteVTKToStream("testMesh",unMesh2,vtkOut);
       vtkOut.close();
 
+      SolverUtils::FEM::SolutionData &solution2(testSolver2.Solution());
+
+      solution2.Meta().AddField("nodeCoordinates1",'n',3,8,"m");
+      solution2.Meta().AddField("nodeCoordinates2",'n',3,8,"m");
+      solution2.Meta().AddField("cellCoordinates1",'c',3,8,"m");
+      solution2.Meta().AddField("cellCoordinates2",'c',3,8,"m");
+      solution2.Meta().AddField("cellFunction1",'c',1,8,"m");
+      solution2.Meta().AddField("cellFunction2",'c',1,8,"m");
+      solution2.Meta().AddField("nodeFunction1",'n',1,8,"m");
+      solution2.Meta().AddField("nodeFunction2",'n',1,8,"m");
+      testSolver2.CreateSoln();
+      unsigned int nNodes2 = unMesh2.nc.NNodes();
+      unsigned int nElem2  = unMesh2.con.Nelem();
+
+      // Step (3) allocate our own local buffers for the data
+      nodeCoordinates2_1.resize(3*nNodes2);
+      nodeCoordinates2_2.resize(3*nNodes2);
+      cellCoordinates2_1.resize(3*nElem2);
+      cellCoordinates2_2.resize(3*nElem2);
+      nodeFunction2_1.resize(nNodes2);
+      cellFunction2_1.resize(nElem2);
+      nodeFunction2_2.resize(nNodes2);
+      cellFunction2_2.resize(nElem2);
+      
+      // Step (4) reset the buffers created above to be our own local buffers
+      solution2.SetFieldBuffer("nodeCoordinates1",nodeCoordinates2_1);
+      solution2.SetFieldBuffer("nodeCoordinates2",nodeCoordinates2_2);
+      solution2.SetFieldBuffer("cellCoordinates1",cellCoordinates2_1);
+      solution2.SetFieldBuffer("cellCoordinates2",cellCoordinates2_2);
+      solution2.SetFieldBuffer("nodeFunction1",nodeFunction2_1);
+      solution2.SetFieldBuffer("nodeFunction2",nodeFunction2_2);
+      solution2.SetFieldBuffer("cellFunction1",cellFunction2_1);
+      solution2.SetFieldBuffer("cellFunction2",cellFunction2_2);
+     
+      SolverUtils::RegisterSolver("transSolver2",testSolver2,201);
+
       // Generate a second triangle element mesh with 64 elements
       meshOut.str("");
       meshOut.clear();
@@ -201,8 +301,44 @@ namespace COM {
       vtkOut.open("testTriangleMesh.vtk");
       SolverUtils::Mesh::WriteVTKToStream("testMesh",unMesh3,vtkOut);
       vtkOut.close();
-
       
+      
+      SolverUtils::FEM::SolutionData &solution3(testSolver3.Solution());
+
+      solution3.Meta().AddField("nodeCoordinates1",'n',3,8,"m");
+      solution3.Meta().AddField("nodeCoordinates2",'n',3,8,"m");
+      solution3.Meta().AddField("cellCoordinates1",'c',3,8,"m");
+      solution3.Meta().AddField("cellCoordinates2",'c',3,8,"m");
+      solution3.Meta().AddField("cellFunction1",'c',1,8,"m");
+      solution3.Meta().AddField("cellFunction2",'c',1,8,"m");
+      solution3.Meta().AddField("nodeFunction1",'n',1,8,"m");
+      solution3.Meta().AddField("nodeFunction2",'n',1,8,"m");
+      testSolver3.CreateSoln();
+      unsigned int nNodes3 = unMesh3.nc.NNodes();
+      unsigned int nElem3  = unMesh3.con.Nelem();
+
+      // Step (3) allocate our own local buffers for the data
+      nodeCoordinates3_1.resize(3*nNodes3);
+      nodeCoordinates3_2.resize(3*nNodes3);
+      cellCoordinates3_1.resize(3*nElem3);
+      cellCoordinates3_2.resize(3*nElem3);
+      nodeFunction3_1.resize(nNodes3);
+      cellFunction3_1.resize(nElem3);
+      nodeFunction3_2.resize(nNodes3);
+      cellFunction3_2.resize(nElem3);
+      
+      // Step (4) reset the buffers created above to be our own local buffers
+      solution3.SetFieldBuffer("nodeCoordinates1",nodeCoordinates3_1);
+      solution3.SetFieldBuffer("nodeCoordinates2",nodeCoordinates3_2);
+      solution3.SetFieldBuffer("cellCoordinates1",cellCoordinates3_1);
+      solution3.SetFieldBuffer("cellCoordinates2",cellCoordinates3_2);
+      solution3.SetFieldBuffer("nodeFunction1",nodeFunction3_1);
+      solution3.SetFieldBuffer("nodeFunction2",nodeFunction3_2);
+      solution3.SetFieldBuffer("cellFunction1",cellFunction3_1);
+      solution3.SetFieldBuffer("cellFunction2",cellFunction3_2);
+     
+      SolverUtils::RegisterSolver("transSolver3",testSolver3,301);
+
       
     }
     ///
@@ -217,6 +353,79 @@ namespace COM {
     /// F2 is quadratic function in x and integrates to unity over [0,1].
     ///
     double F2(double x) { return (3.0*x*x); };
+
+    virtual void Test__DataTransfer(ResultsType &result)
+    {
+
+      SolverUtils::TransferObject transfer11("transfer11");
+      SolverUtils::TransferObject transfer12("transfer12");
+      SolverUtils::TransferObject transfer13("transfer13");
+      SolverUtils::TransferObject transfer23("transfer23");
+      result.UpdateResult("COM::DataTransferObject::Created",1);
+      
+      transfer11.Overlay("transSolver1","transSolver1");
+      transfer12.Overlay("transSolver1","transSolver2");
+      transfer13.Overlay("transSolver1","transSolver3");
+      transfer23.Overlay("transSolver2","transSolver3");
+      result.UpdateResult("COM::DataTransferOverlay:Created",1);
+
+      //      { 
+        std::string solver1NodalCoordinatesName("transSolver1.nc");
+        std::string solver2NodalCoordinatesName("transSolver2.nc");
+        std::string solver3NodalCoordinatesName("transSolver3.nc");
+        double *solver1NodalCoordinates = NULL;
+        double *solver2NodalCoordinates = NULL;
+        double *solver3NodalCoordinates = NULL;
+
+        COM_get_array(solver1NodalCoordinatesName.c_str(),101,&solver1NodalCoordinates);
+        COM_get_array(solver2NodalCoordinatesName.c_str(),201,&solver2NodalCoordinates);
+        COM_get_array(solver3NodalCoordinatesName.c_str(),301,&solver3NodalCoordinates);
+        if(solver1NodalCoordinates && solver2NodalCoordinates && solver3NodalCoordinates)
+          result.UpdateResult("COM::DataTransferCoordinates:Retrieved",1);
+        
+    //     int numberFluidNodes = fluidsAgent->Coordinates().size()/3;
+    //     int numberSolidNodes = structuresAgent->Coordinates().size()/3;
+    //     if(!fluidCoordinates || !solidCoordinates){
+    //       std::cerr << "FSICoupling::TestTransfer:Error: Failed to get coordinate arrays. Exiting."
+    //                 << std::endl;
+    //   exit(1);
+    // }
+   
+    // double tolerance = 1e-12;
+    // double maxdiff = 0;
+    // const std::vector<double> &fluidCoordArray(fluidsAgent->Coordinates());
+    // const std::vector<double> &structCoordArray(structuresAgent->Coordinates());
+    // std::cout << "BEFORE TRANSFER: " << std::endl;
+    // for(int i = 0; i < numberFluidNodes;i++){
+    //   std::cout << "F(" << fluidCoordArray[i*3] << "," << fluidCoordArray[i*3+1] << ","
+    //             << fluidCoordArray[i*3+2] << ")" << std::endl;
+    // }
+    // for(int i = 0; i < numberSolidNodes;i++){
+    //   std::cout << "S(" << structCoordArray[i*3] << "," << structCoordArray[i*3+1] << ","
+    //             << structCoordArray[i*3+2] << ")" << std::endl;
+    // }
+    // transferAgent->Interpolate("coords","coords"); // transfer from structures to fluids the node coordinates
+    // std::cout << "FLUIDS AFTER TRANSFER: " << std::endl;
+    // for(int i = 0; i < numberFluidNodes;i++){
+    //   double diff1 = std::abs(fluidCoordinates[i*3] - fluidCoordArray[i*3]);
+    //   double diff2 = std::abs(fluidCoordinates[i*3+1] - fluidCoordArray[i*3+1]);
+    //   double diff3 = std::abs(fluidCoordinates[i*3+2] - fluidCoordArray[i*3+2]);
+    //   double diff = std::sqrt(diff1*diff1 + diff2*diff2 + diff3*diff3);
+    //   if(diff > maxdiff) maxdiff = diff;
+    //   if(diff > tolerance){
+    //     std::cout << "FSICoupling::TestTransfer: Coordinate transfer tolerance exceeded for node " << i+1 
+    //               << " (" << diff << ")" << std::endl
+    //               << "(" << fluidCoordinates[i*3] << "," << fluidCoordinates[i*3+1] << "," << fluidCoordinates[i*3+2]
+    //               << ") : (" << fluidCoordArray[i*3] << "," << fluidCoordArray[i*3+1] << "," << fluidCoordArray[i*3+2]
+    //               << ")" << std::endl;
+    //   }
+    // }
+    // std::cout << "FSICoupling::TestTransfer: Maximum transferred (s->f) coordinate difference: " << maxdiff << std::endl;
+    // }
+
+      result.UpdateResult("COM::DataTransferTest:Runs", 1);
+    };
+
     ///
     /// Test for COM_LOAD_MODULE_STATIC_DYNAMIC and COM_UNLOAD_MODULE_STATIC_DYNAMIC.
     ///
@@ -1035,6 +1244,7 @@ namespace COM {
       Test__ModuleFunctionTest(result);
       Test__GetModules(result);
       Test__DataItemManagement(result);
+      Test__DataTransfer(result);
       Epilogue();
     }
     
@@ -1055,6 +1265,8 @@ namespace COM {
         Test__GetModules(result);
       if(name == "LoadUnloadMemTest")
         Test__LoadUnloadMemTest(result);
+      if(name == "DataTransfer")
+        Test__DataTransfer(result);
       Epilogue();
     }
 

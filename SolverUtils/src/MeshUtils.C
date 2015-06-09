@@ -108,7 +108,7 @@ namespace SolverUtils { namespace MeshUtils {
 	
         int nElem = 0;
         int nCount = 0;
-
+        int eCounter=0;
         while(nElem++ < numberOfElements){
           std::vector<unsigned int> element;
           element.push_back(nCount+1);
@@ -125,16 +125,15 @@ namespace SolverUtils { namespace MeshUtils {
           nCount--;
           element.push_back(nCount+1);
           nCount++;
-          if(!((nCount+1)%(nDir1+1))) nCount++;
+          eCounter++;
+          if (eCounter==nDir1) {
+            nCount++;
+            eCounter=0;
+          }
           connectivityArray.push_back(element);
         }
 
-      }
-
-
-
-
-      if (wantTriangles==2) {
+      } else  if (wantTriangles==2) {
         //creates the centroid nodal coordinates for use in breaking the quad into triangles
 	
         int numberOfElements=(nDir1*nDir2)*4;
@@ -183,7 +182,7 @@ namespace SolverUtils { namespace MeshUtils {
         nElem = 0;
         int nCount = 0;
         int cIndex=(coordinates.size()/3)-(numberOfElements/4);
-	
+	int eCounter=0;
         //specifying the connectivity of nodes to actually make the triangles
         while(nElem < numberOfElements){
           std::vector<unsigned int> element;
@@ -221,8 +220,11 @@ namespace SolverUtils { namespace MeshUtils {
           element.clear();
 	
           cIndex++;
-
-          if(!((nCount+1)%(nDir1+1))) nCount++;
+          eCounter++;
+          if (eCounter==nDir1){
+            nCount++;
+            eCounter=0;
+          }
     		
         }
 
@@ -233,18 +235,26 @@ namespace SolverUtils { namespace MeshUtils {
     
         int nElem = 0;
         int nCount = 0;
+        int eCounter =0;
         while(nElem++ < numberOfElements){
           std::vector<unsigned int> element;
           element.push_back(nCount+1);
           element.push_back((nCount++)+(nDir1+1)+1);
           element.push_back(nCount+(nDir1+1)+1);
           element.push_back(nCount+1);
-          if(!((nCount+1)%(nDir1+1))) nCount++;
+          eCounter++;
+          if (eCounter==nDir1){
+            nCount++;
+            eCounter=0;
+          }
           connectivityArray.push_back(element);
         }
-    
       }
-  
+
+
+
+
+
       std::vector<std::vector<unsigned int> >::iterator conIt = connectivityArray.begin();
       outStream << connectivityArray.size() << std::endl;
 
