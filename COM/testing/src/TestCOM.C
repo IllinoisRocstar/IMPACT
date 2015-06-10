@@ -48,9 +48,9 @@ namespace COM {
 
     int com_initialized = COM_initialized();
     bool com_initialized_pass = (com_initialized <= 0);
- 
+    MPI_Init(&argc,&argv);
     COM_init(&argc, &argv);
-    std::cout << "Here here here" << std::endl;
+    
     if(com_initialized_pass)
       com_initialized = (COM_initialized() > 0);
 
@@ -165,7 +165,7 @@ namespace COM {
     if(verblevel > 2)
       *Out << "COM::Test: Exiting test function (success)" << std::endl;
 
-    
+    MPI_Finalize();
     return(0);
   }
 };
