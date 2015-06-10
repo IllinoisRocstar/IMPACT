@@ -441,12 +441,69 @@ namespace COM {
         CompareSolutionsWithDetail(testSolver2.NodeCoordinates1(),testSolver2.NodeCoordinates2(),std::cout);
       result.UpdateResult("COM::DataTransfer::LinearTriToSquareNN",works);
 
+      transfer13.Interpolate("nodeCoordinates1","nodeCoordinates2");
+      works = 1;
+      if(!TwoSolutionsMatch(testSolver3.NodeCoordinates1(),testSolver3.NodeCoordinates2()))
+        works = 0;
+      if(!works)
+        CompareSolutionsWithDetail(testSolver3.NodeCoordinates1(),testSolver3.NodeCoordinates2(),std::cout);
+      result.UpdateResult("COM::DataTransfer::LinearTriToDTriangleNN",works);
+	
+
+      transfer23.Interpolate("nodeCoordinates1","nodeCoordinates2");
+      works = 1;
+      if(!TwoSolutionsMatch(testSolver3.NodeCoordinates1(),testSolver3.NodeCoordinates2()))
+        works = 0;
+      if(!works)
+        CompareSolutionsWithDetail(testSolver3.NodeCoordinates1(),testSolver3.NodeCoordinates2(),std::cout);
+      result.UpdateResult("COM::DataTransfer::LinearSquareToDTriangleNN",works);
       
       //
       // Quadratic function transfers - transferring the square of the nodal coordinates themselves
       // is a quadratic function transfer. The following transfers do the coordinate
       // transfers between the various meshes.
-      //
+      
+      
+      nc1It = testSolver1.NodeCoordinates1().begin();
+      nc2It = testSolver2.NodeCoordinates1().begin();
+      nc3It = testSolver3.NodeCoordinates1().begin();
+      while(nc1It != testSolver1.NodeCoordinates1().end()){
+        *nc1It++ = (*solver1MeshCoordinates++)*(*solver1MeshCoordinates);
+        *nc2It++ = (*solver2MeshCoordinates++)*(*solver2MeshCoordinates);
+        *nc3It++ = (*solver2MeshCoordinates++)*(*solver2MeshCoordinates);
+
+       }
+
+      // Transfer coordinate data to different meshes and make sure that the
+      // new coordinates match the actual coordinates!
+      transfer12.Interpolate("nodeCoordinates1","nodeCoordinates2");
+      works = 1;
+      if(!TwoSolutionsMatch(testSolver2.NodeCoordinates1(),testSolver2.NodeCoordinates2()))
+        works = 0;
+      if(!works)
+        CompareSolutionsWithDetail(testSolver2.NodeCoordinates1(),testSolver2.NodeCoordinates2(),std::cout);
+      result.UpdateResult("COM::DataTransfer::QuadraticTriToSquareNN",works);
+
+      transfer13.Interpolate("nodeCoordinates1","nodeCoordinates2");
+      works = 1;
+      if(!TwoSolutionsMatch(testSolver3.NodeCoordinates1(),testSolver3.NodeCoordinates2()))
+        works = 0;
+      if(!works)
+        CompareSolutionsWithDetail(testSolver3.NodeCoordinates1(),testSolver3.NodeCoordinates2(),std::cout);
+      result.UpdateResult("COM::DataTransfer::QuadraticTriToDTriangleNN",works);
+	
+
+      transfer23.Interpolate("nodeCoordinates1","nodeCoordinates2");
+      works = 1;
+      if(!TwoSolutionsMatch(testSolver3.NodeCoordinates1(),testSolver3.NodeCoordinates2()))
+        works = 0;
+      if(!works)
+        CompareSolutionsWithDetail(testSolver3.NodeCoordinates1(),testSolver3.NodeCoordinates2(),std::cout);
+      result.UpdateResult("COM::DataTransfer::QuadraticSquareToDTriangleNN",works);
+
+
+
+
 
       result.UpdateResult("COM::DataTransferTest:Runs", 1);
     };
@@ -1242,14 +1299,14 @@ namespace COM {
             if(result_string=="Hello COM from TestFCWin1!")
               result.UpdateResult("ExternalFCModuleFunction:CallFromDriver",true);
           }
-//          if(ffunc4){
-//            std::vector<char> fresult(81,'\0');
-//            COM_call_function(FModFunction4_handle,&fresult[0]);
-//            std::string result_string(&fresult[0]);
-//            IRAD::Util::Trim(result_string);
-//            if(result_string=="Hello COM from TestFCWin1!")
-//              result.UpdateResult("ExternalFCModuleFunction:CallFromFModule",true);
-//          }
+          if(ffunc4){
+            std::vector<char> fresult(81,'\0');
+            COM_call_function(FModFunction4_handle,&fresult[0]);
+            std::string result_string(&fresult[0]);
+            IRAD::Util::Trim(result_string);
+            if(result_string=="Hello COM from TestFCWin1!")
+              result.UpdateResult("ExternalFCModuleFunction:CallFromFModule",true);
+          }
         }
       }
    

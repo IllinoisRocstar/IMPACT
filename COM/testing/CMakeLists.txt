@@ -151,6 +151,12 @@ ADD_TEST(COM::DataTransferCoordinates:Retrieved ${TESTRESULT} COM::DataTransferC
 ADD_TEST(COM::DataTransferOverlay:Created ${TESTRESULT} COM::DataTransferOverlay:Created com_testresults.txt)
 ADD_TEST(COM::DataTransfer::DirectInjection ${TESTRESULT} COM::DataTransfer::DirectInjection com_testresults.txt)
 ADD_TEST(COM::DataTransfer::LinearTriToSquareNN ${TESTRESULT} COM::DataTransfer::LinearTriToSqareNN com_testresults.txt)
+ADD_TEST(COM::DataTransfer::LinearTriToDTriNN ${TESTRESULT} COM::DataTransfer::LinearTriToDTriNN com_testresults.txt)
+ADD_TEST(COM::DataTransfer::LinearSquareToDTriNN ${TESTRESULT} COM::DataTransfer::LinearSquareToDTriNN com_testresults.txt)
+
+ADD_TEST(COM::DataTransfer::QuadraticTriToSquareNN ${TESTRESULT} COM::DataTransfer::QuadraticTriToSqareNN com_testresults.txt)
+ADD_TEST(COM::DataTransfer::QuadraticTriToDTriNN ${TESTRESULT} COM::DataTransfer::QuadraticTriToDTriNN com_testresults.txt)
+ADD_TEST(COM::DataTransfer::QuadraticSquareToDTriNN ${TESTRESULT} COM::DataTransfer::QuadraticSquareToDTriNN com_testresults.txt)
 
 IF(MPI_CXX_COMPILER)
   # The parallel tests are actually run by this command
