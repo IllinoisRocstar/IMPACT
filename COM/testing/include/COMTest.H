@@ -70,15 +70,15 @@ namespace COM {
   public:
     void Init(const std::string &filename);
   protected:
-    std::string name;                  // string at solver
+    std::string name;                     // string at solver
     std::vector<double> nodeCoordinates1; // vector at nodes
     std::vector<double> nodeCoordinates2; // vector at nodes
     std::vector<double> cellCoordinates1; // vector at nodes
     std::vector<double> cellCoordinates2; // vector at nodes
-    std::vector<double> nodeFunction1; // function at nodes
-    std::vector<double> nodeFunction2; // function at nodes
-    std::vector<double> cellFunction1; // function at cells
-    std::vector<double> cellFunction2; // function at cells
+    std::vector<double> nodeFunction1;    // function at nodes
+    std::vector<double> nodeFunction2;    // function at nodes
+    std::vector<double> cellFunction1;    // function at cells
+    std::vector<double> cellFunction2;    // function at cells
   public:
     std::vector<double> &NodeCoordinates1(){return(nodeCoordinates1);};
     std::vector<double> &NodeCoordinates2(){return(nodeCoordinates2);};
@@ -132,35 +132,6 @@ namespace COM {
     TestSolver testSolver1;
     TestSolver testSolver2;
     TestSolver testSolver3;
-    ///
-    /// Vectors to store "solver" solution data for testing
-    ///
-    // std::vector<double> nodeCoordinates1_1;
-    // std::vector<double> nodeCoordinates1_2;
-    // std::vector<double> cellCoordinates1_1;
-    // std::vector<double> cellCoordinates1_2;
-    // std::vector<double> nodeFunction1_1;
-    // std::vector<double> nodeFunction1_2;
-    // std::vector<double> cellFunction1_1;
-    // std::vector<double> cellFunction1_2;
-
-    // std::vector<double> nodeCoordinates2_1;
-    // std::vector<double> nodeCoordinates2_2;
-    // std::vector<double> cellCoordinates2_1;
-    // std::vector<double> cellCoordinates2_2;
-    // std::vector<double> nodeFunction2_1;
-    // std::vector<double> nodeFunction2_2;
-    // std::vector<double> cellFunction2_1;
-    // std::vector<double> cellFunction2_2;
-
-    // std::vector<double> nodeCoordinates3_1;
-    // std::vector<double> nodeCoordinates3_2;
-    // std::vector<double> cellCoordinates3_1;
-    // std::vector<double> cellCoordinates3_2;
-    // std::vector<double> nodeFunction3_1;
-    // std::vector<double> nodeFunction3_2;
-    // std::vector<double> cellFunction3_1;
-    // std::vector<double> cellFunction3_2;
 
   public:
     /// 
@@ -372,9 +343,31 @@ namespace COM {
     ///
     double F2(double x) { return (3.0*x*x); };
 
+    bool TwoSolutionsMatch(std::vector<double> &solution1,std::vector<double> &solution2,double tol = 1e-12)
+    {
+      std::vector<double>::iterator soln1It = solution1.begin();
+      std::vector<double>::iterator soln2It = solution2.begin();
+      while(soln1It != solution1.end())
+        if(std::abs(*soln1It++ - *soln2It++) > tol) return(false);
+      return(true);
+    }
+
+    void CompareSolutionsWithDetail(std::vector<double> &solution1,std::vector<double> &solution2,std::ostream &outStream)
+    {
+      std::vector<double>::iterator soln1It = solution1.begin();
+      std::vector<double>::iterator soln2It = solution2.begin();
+      while(soln1It != solution1.end()){
+        outStream << soln1It - solution1.begin() << "\t: " << *soln1It 
+                  << ", " << *soln2It << std::endl;
+        soln1It++;
+        soln2It++;
+      }
+    }
+    
+    
     virtual void Test__DataTransfer(ResultsType &result)
     {
-
+      
       SolverUtils::TransferObject transfer11("transfer11");
       SolverUtils::TransferObject transfer12("transfer12");
       SolverUtils::TransferObject transfer13("transfer13");
@@ -385,92 +378,76 @@ namespace COM {
       transfer12.Overlay("transSolver1","transSolver2");
       transfer13.Overlay("transSolver1","transSolver3");
       transfer23.Overlay("transSolver2","transSolver3");
-
-      result.UpdateResult("COM::DataTransferOverlay:Created",1);
-
-    
-      std::string solver1NodalCoordinatesName("transSolver1.nc");
-      std::string solver2NodalCoordinatesName("transSolver2.nc");
-      std::string solver3NodalCoordinatesName("transSolver3.nc");
-      double *solver1NodalCoordinates = NULL;
-      double *solver2NodalCoordinates = NULL;
-      double *solver3NodalCoordinates = NULL;
       
-      COM_get_array(solver1NodalCoordinatesName.c_str(),101,&solver1NodalCoordinates);
-      COM_get_array(solver2NodalCoordinatesName.c_str(),101,&solver2NodalCoordinates);
-      COM_get_array(solver3NodalCoordinatesName.c_str(),101,&solver3NodalCoordinates);
-     
-      if(solver1NodalCoordinates && solver2NodalCoordinates && solver3NodalCoordinates)
+      result.UpdateResult("COM::DataTransferOverlay:Created",1);
+      
+      
+      // This is the "name" of the mesh coordinates array in the CI 'Window'
+      std::string solver1MeshCoordinatesName("transSolver1.nc");
+      std::string solver2MeshCoordinatesName("transSolver2.nc");
+      std::string solver3MeshCoordinatesName("transSolver3.nc");
+      
+      double *solver1MeshCoordinates = NULL;
+      double *solver2MeshCoordinates = NULL;
+      double *solver3MeshCoordinates = NULL;
+      
+      // "Get" the mesh coordinates array from COM for each of the "solvers"
+      COM_get_array(solver1MeshCoordinatesName.c_str(),101,&solver1MeshCoordinates);
+      COM_get_array(solver2MeshCoordinatesName.c_str(),101,&solver2MeshCoordinates);
+      COM_get_array(solver3MeshCoordinatesName.c_str(),101,&solver3MeshCoordinates);
+      
+      // Make sure the 'get' worked
+      if(solver1MeshCoordinates && solver2MeshCoordinates && solver3MeshCoordinates)
         result.UpdateResult("COM::DataTransferCoordinates:Retrieved",1);
-
-      // nodeCoordinates3_1.resize(3*nNodes3);
-      // nodeCoordinates3_2.resize(3*nNodes3);
-      // cellCoordinates3_1.resize(3*nElem3);
-      // cellCoordinates3_2.resize(3*nElem3);
-      // nodeFunction3_1.resize(nNodes3);
-      // cellFunction3_1.resize(nElem3);
-      // nodeFunction3_2.resize(nNodes3);
-      // cellFunction3_2.resize(nElem3);
+      
+      // Copy the mesh coordinate data into the first solution array (i.e. nodeCoordinates1)
+      // for each solver.
       std::vector<double>::iterator nc1It = testSolver1.NodeCoordinates1().begin();
+      std::vector<double>::iterator nc2It = testSolver2.NodeCoordinates1().begin();
+      std::vector<double>::iterator nc3It = testSolver3.NodeCoordinates1().begin();
       while(nc1It != testSolver1.NodeCoordinates1().end()){
-        *nc1It++ = *solver1NodalCoordinates++;
+        *nc1It++ = *solver1MeshCoordinates++;
+        *nc2It++ = *solver2MeshCoordinates++;
+        *nc3It++ = *solver2MeshCoordinates++;
       }
      
-      
+      //
+      // Linear function transfers - transferring the nodal coordinates themselves
+      // is a linear function transfer. The following transfers do the coordinate
+      // transfers between the various meshes.
+      //
+
+      // Transfer coordinate data to the same mesh and make sure that works
+      // This transfers from the first solution array of solver1 (i.e. nodeCoordinates1)
+      // to the second solution array of solver1 (i.e. nodeCoordinates2).
       std::cout << "Transferring data by direct injection..." << std::flush;
       transfer11.Transfer("nodeCoordinates1","nodeCoordinates2");
       std::cout << "done!" << std::endl;
 
-      std::vector<double>::iterator nc2It = testSolver1.NodeCoordinates2().begin();
+      nc2It = testSolver1.NodeCoordinates2().begin();
       nc1It = testSolver1.NodeCoordinates1().begin();
       int works = 1;
       while(nc1It != testSolver1.NodeCoordinates1().end())
         if(std::abs(*nc1It++ - *nc2It++) > 1e-12) works = 0;
-
-
       result.UpdateResult("COM::DataTransfer::DirectInjection",works);
 
-      //     int numberFluidNodes = fluidsAgent->Coordinates().size()/3;
-      //     int numberSolidNodes = structuresAgent->Coordinates().size()/3;
-      //     if(!fluidCoordinates || !solidCoordinates){
-      //       std::cerr << "FSICoupling::TestTransfer:Error: Failed to get coordinate arrays. Exiting."
-      //                 << std::endl;
-      //   exit(1);
-      // }
+      // Transfer coordinate data to different meshes and make sure that the
+      // new coordinates match the actual coordinates!
+      transfer12.Interpolate("nodeCoordinates1","nodeCoordinates2");
+      works = 1;
+      if(!TwoSolutionsMatch(testSolver2.NodeCoordinates1(),testSolver2.NodeCoordinates2()))
+        works = 0;
+      if(!works)
+        CompareSolutionsWithDetail(testSolver2.NodeCoordinates1(),testSolver2.NodeCoordinates2(),std::cout);
+      result.UpdateResult("COM::DataTransfer::LinearTriToSquareNN",works);
+
       
-      // double tolerance = 1e-12;
-      // double maxdiff = 0;
-      // const std::vector<double> &fluidCoordArray(fluidsAgent->Coordinates());
-      // const std::vector<double> &structCoordArray(structuresAgent->Coordinates());
-      // std::cout << "BEFORE TRANSFER: " << std::endl;
-      // for(int i = 0; i < numberFluidNodes;i++){
-      //   std::cout << "F(" << fluidCoordArray[i*3] << "," << fluidCoordArray[i*3+1] << ","
-      //             << fluidCoordArray[i*3+2] << ")" << std::endl;
-      // }
-      // for(int i = 0; i < numberSolidNodes;i++){
-      //   std::cout << "S(" << structCoordArray[i*3] << "," << structCoordArray[i*3+1] << ","
-      //             << structCoordArray[i*3+2] << ")" << std::endl;
-      // }
-      // transferAgent->Interpolate("coords","coords"); // transfer from structures to fluids the node coordinates
-      // std::cout << "FLUIDS AFTER TRANSFER: " << std::endl;
-      // for(int i = 0; i < numberFluidNodes;i++){
-      //   double diff1 = std::abs(fluidCoordinates[i*3] - fluidCoordArray[i*3]);
-      //   double diff2 = std::abs(fluidCoordinates[i*3+1] - fluidCoordArray[i*3+1]);
-      //   double diff3 = std::abs(fluidCoordinates[i*3+2] - fluidCoordArray[i*3+2]);
-      //   double diff = std::sqrt(diff1*diff1 + diff2*diff2 + diff3*diff3);
-      //   if(diff > maxdiff) maxdiff = diff;
-      //   if(diff > tolerance){
-      //     std::cout << "FSICoupling::TestTransfer: Coordinate transfer tolerance exceeded for node " << i+1 
-      //               << " (" << diff << ")" << std::endl
-      //               << "(" << fluidCoordinates[i*3] << "," << fluidCoordinates[i*3+1] << "," << fluidCoordinates[i*3+2]
-      //               << ") : (" << fluidCoordArray[i*3] << "," << fluidCoordArray[i*3+1] << "," << fluidCoordArray[i*3+2]
-      //               << ")" << std::endl;
-      //   }
-      // }
-      // std::cout << "FSICoupling::TestTransfer: Maximum transferred (s->f) coordinate difference: " << maxdiff << std::endl;
-      // }
-      
-      
+      //
+      // Quadratic function transfers - transferring the square of the nodal coordinates themselves
+      // is a quadratic function transfer. The following transfers do the coordinate
+      // transfers between the various meshes.
+      //
+
       result.UpdateResult("COM::DataTransferTest:Runs", 1);
     };
 
