@@ -114,7 +114,11 @@ namespace COM {
   class TestModule : public TestSolver, public COM_Object {
   public:
     /// Default constructor.
-    TestModule(){};
+    TestModule(){
+      my_window_name.erase();
+      other_window_name.erase(); /// Tracks *this* external window's name
+      fortran_window_name.erase(); /// Tracks the fortran external window's name
+    };
     
     ///
     /// @brief Destructor
@@ -123,16 +127,19 @@ namespace COM {
     ///
     virtual ~TestModule()
     {
+      std::cout << "Entering destructor" << std::endl;
       if(!other_window_name.empty()){
         int other_window_handle = COM_get_window_handle(other_window_name.c_str());
         if(other_window_handle > 0)
           COM_UNLOAD_MODULE_STATIC_DYNAMIC(COMTESTMOD,other_window_name.c_str());
       }
+      std::cout << "In destructor" << std::endl;
       if(!fortran_window_name.empty()){
         int fortran_window_handle = COM_get_window_handle(fortran_window_name.c_str());
         if(fortran_window_handle > 0)
           COM_UNLOAD_MODULE_STATIC_DYNAMIC(COMFTESTMOD,fortran_window_name.c_str());
       }
+      std::cout << "Destructor done." << std::endl;
     };  
 
 
