@@ -162,6 +162,14 @@ namespace SolverUtils { namespace FEM {
   class SolutionMetaData : public std::vector<FEM::FieldMetaData>
   {
   public:
+    void Copy(const SolutionMetaData &inMetaData)
+    {
+      this->resize(0);
+      std::vector<FEM::FieldMetaData>::const_iterator imdIt = inMetaData.begin();
+      while(imdIt != inMetaData.end())
+        this->push_back(*imdIt++);
+      return;
+    }      
     void ReadFromStream(std::istream &InStr)
     {
       int num_vars;

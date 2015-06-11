@@ -67,8 +67,10 @@ namespace COM {
 
   class TestSolver : public SolverUtils::FEM::SolverAgent
   {
+
   public:
     void Init(const std::string &filename);
+
   protected:
     std::string name;                     // string at solver
     std::vector<double> nodeCoordinates1; // vector at nodes
@@ -79,7 +81,12 @@ namespace COM {
     std::vector<double> nodeFunction2;    // function at nodes
     std::vector<double> cellFunction1;    // function at cells
     std::vector<double> cellFunction2;    // function at cells
+    int nNodes;
+    int nElem;
+
   public:
+    int NNodes(){return(Mesh().nc.NNodes());};
+    int NElem(){return(Mesh().con.Nelem());};
     std::vector<double> &NodeCoordinates1(){return(nodeCoordinates1);};
     std::vector<double> &NodeCoordinates2(){return(nodeCoordinates2);};
     std::vector<double> &CellCoordinates1(){return(cellCoordinates1);};
@@ -89,6 +96,57 @@ namespace COM {
     std::vector<double> &NodeFunction2(){return(nodeFunction2);};
     std::vector<double> &CellFunction1(){return(cellFunction1);};
     std::vector<double> &CellFunction2(){return(cellFunction2);};
+
+    void Setup(const std::string &meshString,const std::string &solverName,
+               const std::string &meshName){
+
+      std::istringstream meshStream(meshString);
+      SolverUtils::MeshUtils::meshgen2d(meshStream,Mesh());
+ 
+      // Write the test mesh for use in later tests
+      std::ofstream Ouf;
+      Ouf.open((meshName+".mesh").c_str());
+      Ouf << Mesh().nc << std::endl << Mesh().con << std::endl;
+      Ouf.close();
+      std::ofstream vtkOut;
+      vtkOut.open((meshName+".vtk").c_str());
+      SolverUtils::Mesh::WriteVTKToStream(meshName,Mesh(),vtkOut);
+      vtkOut.close();
+
+      int nNodes = Mesh().nc.NNodes();
+      int nElem  = Mesh().con.Nelem();
+
+      nodeCoordinates1.resize(3*nNodes);
+      nodeCoordinates2.resize(3*nNodes);
+      cellCoordinates1.resize(3*nElem);
+      cellCoordinates2.resize(3*nElem);
+      nodeFunction1.resize(nNodes);
+      cellFunction1.resize(nElem);
+      nodeFunction2.resize(nNodes);
+      cellFunction2.resize(nElem);
+      
+      Solution().Meta().AddField("nodeCoordinates1",'n',3,8,"m");
+      Solution().Meta().AddField("nodeCoordinates2",'n',3,8,"m");
+      Solution().Meta().AddField("cellCoordinates1",'c',3,8,"m");
+      Solution().Meta().AddField("cellCoordinates2",'c',3,8,"m");
+      Solution().Meta().AddField("cellFunction1",'c',1,8,"m");
+      Solution().Meta().AddField("cellFunction2",'c',1,8,"m");
+      Solution().Meta().AddField("nodeFunction1",'n',1,8,"m");
+      Solution().Meta().AddField("nodeFunction2",'n',1,8,"m");
+
+      CreateSoln();
+      
+      Solution().SetFieldBuffer("nodeCoordinates1",nodeCoordinates1);
+      Solution().SetFieldBuffer("nodeCoordinates2",nodeCoordinates2);
+      Solution().SetFieldBuffer("cellCoordinates1",cellCoordinates1);
+      Solution().SetFieldBuffer("cellCoordinates2",cellCoordinates2);
+      Solution().SetFieldBuffer("nodeFunction1",nodeFunction1);
+      Solution().SetFieldBuffer("nodeFunction2",nodeFunction2);
+      Solution().SetFieldBuffer("cellFunction1",cellFunction1);
+      Solution().SetFieldBuffer("cellFunction2",cellFunction2);
+
+      SolverUtils::RegisterSolver(solverName,*this);
+    }
   };
 
   /// 
@@ -144,7 +202,7 @@ namespace COM {
     ///
     virtual void Epilogue() 
     {
-      IRAD::Sys::Remove("test.mesh");
+      //      IRAD::Sys::Remove("test_triangle.mesh");
     };
 
     ///
@@ -159,63 +217,14 @@ namespace COM {
       for(int i = 10;i < 10000000;i*=10) N.push_back(i);
 
 
-
-      // Generates a triangulated rectangle with 25 nodes, 32 elements
+      // Generates a triangulated mesh by bisecting rectangles
       std::ostringstream meshOut;
       meshOut << "1" << std::endl 
               << "0 5 5" << std::endl
               << "0 5 5" << std::endl
               << "0 0 0" << std::endl;
-      std::istringstream meshStream(meshOut.str());
-      SolverUtils::Mesh::UnstructuredMesh &unMesh1(testSolver1.Mesh());
-      SolverUtils::MeshUtils::meshgen2d(meshStream,unMesh1);
-      SolverUtils::FEM::SolutionData &solution1(testSolver1.Solution());
-
-      // Write the test mesh to test.mesh
-      std::ofstream Ouf;
-      Ouf.open("test.mesh");
-      Ouf << unMesh1.nc << std::endl << unMesh1.con << std::endl;
-      Ouf.close();
-      std::ofstream vtkOut;
-      vtkOut.open("testMesh.vtk");
-      SolverUtils::Mesh::WriteVTKToStream("testMesh",unMesh1,vtkOut);
-      vtkOut.close();
-      solution1.Meta().AddField("nodeCoordinates1",'n',3,8,"m");
-      solution1.Meta().AddField("nodeCoordinates2",'n',3,8,"m");
-      solution1.Meta().AddField("cellCoordinates1",'c',3,8,"m");
-      solution1.Meta().AddField("cellCoordinates2",'c',3,8,"m");
-      solution1.Meta().AddField("cellFunction1",'c',1,8,"m");
-      solution1.Meta().AddField("cellFunction2",'c',1,8,"m");
-      solution1.Meta().AddField("nodeFunction1",'n',1,8,"m");
-      solution1.Meta().AddField("nodeFunction2",'n',1,8,"m");
-      testSolver1.CreateSoln();
-      unsigned int nNodes1 = unMesh1.nc.NNodes();
-      unsigned int nElem1  = unMesh1.con.Nelem();
-
-      // Step (3) allocate our own local buffers for the data
-      testSolver1.NodeCoordinates1().resize(3*nNodes1);
-      testSolver1.NodeCoordinates2().resize(3*nNodes1);
-      testSolver1.CellCoordinates1().resize(3*nElem1);
-      testSolver1.CellCoordinates2().resize(3*nElem1);
-      testSolver1.NodeFunction1().resize(nNodes1);
-      testSolver1.CellFunction1().resize(nElem1);
-      testSolver1.NodeFunction2().resize(nNodes1);
-      testSolver1.CellFunction2().resize(nElem1);
-      
-      // Step (4) reset the buffers created above to be our own local buffers
-      solution1.SetFieldBuffer("nodeCoordinates1",testSolver1.NodeCoordinates1());
-      solution1.SetFieldBuffer("nodeCoordinates2",testSolver1.NodeCoordinates2());
-      solution1.SetFieldBuffer("cellCoordinates1",testSolver1.CellCoordinates1());
-      solution1.SetFieldBuffer("cellCoordinates2",testSolver1.CellCoordinates2());
-      solution1.SetFieldBuffer("nodeFunction1",testSolver1.NodeFunction1());
-      solution1.SetFieldBuffer("nodeFunction2",testSolver1.NodeFunction2());
-      solution1.SetFieldBuffer("cellFunction1",testSolver1.CellFunction1());
-      solution1.SetFieldBuffer("cellFunction2",testSolver1.CellFunction2());
-     
-      SolverUtils::RegisterSolver("transSolver1",testSolver1);
-
-
-
+      testSolver1.Setup(meshOut.str(),"transSolver1","testTriangle");
+  
       // Generate a square element mesh
       meshOut.str("");
       meshOut.clear();
@@ -223,112 +232,17 @@ namespace COM {
               << "0 5 12" << std::endl
               << "0 5 12" << std::endl
               << "0 0 0" << std::endl;
-      meshStream.clear();
-      meshStream.str(meshOut.str());
-      
-      SolverUtils::Mesh::UnstructuredMesh &unMesh2(testSolver2.Mesh());
-      SolverUtils::MeshUtils::meshgen2d(meshStream,unMesh2);
-      Ouf.clear();
-      Ouf.open("test_square.mesh");
-      Ouf << unMesh2.nc << std::endl << unMesh2.con << std::endl;
-      vtkOut.clear();
-      vtkOut.open("testSquareMesh.vtk");
-      SolverUtils::Mesh::WriteVTKToStream("testMesh",unMesh2,vtkOut);
-      vtkOut.close();
+      testSolver2.Setup(meshOut.str(),"transSolver2","testSquare");
 
-      SolverUtils::FEM::SolutionData &solution2(testSolver2.Solution());
-
-      solution2.Meta().AddField("nodeCoordinates1",'n',3,8,"m");
-      solution2.Meta().AddField("nodeCoordinates2",'n',3,8,"m");
-      solution2.Meta().AddField("cellCoordinates1",'c',3,8,"m");
-      solution2.Meta().AddField("cellCoordinates2",'c',3,8,"m");
-      solution2.Meta().AddField("cellFunction1",'c',1,8,"m");
-      solution2.Meta().AddField("cellFunction2",'c',1,8,"m");
-      solution2.Meta().AddField("nodeFunction1",'n',1,8,"m");
-      solution2.Meta().AddField("nodeFunction2",'n',1,8,"m");
-      testSolver2.CreateSoln();
-      unsigned int nNodes2 = unMesh2.nc.NNodes();
-      unsigned int nElem2  = unMesh2.con.Nelem();
-
-      // Step (3) allocate our own local buffers for the data
-      testSolver2.NodeCoordinates1().resize(3*nNodes2);
-      testSolver2.NodeCoordinates2().resize(3*nNodes2);
-      testSolver2.CellCoordinates1().resize(3*nElem2);
-      testSolver2.CellCoordinates2().resize(3*nElem2);
-      testSolver2.NodeFunction1().resize(nNodes2);
-      testSolver2.CellFunction1().resize(nElem2);
-      testSolver2.NodeFunction2().resize(nNodes2);
-      testSolver2.CellFunction2().resize(nElem2);
-      
-      // Step (4) reset the buffers created above to be our own local buffers
-      solution2.SetFieldBuffer("nodeCoordinates1",testSolver2.NodeCoordinates1());
-      solution2.SetFieldBuffer("nodeCoordinates2",testSolver2.NodeCoordinates2());
-      solution2.SetFieldBuffer("cellCoordinates1",testSolver2.CellCoordinates1());
-      solution2.SetFieldBuffer("cellCoordinates2",testSolver2.CellCoordinates2());
-      solution2.SetFieldBuffer("nodeFunction1",testSolver2.NodeFunction1());
-      solution2.SetFieldBuffer("nodeFunction2",testSolver2.NodeFunction2());
-      solution2.SetFieldBuffer("cellFunction1",testSolver2.CellFunction1());
-      solution2.SetFieldBuffer("cellFunction2",testSolver2.CellFunction2());
-     
-      SolverUtils::RegisterSolver("transSolver2",testSolver2);
-
-      // Generate a second triangle element mesh with 64 elements
+      // Generate a second triangle mesh by quartering rectangles
       meshOut.str("");
       meshOut.clear();
       meshOut << "2" << std::endl 
-              << "0 5 8" << std::endl
-              << "0 5 8" << std::endl
+              << "0 5 7" << std::endl
+              << "0 5 7" << std::endl
               << "0 0 0" << std::endl;
-      meshStream.clear();
-      meshStream.str(meshOut.str());
-      SolverUtils::Mesh::UnstructuredMesh &unMesh3(testSolver3.Mesh());
-      SolverUtils::MeshUtils::meshgen2d(meshStream,unMesh3);
-      Ouf.clear();
-      Ouf.open("test_triangles.mesh");
-      Ouf << unMesh3.nc << std::endl << unMesh3.con << std::endl;
-      vtkOut.clear();
-      vtkOut.open("testTriangleMesh.vtk");
-      SolverUtils::Mesh::WriteVTKToStream("testMesh",unMesh3,vtkOut);
-      vtkOut.close();
-      
-      
-      SolverUtils::FEM::SolutionData &solution3(testSolver3.Solution());
+      testSolver3.Setup(meshOut.str(),"transSolver3","testQTriangle");
 
-      solution3.Meta().AddField("nodeCoordinates1",'n',3,8,"m");
-      solution3.Meta().AddField("nodeCoordinates2",'n',3,8,"m");
-      solution3.Meta().AddField("cellCoordinates1",'c',3,8,"m");
-      solution3.Meta().AddField("cellCoordinates2",'c',3,8,"m");
-      solution3.Meta().AddField("cellFunction1",'c',1,8,"m");
-      solution3.Meta().AddField("cellFunction2",'c',1,8,"m");
-      solution3.Meta().AddField("nodeFunction1",'n',1,8,"m");
-      solution3.Meta().AddField("nodeFunction2",'n',1,8,"m");
-      testSolver3.CreateSoln();
-      unsigned int nNodes3 = unMesh3.nc.NNodes();
-      unsigned int nElem3  = unMesh3.con.Nelem();
-
-      // Step (3) allocate our own local buffers for the data
-      testSolver3.NodeCoordinates1().resize(3*nNodes3);
-      testSolver3.NodeCoordinates2().resize(3*nNodes3);
-      testSolver3.CellCoordinates1().resize(3*nElem3);
-      testSolver3.CellCoordinates2().resize(3*nElem3);
-      testSolver3.NodeFunction1().resize(nNodes3);
-      testSolver3.CellFunction1().resize(nElem3);
-      testSolver3.NodeFunction2().resize(nNodes3);
-      testSolver3.CellFunction2().resize(nElem3);
-      
-      // Step (4) reset the buffers created above to be our own local buffers
-      solution3.SetFieldBuffer("nodeCoordinates1",testSolver3.NodeCoordinates1());
-      solution3.SetFieldBuffer("nodeCoordinates2",testSolver3.NodeCoordinates2());
-      solution3.SetFieldBuffer("cellCoordinates1",testSolver3.CellCoordinates1());
-      solution3.SetFieldBuffer("cellCoordinates2",testSolver3.CellCoordinates2());
-      solution3.SetFieldBuffer("nodeFunction1",testSolver3.NodeFunction1());
-      solution3.SetFieldBuffer("nodeFunction2",testSolver3.NodeFunction2());
-      solution3.SetFieldBuffer("cellFunction1",testSolver3.CellFunction1());
-      solution3.SetFieldBuffer("cellFunction2",testSolver3.CellFunction2());
-     
-      SolverUtils::RegisterSolver("transSolver3",testSolver3);
-
-      
     }
     ///
     /// Simple test function fixture returns \f$2x\f$.
@@ -433,7 +347,7 @@ namespace COM {
 
       // Transfer coordinate data to different meshes and make sure that the
       // new coordinates match the actual coordinates!
-      transfer12.Interpolate("nodeCoordinates1","nodeCoordinates2");
+      transfer12.Transfer("nodeCoordinates1","nodeCoordinates2");
       works = 1;
       if(!TwoSolutionsMatch(testSolver2.NodeCoordinates1(),testSolver2.NodeCoordinates2()))
         works = 0;
@@ -441,22 +355,22 @@ namespace COM {
         CompareSolutionsWithDetail(testSolver2.NodeCoordinates1(),testSolver2.NodeCoordinates2(),std::cout);
       result.UpdateResult("COM::DataTransfer::LinearTriToSquareNN",works);
 
-      transfer13.Interpolate("nodeCoordinates1","nodeCoordinates2");
+      transfer13.Transfer("nodeCoordinates1","nodeCoordinates2");
       works = 1;
       if(!TwoSolutionsMatch(testSolver3.NodeCoordinates1(),testSolver3.NodeCoordinates2()))
         works = 0;
       if(!works)
         CompareSolutionsWithDetail(testSolver3.NodeCoordinates1(),testSolver3.NodeCoordinates2(),std::cout);
-      result.UpdateResult("COM::DataTransfer::LinearTriToDTriangleNN",works);
+      result.UpdateResult("COM::DataTransfer::LinearTriToDTriNN",works);
 	
 
-      transfer23.Interpolate("nodeCoordinates1","nodeCoordinates2");
+      transfer23.Transfer("nodeCoordinates1","nodeCoordinates2");
       works = 1;
       if(!TwoSolutionsMatch(testSolver3.NodeCoordinates1(),testSolver3.NodeCoordinates2()))
         works = 0;
       if(!works)
         CompareSolutionsWithDetail(testSolver3.NodeCoordinates1(),testSolver3.NodeCoordinates2(),std::cout);
-      result.UpdateResult("COM::DataTransfer::LinearSquareToDTriangleNN",works);
+      result.UpdateResult("COM::DataTransfer::LinearSquareToDTriNN",works);
       
       //
       // Quadratic function transfers - transferring the square of the nodal coordinates themselves
@@ -468,15 +382,20 @@ namespace COM {
       nc2It = testSolver2.NodeCoordinates1().begin();
       nc3It = testSolver3.NodeCoordinates1().begin();
       while(nc1It != testSolver1.NodeCoordinates1().end()){
-        *nc1It++ = (*solver1MeshCoordinates++)*(*solver1MeshCoordinates);
-        *nc2It++ = (*solver2MeshCoordinates++)*(*solver2MeshCoordinates);
-        *nc3It++ = (*solver2MeshCoordinates++)*(*solver2MeshCoordinates);
-
+        double squareValue1 = ((*solver1MeshCoordinates)*(*solver1MeshCoordinates)); 
+        double squareValue2 = ((*solver2MeshCoordinates)*(*solver2MeshCoordinates)); 
+        double squareValue3 = ((*solver3MeshCoordinates)*(*solver3MeshCoordinates)); 
+        *nc1It++ = squareValue1;
+        *nc2It++ = squareValue2;
+        *nc3It++ = squareValue3;
+        solver1MeshCoordinates++;
+        solver2MeshCoordinates++;
+        solver3MeshCoordinates++;
        }
 
       // Transfer coordinate data to different meshes and make sure that the
       // new coordinates match the actual coordinates!
-      transfer12.Interpolate("nodeCoordinates1","nodeCoordinates2");
+      transfer12.Transfer("nodeCoordinates1","nodeCoordinates2");
       works = 1;
       if(!TwoSolutionsMatch(testSolver2.NodeCoordinates1(),testSolver2.NodeCoordinates2()))
         works = 0;
@@ -484,25 +403,22 @@ namespace COM {
         CompareSolutionsWithDetail(testSolver2.NodeCoordinates1(),testSolver2.NodeCoordinates2(),std::cout);
       result.UpdateResult("COM::DataTransfer::QuadraticTriToSquareNN",works);
 
-      transfer13.Interpolate("nodeCoordinates1","nodeCoordinates2");
+      transfer13.Transfer("nodeCoordinates1","nodeCoordinates2");
       works = 1;
       if(!TwoSolutionsMatch(testSolver3.NodeCoordinates1(),testSolver3.NodeCoordinates2()))
         works = 0;
       if(!works)
         CompareSolutionsWithDetail(testSolver3.NodeCoordinates1(),testSolver3.NodeCoordinates2(),std::cout);
-      result.UpdateResult("COM::DataTransfer::QuadraticTriToDTriangleNN",works);
+      result.UpdateResult("COM::DataTransfer::QuadraticTriToDTriNN",works);
 	
 
-      transfer23.Interpolate("nodeCoordinates1","nodeCoordinates2");
+      transfer23.Transfer("nodeCoordinates1","nodeCoordinates2");
       works = 1;
       if(!TwoSolutionsMatch(testSolver3.NodeCoordinates1(),testSolver3.NodeCoordinates2()))
         works = 0;
       if(!works)
         CompareSolutionsWithDetail(testSolver3.NodeCoordinates1(),testSolver3.NodeCoordinates2(),std::cout);
-      result.UpdateResult("COM::DataTransfer::QuadraticSquareToDTriangleNN",works);
-
-
-
+      result.UpdateResult("COM::DataTransfer::QuadraticSquareToDTriNN",works);
 
 
       result.UpdateResult("COM::DataTransferTest:Runs", 1);
@@ -525,7 +441,7 @@ namespace COM {
       int ValidateHandle = COM_get_function_handle("Solver1.ValidateAddress");
       int StepHandle = COM_get_function_handle("Solver1.Step");
 
-      std::string meshname("test.mesh");
+      std::string meshname("testTriangle.mesh");
       std::string filename("Solver1");
       int use_timestamp = 0;
       // This init function registers a bunch of DataItems

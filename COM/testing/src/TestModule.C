@@ -587,8 +587,13 @@ namespace COM {
       std::string global_name(name+".global");
       COM_get_object(global_name.c_str(),0,&test_module_pointer);
       COM_assertion_msg( test_module_pointer->validate_object()==0, "Invalid object");
-      delete test_module_pointer;
+      if(test_module_pointer){
+        std::cout << "Deleting test_module_pointer" << std::endl;
+        delete test_module_pointer;
+      }
+      std::cout << "Deleting window (" << name << ")" << std::endl;
       COM_delete_window(std::string(name));
+      std::cout << "Done Unloading module." << std::endl;
     }
 
   private:
