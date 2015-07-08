@@ -108,7 +108,7 @@ clear_overlay( const char *m1,
     delete it2->second; _trs_windows.erase( it2);
   }
   else {
-    std::cerr << "ROCFACE: ERROR: The overlay of window \"" << n1 
+    std::cerr << "SurfX: ERROR: The overlay of window \"" << n1 
 	      << "\" and window \"" << n2 << "\" does not exist for deleting"
 	      << std::endl;
     RFC_assertion(false); MPI_Abort(MPI_COMM_WORLD, -1);
@@ -157,23 +157,23 @@ read_overlay( const COM::DataItem *a1,
   if ( prefix1 == NULL) prefix1 = n1.c_str();
   if ( prefix2 == NULL) prefix2 = n2.c_str();
 
-  if ( it1->second->comm_rank()==0) {
-    std::cout << "ROCFACE: Reading in subdivision of window " << n1 
+  if ( it1->second->comm_rank()==0 && _ctrl.verb) {
+    std::cout << "SurfX: Reading in subdivision of window " << n1 
 	      << " from files with prefix \"" 
 	      << prefix1 << "\"...." << std::flush;
   }
   it1->second->read_sdv( prefix1, format);
-  if ( it1->second->comm_rank()==0) {
+  if ( it1->second->comm_rank()==0 && _ctrl.verb) {
     std::cout << "Done" << std::endl;
   }
 
-  if ( it2->second->comm_rank()==0) {
-    std::cout << "ROCFACE: Reading in subdivision of window " << n2 
+  if ( it2->second->comm_rank()==0 && _ctrl.verb) {
+    std::cout << "SurfX: Reading in subdivision of window " << n2 
 	      << " from files with prefix \"" 
 	      << prefix2 << "\"...." << std::flush;
   }
   it2->second->read_sdv( prefix2, format);
-  if ( it2->second->comm_rank()==0) {
+  if ( it2->second->comm_rank()==0 && _ctrl.verb) {
     std::cout << "Done" << std::endl;
   }
 }
@@ -197,7 +197,7 @@ write_overlay( const COM::DataItem *a1,
   
   TRS_Windows::iterator it1 = _trs_windows.find( wn1);
   if ( it1 == _trs_windows.end()) {
-    std::cerr << "ROCFACE: ERROR: The overlay of window \"" << n1 
+    std::cerr << "SurfX: ERROR: The overlay of window \"" << n1 
 	      << "\" and window \"" << n2 << "\" does not exist for output"
 	      << std::endl;
     RFC_assertion( false); MPI_Abort( MPI_COMM_WORLD, -1);
@@ -209,8 +209,8 @@ write_overlay( const COM::DataItem *a1,
   if ( prefix1 == NULL) prefix1 = n1.c_str();
   if ( prefix2 == NULL) prefix2 = n2.c_str();
 
-  if ( it1->second->comm_rank()==0) {
-    std::cout << "ROCFACE: Writing subdivision of window \"" 
+  if ( it1->second->comm_rank()==0 && _ctrl.verb) {
+    std::cout << "SurfX: Writing subdivision of window \"" 
 	      << n1 << "\"...." << std::flush;
   }
   if ( format && std::strcmp( format, "Tecplot")==0) {
@@ -220,12 +220,12 @@ write_overlay( const COM::DataItem *a1,
   else 
     it1->second->write_sdv( prefix1, format);
 
-  if ( it1->second->comm_rank()==0) {
+  if ( it1->second->comm_rank()==0 && _ctrl.verb) {
     std::cout << "Done" << std::endl;
   }
 
-  if ( it2->second->comm_rank()==0) {
-    std::cout << "ROCFACE: Writing subdivision of window \"" 
+  if ( it2->second->comm_rank()==0 && _ctrl.verb) {
+    std::cout << "SurfX: Writing subdivision of window \"" 
 	      << n2 << "\"...." << std::flush;
   }
 
@@ -236,7 +236,7 @@ write_overlay( const COM::DataItem *a1,
   else
     it2->second->write_sdv( prefix2, format);
 
-  if ( it2->second->comm_rank()==0) {
+  if ( it2->second->comm_rank()==0 && _ctrl.verb) {
     std::cout << "Done" << std::endl;
   }
 }
@@ -267,7 +267,7 @@ set_tags( const COM::DataItem *src, const COM::DataItem *trg,
   TRS_Windows::iterator it2 = _trs_windows.find( wn2);
 
   if ( it2 == _trs_windows.end()) {
-    std::cerr << "ROCFACE::ERROR: The overlay of window \"" << n1 
+    std::cerr << "SurfX::ERROR: The overlay of window \"" << n1 
 	      << "\" and window \"" << n2 << "\" does not exist"
 	      << std::endl;
     RFC_assertion( false); MPI_Abort( MPI_COMM_WORLD, -1);
@@ -404,7 +404,7 @@ void Rocface::transfer( const COM::DataItem *src, COM::DataItem *trg,
   TRS_Windows::iterator it2 = _trs_windows.find( wn2);
 
   if ( it1 == _trs_windows.end() || it2 == _trs_windows.end()) {
-    std::cerr << "ROCFACE::ERROR: The overlay of window \"" << n1 
+    std::cerr << "SurfX::ERROR: The overlay of window \"" << n1 
 	      << "\" and window \"" << n2 << "\" does not exist"
 	      << std::endl;
     RFC_assertion( false); MPI_Abort( MPI_COMM_WORLD, -1);
@@ -424,9 +424,9 @@ void Rocface::transfer( const COM::DataItem *src, COM::DataItem *trg,
   if ( _ctrl.verb) {
     if ( w2->comm_rank()==0) {
       if (conserv) 
-	std::cout << "ROCFACE: Conservatively transferring "; 
+	std::cout << "SurfX: Conservatively transferring "; 
       else
-	std::cout << "ROCFACE: Interpolating "; 
+	std::cout << "SurfX: Interpolating "; 
       std::cout << " from " << w1->name()+"."+src->name() 
 		<< " to " << w2->name()+"."+trg->name() << std::endl; 
     }
@@ -437,10 +437,10 @@ void Rocface::transfer( const COM::DataItem *src, COM::DataItem *trg,
     trans.integrate( *w1, sf, integral, order);
     
     if ( w1->comm_rank()==0) {
-      std::cout << "ROCFACE: Before transfer\nROCFACE:\tminimum:  " << min_v
-		<< "\nROCFACE:\tmaximum:  " << max_v;
+      std::cout << "SurfX: Before transfer\nSurfX:\tminimum:  " << min_v
+		<< "\nSurfX:\tmaximum:  " << max_v;
       if ( !load) 
-	std::cout << "\nROCFACE:\tintegral: " << std::setprecision(10)
+	std::cout << "\nSurfX:\tintegral: " << std::setprecision(10)
 		  << integral;
       std::cout << std::endl;
     }
@@ -458,10 +458,10 @@ void Rocface::transfer( const COM::DataItem *src, COM::DataItem *trg,
     trans.integrate( *w2, tf, integral, order);
     
     if ( w2->comm_rank()==0) {
-      std::cout << "ROCFACE: After transfer\nROCFACE:\tminimum:  " << min_v
-		<< "\nROCFACE:\tmaximum:  " << max_v;
+      std::cout << "SurfX: After transfer\nSurfX:\tminimum:  " << min_v
+		<< "\nSurfX:\tmaximum:  " << max_v;
       if ( !load) 
-	std::cout << "\nROCFACE:\tintegral: " << std::setprecision(10)
+	std::cout << "\nSurfX:\tintegral: " << std::setprecision(10)
 		  << integral;
       std::cout << std::endl;
     }

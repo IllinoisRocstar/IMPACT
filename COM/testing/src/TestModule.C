@@ -129,12 +129,14 @@ namespace COM {
     {
       std::cout << "Entering destructor" << std::endl;
       if(!other_window_name.empty()){
+        std::cout << "deleting other sub-window" << std::endl;
         int other_window_handle = COM_get_window_handle(other_window_name.c_str());
         if(other_window_handle > 0)
           COM_UNLOAD_MODULE_STATIC_DYNAMIC(COMTESTMOD,other_window_name.c_str());
       }
       std::cout << "In destructor" << std::endl;
       if(!fortran_window_name.empty()){
+        std::cout << "Deleting other fortran module." << std::endl;
         int fortran_window_handle = COM_get_window_handle(fortran_window_name.c_str());
         if(fortran_window_handle > 0)
           COM_UNLOAD_MODULE_STATIC_DYNAMIC(COMFTESTMOD,fortran_window_name.c_str());

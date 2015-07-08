@@ -316,7 +316,6 @@ void Pane_communicator::begin_update( const Buff_type btype,
       
       else { // btype == SHARED_NODE &&_panes[i]->id()==vs[pcb->index]
 	pcb->inbuf.resize( bufsize);
-
 	// A pane is sending to itself.
 	// In a list of nodes which a pane shares with itself, the nodes are
 	// listed in pairs.  IE a node list { 1,16,2,17,...} indicates that nodes
@@ -390,7 +389,6 @@ void reduce_real( MPI_Op op, T *a, T *b, int size) throw(int) {
 void Pane_communicator::reduce_on_shared_nodes( MPI_Op op) {
   while ( !_reqs_recv.empty()) {
     int index;
-
     // Wait for any receive request to finish and then process the request
     if ( _comm!=MPI_COMM_NULL) {
       MPI_Status status;
@@ -398,9 +396,9 @@ void Pane_communicator::reduce_on_shared_nodes( MPI_Op op) {
 			      &index, &status);
       COM_assertion( ierr == 0);
     }
-    else
+    else{
       index = _reqs_recv.size()-1;
-
+    }
     // Obtain the indices in _shr_buffs for the receive request
     int i=_reqs_indices[index].first, j=(_reqs_indices[index].second>>4);
 
@@ -410,7 +408,6 @@ void Pane_communicator::reduce_on_shared_nodes( MPI_Op op) {
 
     const COM::DataItem *pconn = _panes[i]->dataitem(_my_pconn_id);
     const int *vs = (const int*)pconn->pointer();
-
     Pane_comm_buffers &pcb = _shr_buffs[i][j];
     COM_assertion( int(pcb.inbuf.size()) == _ncomp_bytes*vs[ pcb.index+1]);
     

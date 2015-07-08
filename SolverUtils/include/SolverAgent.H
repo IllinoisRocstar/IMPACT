@@ -132,7 +132,7 @@ namespace SolverUtils { namespace FEM {
 	Ostr << "Number of quads:      " << nquad << std::endl;
       return(Ostr);
     };
-      
+    ~SolverAgent(){};
   };
 
   class FDSolverAgent : public SolverAgent

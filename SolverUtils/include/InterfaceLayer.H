@@ -125,9 +125,9 @@ namespace SolverUtils {
     unsigned int number_of_quads = quads.Nelem();
     int *con_array = NULL;
     if(number_of_tris > 0){
-      COM_set_size((wname+".:t3:real").c_str(),pane_id,number_of_tris);
-      COM_resize_array((wname+".:t3:real").c_str(),pane_id);
-      COM_get_array((wname+".:t3:real").c_str(),pane_id,&con_array);
+      COM_set_size((wname+".:t3:").c_str(),pane_id,number_of_tris);
+      COM_resize_array((wname+".:t3:").c_str(),pane_id);
+      COM_get_array((wname+".:t3:").c_str(),pane_id,&con_array);
       ci = tris.begin();
       while(ci != tris.end()){
 	unsigned int element_id = ci - tris.begin() + 1;
@@ -139,9 +139,9 @@ namespace SolverUtils {
       }
     }
     if(number_of_quads > 0){
-      COM_set_size((wname+".:q4:real").c_str(),pane_id,number_of_quads);
-      COM_resize_array((wname+".:q4:real").c_str(),pane_id);
-      COM_get_array((wname+".:q4:real").c_str(),pane_id,&con_array);
+      COM_set_size((wname+".:q4:").c_str(),pane_id,number_of_quads);
+      COM_resize_array((wname+".:q4:").c_str(),pane_id);
+      COM_get_array((wname+".:q4:").c_str(),pane_id,&con_array);
       ci = quads.begin();
       while(ci != quads.end()){
 	unsigned int element_id = ci - quads.begin() + 1;
@@ -199,9 +199,9 @@ namespace SolverUtils {
     unsigned int number_of_pris   = pris.Nelem();
     int *con_array = NULL;
     if(number_of_tets > 0){
-      COM_set_size((wname+".:T4:real").c_str(),pane_id,number_of_tets);
-      COM_resize_array((wname+".:T4:real").c_str(),pane_id);
-      COM_get_array((wname+".:T4:real").c_str(),pane_id,&con_array);
+      COM_set_size((wname+".:T4:").c_str(),pane_id,number_of_tets);
+      COM_resize_array((wname+".:T4:").c_str(),pane_id);
+      COM_get_array((wname+".:T4:").c_str(),pane_id,&con_array);
       ci = tets.begin();
       while(ci != tets.end()){
 	unsigned int element_id = ci - tets.begin() + 1;
@@ -214,9 +214,9 @@ namespace SolverUtils {
       }
     }
     if(number_of_pyrs > 0){
-      COM_set_size((wname+".:P5:real").c_str(),pane_id,number_of_pyrs);
-      COM_resize_array((wname+".:P5:real").c_str(),pane_id);
-      COM_get_array((wname+".:P5:real").c_str(),pane_id,&con_array);
+      COM_set_size((wname+".:P5:").c_str(),pane_id,number_of_pyrs);
+      COM_resize_array((wname+".:P5:").c_str(),pane_id);
+      COM_get_array((wname+".:P5:").c_str(),pane_id,&con_array);
       ci = pyrs.begin();
       while(ci != pyrs.end()){
 	unsigned int element_id = ci - pyrs.begin() + 1;
@@ -230,9 +230,9 @@ namespace SolverUtils {
       }
     }
     if(number_of_pris > 0){
-      COM_set_size((wname+".:P6:real").c_str(),pane_id,number_of_pris);
-      COM_resize_array((wname+".:P6:real").c_str(),pane_id);
-      COM_get_array((wname+".:P6:real").c_str(),pane_id,&con_array);
+      COM_set_size((wname+".:P6:").c_str(),pane_id,number_of_pris);
+      COM_resize_array((wname+".:P6:").c_str(),pane_id);
+      COM_get_array((wname+".:P6:").c_str(),pane_id,&con_array);
       ci = pris.begin();
       while(ci != pris.end()){
 	unsigned int element_id = ci - pris.begin() + 1;
@@ -247,9 +247,9 @@ namespace SolverUtils {
       }
     }
     if(number_of_bricks > 0){
-      COM_set_size((wname+".:B8:real").c_str(),pane_id,number_of_bricks);
-      COM_resize_array((wname+".:B8:real").c_str(),pane_id);
-      COM_get_array((wname+".:B8:real").c_str(),pane_id,&con_array);
+      COM_set_size((wname+".:B8:").c_str(),pane_id,number_of_bricks);
+      COM_resize_array((wname+".:B8:").c_str(),pane_id);
+      COM_get_array((wname+".:B8:").c_str(),pane_id,&con_array);
       ci = bricks.begin();
       while(ci != bricks.end()){
 	unsigned int element_id = ci - bricks.begin() + 1;
@@ -469,25 +469,28 @@ namespace SolverUtils {
 	  assert(wanted_bufsize == orig_bufsize);
 	else
 	  wanted_bufsize = data[data_index].size();
-	if(md.loc == 'm')
-	  COM_set_size(dataitem_name,pane_id,wanted_bufsize); // all global data get a size of 1, except strings
+	if(md.loc == 'm')  // all global data get a size of 1, except strings
+	  COM_set_size(dataitem_name,pane_id,wanted_bufsize);
 	if(copy){
 	  COM_resize_array(dataitem_name,pane_id);
 	  void *the_array = NULL;
 	  COM_get_array(dataitem_name.c_str(),pane_id,&the_array);
-	  std::memcpy(the_array,const_cast<char *>(reinterpret_cast<const char *>(data[data_index].data())),
+	  std::memcpy(the_array,
+                      const_cast<char *>(reinterpret_cast<const char *>(data[data_index].data())),
 		      wanted_bufsize);
 	}
 	else {
-	  COM_set_array(dataitem_name,pane_id,const_cast<char *>(reinterpret_cast<const char *>
-								  (data[data_index].data())));
+	  COM_set_array(dataitem_name,pane_id,
+                        const_cast<char *>(reinterpret_cast<const char *>
+                                           (data[data_index].data())));
 	}
       }
     }
     return(0);
   };
 
-  int WriteVTKToStream(const std::string &name,FEM::SolverAgent &agent,std::ostream &Ostr)
+  int WriteVTKToStream(const std::string &name,FEM::SolverAgent &agent,
+                       std::ostream &Ostr)
   {
     FEM::SolutionData &soln = agent.Solution();
     Mesh::UnstructuredMesh &mesh = agent.Mesh();
@@ -582,6 +585,9 @@ namespace SolverUtils {
     COM_delete_window(name);
     return(0);
   };
+  int UnRegisterSolver(const std::string &name){
+    return(DestroySolver(name));
+  };
   // int RegisterSolver(const std::string &name,FEM::SolverAgent &agent)
   // {
 
@@ -617,7 +623,8 @@ namespace SolverUtils {
     COM_window_init_done(name);
     return(0);
   };
-  int UpdateAgentCoordinatesFromPane(const std::string &windowName,int paneID,FEM::SolverAgent &solverAgent)
+  int UpdateAgentCoordinatesFromPane(const std::string &windowName,int paneID,
+                                     FEM::SolverAgent &solverAgent)
   {
     Mesh::UnstructuredMesh &uMesh(solverAgent.Mesh());
     double *windowNodeCoords = NULL;
@@ -630,7 +637,8 @@ namespace SolverUtils {
     uMesh.nc.init_copy(numberOfNodes,windowNodeCoords,dataStride);
     return(0);
   } 
-  int PopulateSolutionDataFromPane(const std::string &windowName,int paneID,FEM::SolutionData &solutionData,bool copyMode = false)
+  int PopulateSolutionDataFromPane(const std::string &windowName,int paneID,
+                                   FEM::SolutionData &solutionData,bool copyMode = false)
   {
     FEM::SolutionData::DataContainer &data(solutionData.Data());
     FEM::SolutionMetaData &meta(solutionData.Meta());
@@ -657,7 +665,8 @@ namespace SolverUtils {
     }
     return(0);
   };
-  int CreateSolutionFromPane(const std::string &windowName,int paneID,FEM::SolverAgent &solverAgent,bool copyMode = false)
+  int CreateSolutionFromPane(const std::string &windowName,int paneID,
+                             FEM::SolverAgent &solverAgent,bool copyMode = false)
   {
     FEM::SolutionData &solutionData(solverAgent.Solution());
     if(PopulateSolutionMetaDataFromPane(windowName,paneID,solutionData))
@@ -666,7 +675,8 @@ namespace SolverUtils {
     if(PopulateSolutionDataFromPane(windowName,paneID,solutionData,copyMode))
       return(2);
   };
-  int PaneToAgent(const std::string &windowName,int paneID,FEM::SolverAgent &solverAgent,bool copyMode = false)
+  int PaneToAgent(const std::string &windowName,int paneID,
+                  FEM::SolverAgent &solverAgent,bool copyMode = false)
   {
     int returnCode = PaneToUnstructuredMesh(windowName,paneID,solverAgent.Mesh());
     if(returnCode)
@@ -675,7 +685,9 @@ namespace SolverUtils {
     if(returnCode)
       return(returnCode+2);
   };
-  int PopulateSolverAgentFromWindow(const std::string &windowName,FEM::SolverAgent &solverAgent,bool copyMode = false)
+  int PopulateSolverAgentFromWindow(const std::string &windowName,
+                                    FEM::SolverAgent &solverAgent,
+                                    bool copyMode = false)
   {
 
     // First, check that the window exists, if not, return an error = 1

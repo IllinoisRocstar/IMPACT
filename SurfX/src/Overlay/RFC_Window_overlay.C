@@ -121,6 +121,7 @@ RFC_Pane_overlay::evaluate_normals() {
 // Evaluate vertex normals as average of face normals of all incident faces.
 void 
 RFC_Window_overlay::evaluate_normals() {
+  //  std::cout << "eval normals" << std::endl;
   // First, evaluate normals for each pane
   Pane_set::iterator it, iend=_pane_set.end();
   for ( it=_pane_set.begin() ; it != iend; ++it) {
@@ -128,8 +129,10 @@ RFC_Window_overlay::evaluate_normals() {
       ((RFC_Pane_overlay*)it->second)->evaluate_normals();
   }
 
+  //  std::cout << "reducing" << std::endl;
   // Second, perform reduction over all vertices
   reduce_normals_to_all( MPI_SUM);
+  //  std::cout << "reducing done" << std::endl;
 
   // Evaluate the one-sided normals for the halfedge edges incident 
   // on sharp features.
@@ -230,6 +233,7 @@ RFC_Window_overlay::evaluate_normals() {
 	normalize( pane._f_tngts[i]);
     }
   }
+  //  std::cout << "eval normals done." << std::endl;
 }
 
 // Get the normal of a vertex.
@@ -482,7 +486,7 @@ void RFC_Pane_overlay::insert_subface(int idx, int plid, const int *lids,
 */
 void 
 RFC_Window_overlay::reduce_normals_to_all( MPI_Op op) {
-
+  //  std::cout << "reduce enter" << std::endl;
   std::vector<void *> ptrs;
   // Loop through panes
   Pane_set::iterator pit=_pane_set.begin(), piend=_pane_set.end();
@@ -491,11 +495,15 @@ RFC_Window_overlay::reduce_normals_to_all( MPI_Op op) {
 
     ptrs.push_back( &pane._nrmls[0]);
   }
-
+  //  std::cout << "loop done." << std::endl;
   _map_comm.init( &ptrs[0], COM_DOUBLE, 3);
+  //  std::cout << "init done." << std::endl;
   _map_comm.begin_update_shared_nodes();
+  //  std::cout << "begin update done." << std::endl;
   _map_comm.reduce_on_shared_nodes( op);
+  //  std::cout << "rosn done." << std::endl;
   _map_comm.end_update_shared_nodes();
+  //  std::cout << "reduce done." << std::endl;
 }
 
 RFC_END_NAME_SPACE

@@ -145,18 +145,19 @@ ADD_TEST(COM::GetNonLocalDataItem:Works ${TESTRESULT} COM::GetNonLocalDataItem:W
 #
 # Data Transfer Tests
 #
-ADD_TEST(COM::DataTransferTest:Runs ${TESTRESULT} COM::DataTransferTest:Runs com_testresults.txt)
 ADD_TEST(COM::DataTransferObject:Created ${TESTRESULT} COM::DataTransferObject:Created com_testresults.txt)
 ADD_TEST(COM::DataTransferCoordinates:Retrieved ${TESTRESULT} COM::DataTransferCoordinates:Retrieved com_testresults.txt)
 ADD_TEST(COM::DataTransferOverlay:Created ${TESTRESULT} COM::DataTransferOverlay:Created com_testresults.txt)
 ADD_TEST(COM::DataTransfer::DirectInjection ${TESTRESULT} COM::DataTransfer::DirectInjection com_testresults.txt)
-ADD_TEST(COM::DataTransfer::LinearTriToSquareNN ${TESTRESULT} COM::DataTransfer::LinearTriToSqareNN com_testresults.txt)
-ADD_TEST(COM::DataTransfer::LinearTriToDTriNN ${TESTRESULT} COM::DataTransfer::LinearTriToDTriNN com_testresults.txt)
-ADD_TEST(COM::DataTransfer::LinearSquareToDTriNN ${TESTRESULT} COM::DataTransfer::LinearSquareToDTriNN com_testresults.txt)
-
-ADD_TEST(COM::DataTransfer::QuadraticTriToSquareNN ${TESTRESULT} COM::DataTransfer::QuadraticTriToSqareNN com_testresults.txt)
-ADD_TEST(COM::DataTransfer::QuadraticTriToDTriNN ${TESTRESULT} COM::DataTransfer::QuadraticTriToDTriNN com_testresults.txt)
-ADD_TEST(COM::DataTransfer::QuadraticSquareToDTriNN ${TESTRESULT} COM::DataTransfer::QuadraticSquareToDTriNN com_testresults.txt)
+ADD_TEST(COM::DataTransfer::LinearTriToQuadNN ${TESTRESULT} COM::DataTransfer::LinearTriToQuadNN com_testresults.txt)
+ADD_TEST(COM::DataTransfer::LinearTriToTri2NN ${TESTRESULT} COM::DataTransfer::LinearTriToTri2NN com_testresults.txt)
+ADD_TEST(COM::DataTransfer::LinearQuadToTri2NN ${TESTRESULT} COM::DataTransfer::LinearQuadToTri2NN com_testresults.txt)
+ADD_TEST(COM::DataTransfer::LinearQuadToTriNN ${TESTRESULT} COM::DataTransfer::LinearQuadToTriNN com_testresults.txt)
+ADD_TEST(COM::DataTransfer::LinearTri2ToTriNN ${TESTRESULT} COM::DataTransfer::LinearTri2ToTriNN com_testresults.txt)
+ADD_TEST(COM::DataTransfer::LinearTri2ToQuadNN ${TESTRESULT} COM::DataTransfer::LinearTri2ToQuadNN com_testresults.txt)
+ADD_TEST(COM::DataTransfer::LinearTest::Runs ${TESTRESULT} COM::DataTransfer::LinearTest::Runs com_testresults.txt)
+ADD_TEST(COM::DataTransfer::QuadraticTest::Runs ${TESTRESULT} COM::DataTransfer::QuadraticTest::Runs com_testresults.txt)
+ADD_TEST(COM::DataTransfer::Order2 ${TESTRESULT} COM::DataTransfer::Order2 com_testresults.txt)
 
 IF(MPI_CXX_COMPILER)
   # The parallel tests are actually run by this command

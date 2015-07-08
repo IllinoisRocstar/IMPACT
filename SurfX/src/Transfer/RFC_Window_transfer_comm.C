@@ -166,8 +166,9 @@ RFC_Window_transfer::replicate_metadata( int *pane_ids, int n) {
     if ( p.first != rank) ++npanes_recv[ p.first];
   }
 
-  MPI_Alltoall( &npanes_recv[0], 1, MPI_INT, 
-		&npanes_send[0], 1, MPI_INT, _comm);
+  if(COMMPI_Initialized())
+    MPI_Alltoall( &npanes_recv[0], 1, MPI_INT, 
+                  &npanes_send[0], 1, MPI_INT, _comm);
 
   // Create a buffer for the displacements of the buffer for pane ids.
   std::vector<int> displs_recv( npanes_recv.size()+1); 
@@ -184,8 +185,9 @@ RFC_Window_transfer::replicate_metadata( int *pane_ids, int n) {
 
   std::vector< int>  ids_send( displs_send.back());
 
-  MPI_Alltoallv(&ids_recv[0], &npanes_recv[0],&displs_recv[0], MPI_INT,
-		&ids_send[0], &npanes_send[0],&displs_send[0], MPI_INT, _comm);
+  if(COMMPI_Initialized())
+    MPI_Alltoallv(&ids_recv[0], &npanes_recv[0],&displs_recv[0], MPI_INT,
+                  &ids_send[0], &npanes_send[0],&displs_send[0], MPI_INT, _comm);
 
   
   // Prepare the data structures for sending. 
@@ -507,7 +509,8 @@ void
 RFC_Window_transfer::allreduce( Real *data, int n, MPI_Op op) const {
   std::vector<Real>  buf( data, data+n);
   RFC_assertion( sizeof( Real) == sizeof( double));
-  MPI_Allreduce( &buf[0], data, n, MPI_DOUBLE, op, _comm);
+  if(COMMPI_Initialized())
+    MPI_Allreduce( &buf[0], data, n, MPI_DOUBLE, op, _comm);
 }
 
 void

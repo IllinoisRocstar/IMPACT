@@ -103,8 +103,8 @@ COM_base::COM_base( int *argc, char ***argv) throw( COM_exception, int)
   }
 
   // Initialize MPI if requested and MPI is not yet initialized.
-  if ( _mpi_initialized) MPI_Init( argc, argv);
-
+  if(_mpi_initialized) MPI_Init( argc, argv);
+  
   // Set process-specific verbose level
   int rank = 0;
   if ( COMMPI_Initialized()) rank = COMMPI_Comm_rank( MPI_COMM_WORLD);
