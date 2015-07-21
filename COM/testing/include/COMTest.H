@@ -421,7 +421,9 @@ namespace COM {
         COM_get_array(solver1ConnectivityName.c_str(),101,&solver1Connectivity);
         COM_get_array(solver2ConnectivityName.c_str(),101,&solver2Connectivity);
         COM_get_array(solver3ConnectivityName.c_str(),101,&solver3Connectivity);
-      
+        
+
+
         // Reset the receiving arrays with some conspicious value
         ResetSolution(testSolver1.NodeCoordinates2(),-1);
         ResetSolution(testSolver2.NodeCoordinates2(),-1);
@@ -787,7 +789,7 @@ namespace COM {
       int ValidateHandle = COM_get_function_handle("Solver1.ValidateAddress");
       int StepHandle = COM_get_function_handle("Solver1.Step");
 
-      std::string meshname("testTriangle.mesh");
+      std::string meshname("testTriangle1.mesh");
       std::string filename("Solver1");
       int use_timestamp = 0;
       // This init function registers a bunch of DataItems
