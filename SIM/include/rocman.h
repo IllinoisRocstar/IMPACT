@@ -77,9 +77,10 @@ public:
   void print();
 };
 
-extern int man_verbose;
+//extern int man_verbose;
 
-#define MAN_DEBUG(l, x)   if (man_verbose>=l) printf x;
+//#define MAN_DEBUG(l, x)   if (man_verbose>=l) printf x;
+#define MAN_DEBUG(l, x)  
 
 void debug_print(const std::string str, int pane, int pe, MPI_Comm comm, const char *memo=NULL);
 void debug_int_print(const std::string str, int pane, int pe, MPI_Comm comm, const char *memo=NULL);

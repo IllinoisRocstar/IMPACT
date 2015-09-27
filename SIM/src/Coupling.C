@@ -16,7 +16,7 @@ COM_EXTERN_MODULE(Simpal);
 //class SolidAgent;
 //class FluidAgent;
 
-void RocstarShutdown(int = 0);
+//void RocstarShutdown(int = 0);
 // #ifdef ARM
 // int Rocrem_remesh(const char* solver, const char* indir, const char* outdir,
 // 		  double time, bool pt,bool remesh_surf, 
@@ -310,7 +310,7 @@ void Coupling::read_restart_info()
     fclose(fp);
     if (comm_rank == 0)
       std::cout << "ROCSTAR: THIS RUN IS A RESTART CONTINUED AT ITERATION " << curStep << " WITH TIME " << initialTime << std::endl;
-    param->update_start_time(curStep - 1, initialTime);   // subtle - it starts from 0
+    //    param->update_start_time(curStep - 1, initialTime);   // subtle - it starts from 0
   }
   else {
     if (comm_rank == 0)
@@ -397,7 +397,7 @@ void Coupling::restart_at_time(double t, int step)
     COM_UNLOAD_MODULE_STATIC_DYNAMIC(SurfMap,"MAP");
   }
     // update to given time
-  param->update_start_time( step, t);
+  //  param->update_start_time( step, t);
 
     // load module and call physics routine
   for ( i=0, n=agents.size(); i<n; ++i) {
@@ -478,7 +478,7 @@ void Coupling::Interrupt(int *act,const char *message)
     if(!param->myRank)
       std::cout << "Rocman: Halting simulation." << std::endl;
     finalize();
-    RocstarShutdown();
+    //    RocstarShutdown();
     break;
   case 1:
     // Output solutions and stop.
@@ -487,7 +487,7 @@ void Coupling::Interrupt(int *act,const char *message)
 		<< std::endl;
     output_restart_files( param->current_time);
     finalize();
-    RocstarShutdown();
+    //    RocstarShutdown();
     break;
   case 2:
     //
@@ -560,99 +560,99 @@ Coupling::ProcessInterrupt()
   int fluid_agent_index = 0;
   int action = param->InterruptFlag;
   param->InterruptFlag = 0;
-  if(action > 0){
-    if(param->myRank == 0)
-      std::cout << "Rocman: Processing interrupt." << std::endl;
-    switch(action){
-    case 2:
-      save_step = param->cur_step;
-      restart_at_time(param->LastOutputTime,param->LastOutputStep);
-      param->maxNumTimeSteps = save_step;
-      param->outputIntervalTime /= 10.0;
-      if(!param->myRank){
-	std::cout << "Rocman: Restarting from (time/step): ("
-		  << param->current_time << "," << param->cur_step 
-		  << ") with output"
-		  << " interval, " << param->outputIntervalTime << "." 
-		  << std::endl;
-      }
-      return(1);
-      break;
-    case 3:
-      for(int i = 0,n=agents.size();i<n && !done;n++){
-	std::string::size_type x = agents[i]->get_agent_name().find("lu");
-	if( x != string::npos){
-	  fluid_agent_index = i;
-	  done = true;
-	}
-      }
-      if(!done){
-	std::cerr << "Rocman: Could not find fluid agent.  Dying." 
-		  << std::endl;
-	RocstarShutdown(1);
-      }
-      // char* solver: Path to SimOUT directory (i.e. blah/blah/Rocflu)
-      // double time: timestep to read
-      // bool use_parallel_transfer
-      // bool remesh_surf: true=remesh surface false=leave surface alone
-      // bool transfer_surf: true (only valid if remesh_surf = false)
-      // double scaleFactor: scale mesh granularity
-      // int fieldWidth: digits in filename partition id
-      // int fileBase: 0 is partition ids start at 0, 1 otherwise
-      // int debug: 0=off, 1 = some, more = more
-      // int ngLayers: number of ghost layers; 0-9
-      // returns 1 if success; 0 if fail
-      // Rocrem_remesh(const char* solver, double time, bool remesh_surf, 
-      //	       bool transfer_surf, double scaleFactor, MPI_Comm myComm,
-      //	       int fieldWidth, int fileBase, int debug, int ngLayers) 
-      //
-      // Remeshing test case
-      //
-#ifdef ARM
-      if(!Rocrem_remesh("Rocflu","SimOUT","",param->LastOutputTime,true,true,false,1.0,
-			agents[fluid_agent_index]->get_communicator(),
-			4,0,2,2)){
-	if(!param->myRank)
-	  std::cout << "Rocman: Remeshing failed.  Stopping simulation." 
-		    << std::endl;
-	RocstarShutdown(1);
-      }
-#else
-      if(!param->myRank){
-	//	std::ofstream Ouf;
-	//	Ouf.open("needs_remesh");
-	//	Ouf.close();
-	std::cout << "Rocman: Online remeshing not enabled. Shutting down." << std::endl;
-      }
-      RocstarShutdown(1);
-#endif
-      MPI_Barrier(MPI_COMM_WORLD);
-      restart_at_time(param->LastOutputTime,param->LastOutputStep);
-      MPI_Barrier(MPI_COMM_WORLD);
-      if(!param->myRank)
-	std::cout << "Rocman: Restarting after remesh at (time/step): ("
-		  << param->current_time << "," << param->cur_step << ")"
-		  << std::endl;
-      return(1);
-      break;
-    case 4:
-      MPI_Barrier(MPI_COMM_WORLD);
-      restart_at_time(param->LastOutputTime,param->LastOutputStep);
-      MPI_Barrier(MPI_COMM_WORLD);
-      if(!param->myRank)
-       std::cout << "Rocman: Warm restarting at (time/step): ("
-                 << param->current_time << "," << param->cur_step << ")"
-                 << std::endl;
-      return(1);
-      break;
-    default:
-      if(!param->myRank)
-	std::cout << "Rocman: Unknown interrupt action: " << action << "." 
-		  << std::endl;
-      return(0);
-      break;
-    }
-  }
+//   if(action > 0){
+//     if(param->myRank == 0)
+//       std::cout << "Rocman: Processing interrupt." << std::endl;
+//     switch(action){
+//     case 2:
+//       save_step = param->cur_step;
+//       restart_at_time(param->LastOutputTime,param->LastOutputStep);
+//       param->maxNumTimeSteps = save_step;
+//       param->outputIntervalTime /= 10.0;
+//       if(!param->myRank){
+// 	std::cout << "Rocman: Restarting from (time/step): ("
+// 		  << param->current_time << "," << param->cur_step 
+// 		  << ") with output"
+// 		  << " interval, " << param->outputIntervalTime << "." 
+// 		  << std::endl;
+//       }
+//       return(1);
+//       break;
+//     case 3:
+//       for(int i = 0,n=agents.size();i<n && !done;n++){
+// 	std::string::size_type x = agents[i]->get_agent_name().find("lu");
+// 	if( x != string::npos){
+// 	  fluid_agent_index = i;
+// 	  done = true;
+// 	}
+//       }
+//       if(!done){
+// 	std::cerr << "Rocman: Could not find fluid agent.  Dying." 
+// 		  << std::endl;
+// 	//	RocstarShutdown(1);
+//       }
+//       // char* solver: Path to SimOUT directory (i.e. blah/blah/Rocflu)
+//       // double time: timestep to read
+//       // bool use_parallel_transfer
+//       // bool remesh_surf: true=remesh surface false=leave surface alone
+//       // bool transfer_surf: true (only valid if remesh_surf = false)
+//       // double scaleFactor: scale mesh granularity
+//       // int fieldWidth: digits in filename partition id
+//       // int fileBase: 0 is partition ids start at 0, 1 otherwise
+//       // int debug: 0=off, 1 = some, more = more
+//       // int ngLayers: number of ghost layers; 0-9
+//       // returns 1 if success; 0 if fail
+//       // Rocrem_remesh(const char* solver, double time, bool remesh_surf, 
+//       //	       bool transfer_surf, double scaleFactor, MPI_Comm myComm,
+//       //	       int fieldWidth, int fileBase, int debug, int ngLayers) 
+//       //
+//       // Remeshing test case
+//       //
+// #ifdef ARM
+//       if(!Rocrem_remesh("Rocflu","SimOUT","",param->LastOutputTime,true,true,false,1.0,
+// 			agents[fluid_agent_index]->get_communicator(),
+// 			4,0,2,2)){
+// 	if(!param->myRank)
+// 	  std::cout << "Rocman: Remeshing failed.  Stopping simulation." 
+// 		    << std::endl;
+// 	//	RocstarShutdown(1);
+//       }
+// #else
+//       if(!param->myRank){
+// 	//	std::ofstream Ouf;
+// 	//	Ouf.open("needs_remesh");
+// 	//	Ouf.close();
+// 	std::cout << "Rocman: Online remeshing not enabled. Shutting down." << std::endl;
+//       }
+//       //      RocstarShutdown(1);
+// #endif
+//       MPI_Barrier(MPI_COMM_WORLD);
+//       restart_at_time(param->LastOutputTime,param->LastOutputStep);
+//       MPI_Barrier(MPI_COMM_WORLD);
+//       if(!param->myRank)
+// 	std::cout << "Rocman: Restarting after remesh at (time/step): ("
+// 		  << param->current_time << "," << param->cur_step << ")"
+// 		  << std::endl;
+//       return(1);
+//       break;
+//     case 4:
+//       MPI_Barrier(MPI_COMM_WORLD);
+//       restart_at_time(param->LastOutputTime,param->LastOutputStep);
+//       MPI_Barrier(MPI_COMM_WORLD);
+//       if(!param->myRank)
+//        std::cout << "Rocman: Warm restarting at (time/step): ("
+//                  << param->current_time << "," << param->cur_step << ")"
+//                  << std::endl;
+//       return(1);
+//       break;
+//     default:
+//       if(!param->myRank)
+// 	std::cout << "Rocman: Unknown interrupt action: " << action << "." 
+// 		  << std::endl;
+//       return(0);
+//       break;
+//     }
+//   }
   return(0);
 }
 

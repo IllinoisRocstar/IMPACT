@@ -548,8 +548,8 @@ void Agent::run_bcinitaction(double t, double dt)
 
   // backup first
   if (get_coupling()->get_ipc() <= 1 && dobackup == 1)
-  for (unsigned int i=0; i<interpolateList.size(); i++)
-    interpolateList[i]->backup();
+//   for (unsigned int i=0; i<interpolateList.size(); i++)
+//     interpolateList[i]->backup();
 
   bcInitScheduler.run_actions(t, dt);
 }

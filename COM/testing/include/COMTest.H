@@ -802,13 +802,13 @@ namespace COM {
       std::vector<std::string> expected_dataitem_names;
       expected_dataitem_names.push_back("global");
       expected_dataitem_names.push_back("displacement");
-      expected_dataitem_names.push_back("temperature");
-      expected_dataitem_names.push_back("nodeflags");
-      expected_dataitem_names.push_back("cellflags");
-      expected_dataitem_names.push_back("pressure");
-      expected_dataitem_names.push_back("id");
-      expected_dataitem_names.push_back("time");
-      expected_dataitem_names.push_back("dt");
+      //      expected_dataitem_names.push_back("temperature");
+//       expected_dataitem_names.push_back("nodeflags");
+//       expected_dataitem_names.push_back("cellflags");
+//       expected_dataitem_names.push_back("pressure");
+//       expected_dataitem_names.push_back("id");
+//       expected_dataitem_names.push_back("time");
+//       expected_dataitem_names.push_back("dt");
       std::cout << "COM::Test__DataItemManagement::DataItems:" << std::endl;
       for(int i = 0;i < number_of_dataitems;i++){
         std::string dataitem_name;
@@ -1590,9 +1590,9 @@ namespace COM {
       Test__ModuleLoadingTest(result);
       Test__ModuleFunctionTest(result);
       Test__GetModules(result);
-      Test__DataItemManagement(result);
       Test__LinearDataTransfer(result);
       Test__QuadraticDataTransfer(result);
+      Test__DataItemManagement(result);
       Epilogue();
     }
     

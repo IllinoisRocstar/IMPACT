@@ -181,7 +181,13 @@ COM_base::load_module( const std::string &lname,
   // Obtain a reference to the library.
   int index = _module_map.find(lname).first;
   if ( index<0) { // Load the library
+
+#ifndef DARWIN
     std::string lname_short = std::string("lib") + lname + ".so";
+#else
+    std::string lname_short = std::string("lib") + lname + ".dylib";
+#endif
+
     std::string lname_full = _libdir + lname_short;
 
     // Open the library

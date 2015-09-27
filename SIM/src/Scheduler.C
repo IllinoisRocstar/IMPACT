@@ -144,7 +144,7 @@ void Scheduler::buildDDG()
 
 void Scheduler::schedule()
 {
-   MAN_DEBUG(1, ("Scheduler::schedule called.\n"));
+  //   MAN_DEBUG(1, ("Scheduler::schedule called.\n"));
   COM_assertion_msg(!scheduled, "ERROR: Scheduler has already been scheduled.\n");
 
   // schedule all sub-schedulers

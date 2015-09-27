@@ -19,6 +19,10 @@ set (EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single directo
 set (LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib CACHE PATH "Single directory for all libraries and archives.")
 mark_as_advanced (LIBRARY_OUTPUT_PATH EXECUTABLE_OUTPUT_PATH)
 
+if(APPLE)
+ add_definitions(-DDARWIN)
+endif()
+
 #INCLUDE(CTest)
 #IF(BUILD_TESTING)
 #  SET(BUILDNAME "${BUILDNAME}" CACHE STRING "Name of build on the dashboard")
