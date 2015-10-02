@@ -130,7 +130,7 @@ IF(BUILD_DOCUMENTATION)
                       DEPENDS ${doxyfile} ${doxy_extra_files}
                       COMMENT "Generating documentation")
 
-  ADD_CUSTOM_TARGET( docs DEPENDS ${documentation} )
+  ADD_CUSTOM_TARGET( docs ALL DEPENDS ${documentation} )
   INSTALL( DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs DESTINATION share/IMPACT )
 ENDIF()
 
