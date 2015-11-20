@@ -7,6 +7,7 @@ IF(NOT ENABLE_MPI)
 ELSE()
   FIND_PACKAGE(MPI REQUIRED)
   add_definitions( -DMPICH_IGNORE_CXX_SEEK )
+  INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
 ENDIF()
 
 #INCLUDE(CTest)
@@ -15,7 +16,7 @@ find_path(IO_INC HDF4.h HINTS ../SimIO/In/include)
 set (LIB_SRCS src/Action.C src/Scheduler.C src/Coupling.C src/Agent.C ) 
 set (ALL_SRCS ${LIB_SRCS})
 
-set_source_files_properties(${ALL_SRCS} PROPERTIES COMPILE_FLAGS "-fPIC" )
+set_source_files_properties(${ALL_SRCS} PROPERTIES COMPILE_FLAGS "-fPIC ${MPI_CXX_COMPILE_FLAGS}" )
 #set(TEST_SRCS src/MANTest.C)
 
 # rpath settings
@@ -31,7 +32,8 @@ ELSE()
   add_library(SIM STATIC ${LIB_SRCS})
   add_definitions( -DSTATIC_LINK )
 ENDIF()
-target_link_libraries(SIM SITCOM)
+target_link_libraries(SIM SITCOM ${MPI_CXX_LIBRARIES})
+SET_TARGET_PROPERTIES(SIM PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 
 #add_executable(testx ${TEST_SRCS})
 #target_link_libraries(testx MAN ${APPUTIL_LIB})
