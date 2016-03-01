@@ -126,4 +126,4 @@ SET_TARGET_PROPERTIES(hdf2vtk PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 #ADD_TEST(TestObject:ValidHandle ${TEST_RESULTS} TestObject:ValidHandle testresults.txt)
 #ADD_TEST(TestObject:Exists ${TEST_RESULTS} TestObject:Exists testresults.txt)
 
-INSTALL(TARGETS SimIN hdf2plt printfeas hdf2vtk sepin plagprep RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
+INSTALL(TARGETS SimIN RHDF4 hdf2plt printfeas hdf2vtk sepin plagprep RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
