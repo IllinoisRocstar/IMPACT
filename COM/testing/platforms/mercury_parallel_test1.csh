@@ -9,11 +9,12 @@ rm -f tmpresults_1.txt
 cat <<EOF > ./com_parallel_test_batch.csh
 #!/bin/tcsh
 #
+#PBS -V
 #PBS -l nodes=2:ppn=8
 #PBS -l walltime=00:30:00 
 #PBS -j oe
 #PBS -o com_parallel_test_batch_output
-#PBS -A IRRD
+#PBS -A MPINFRA
 
 cd \${PBS_O_WORKDIR}
 mpirun -np 16 -machinefile \${PBS_NODEFILE} ${BINDIR}/com_parallel_test -o tmpresults_1.txt
@@ -28,6 +29,7 @@ while($i <= 720)
         sleep 10;
     endif
 end
+sleep 10
 cat tmpresults_1.txt >> ${RESULTSFILE}
 rm -f tmpresults_1.txt
 rm -f ./com_parallel_test_batch.csh

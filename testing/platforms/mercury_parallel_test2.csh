@@ -9,11 +9,12 @@ rm -f tmpresults_2.txt
 cat <<EOF > ./impact_parallel_test_batch.csh
 #!/bin/tcsh
 #
+#PBS -V
 #PBS -l nodes=2:ppn=8
 #PBS -l walltime=00:30:00 
 #PBS -j oe
 #PBS -o impact_parallel_test_batch_output
-#PBS -A IRRD
+#PBS -A MPINFRA
 
 cd \${PBS_O_WORKDIR}
 mpiexec -np 16 ${BINDIR}/pepi -o tmpresults_2.txt 1000000
@@ -28,6 +29,7 @@ while($i <= 720)
         sleep 10;
     endif
 end
+sleep 10
 printf "PEPI:Runs=" >> ${RESULTSFILE}
 @ err = 0
 if ( -e tmpresults_2.txt ) then
