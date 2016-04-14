@@ -1874,6 +1874,7 @@ namespace COM {
 
       outfile.close();
 
+
     };
 
     ///
@@ -2081,7 +2082,12 @@ namespace COM {
       outfile_name = "Getsetcommout" + str_rank + ".dat";
       outfile.open(outfile_name.c_str());
 
+      //JK 4/14/16: The set_default is needed now that we removed the forcing
+      // of windows to load onto only MPI_COMM_SELF
+      COM_set_default_communicator(MPI_COMM_SELF);
       COM_LOAD_MODULE_STATIC_DYNAMIC( COMTESTMOD, "TestParallelWin1");
+      COM_set_default_communicator(MPI_COMM_WORLD);
+      //JK 4/14/16: End
       h=COM_get_window_handle("TestParallelWin1");
  
       if(h > 0)
@@ -2245,11 +2251,19 @@ namespace COM {
       ///////////////////////////////
  
 
+      if(rank == 0){
+        std::cout << "End of Test__ParallelModuleLoadingTest" << std::endl;
+      }
+      
       result.UpdateResult("COM::ParallelLoadModule:Works", c_load_module_works);
       result.UpdateResult("COM::ParallelUnloadModule:Works", c_window_gone);
       result.UpdateResult("COM::ParallelFunctionCall:Works", parallel_function_works);
 
       outfile.close();
+
+
+      //reset the default communicator to MPI_COMM_WORLD
+      COM_set_default_communicator(MPI_COMM_WORLD);
     }
 
 
@@ -2283,9 +2297,17 @@ namespace COM {
       ss >> str_rank;
       outfile_name = "testbarrier" + str_rank + ".dat";
       outfile.open(outfile_name.c_str());
- 
+
+      if(rank == 0)
+        std::cout << "Running Test__FunctionBarrierTest" << std::endl;
+
+      //JK 4/14/16: The set_default is needed now that we removed the forcing
+      // of windows to load onto only MPI_COMM_SELF
+      COM_set_default_communicator(MPI_COMM_SELF);
       // Load the module
       COM_LOAD_MODULE_STATIC_DYNAMIC( COMTESTMOD, "TestParallelWin1");
+      COM_set_default_communicator(MPI_COMM_WORLD);
+      //JK 4/14/16: End
 
       // See if the module window exists
       h=COM_get_window_handle("TestParallelWin1");
@@ -2319,6 +2341,8 @@ namespace COM {
       // Unload the module
       COM_UNLOAD_MODULE_STATIC_DYNAMIC( COMTESTMOD, "TestParallelWin1");
     
+      if(rank == 0)
+        std::cout << "End of Test__FunctionBarrierTest" << std::endl;
       result.UpdateResult("COM::FunctionBarrierTest:Runs", true);
       result.UpdateResult("COM::FunctionBarrierTest:Works", barrier_works);
     }

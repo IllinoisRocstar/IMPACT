@@ -62,8 +62,9 @@ namespace COM{
 
     if(com_initialized_pass)
       com_initialized = (COM_initialized() > 0);
-
-    std::cout << "Beginning COM::ParallelTest" << std::endl;
+  
+    if(do_stdout)
+      std::cout << "Beginning COM::ParallelTest" << std::endl;
 
     // The default verbosity is 0
     int verblevel = 0;

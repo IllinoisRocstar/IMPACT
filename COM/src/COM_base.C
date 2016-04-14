@@ -227,9 +227,13 @@ COM_base::load_module( const std::string &lname,
   // Look for the symbol
   std::string fname = lname + "_load_module";
 
+
+  //JK 4/12/16: Turning this off because we want the window to use
+  //the default communicator we explicitly set
   // Set the default communicator to MPI_COMM_SELF
-  MPI_Comm comm = MPI_COMM_SELF; 
-  std::swap(_comm, comm);
+  //MPI_Comm comm = MPI_COMM_SELF; 
+  //std::swap(_comm, comm);
+  //JK 4/12/16: End
 
   void *fptr = dlsym( handle, fname.c_str());
   if ( fptr != NULL) {
@@ -277,8 +281,11 @@ COM_base::load_module( const std::string &lname,
     }
   }
 
+  //JK 4/12/16: Turning this off because it corresponds 
+  //with what I did above
   // Restore the default communicator.
-  std::swap(_comm, comm);
+  //std::swap(_comm, comm);
+  //JK 4/12/16: End
 
   if ( _verb1>1) 
     std::cerr << "Module " << lname << " loaded." << std::endl;
