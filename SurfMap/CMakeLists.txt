@@ -37,6 +37,11 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 include_directories(include ${CMAKE_BINARY_DIR}/include ${COM_INC})
 
+FILE(GLOB H_FILES include/*.H)
+FILE(GLOB h_FILES include/*.h)
+FILE(GLOB hpp_FILES include/*.hpp)
+SET(MAP_INC_FILES ${H_FILES} ${h_FILES} ${hpp_FILES})
+
 IF(NOT BUILD_STATIC)
   add_library(SurfMap SHARED ${MAPLIB_SRCS})
 ELSE()
@@ -72,4 +77,5 @@ SET_TARGET_PROPERTIES(addpconn PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 #ADD_TEST(TestObject:ValidHandle ${TEST_RESULTS} TestObject:ValidHandle testresults.txt)
 #ADD_TEST(TestObject:Exists ${TEST_RESULTS} TestObject:Exists testresults.txt)
 
+INSTALL(FILES ${MAP_INC_FILES} DESTINATION include)
 INSTALL(TARGETS SurfMap RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
