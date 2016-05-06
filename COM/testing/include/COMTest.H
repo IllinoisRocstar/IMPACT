@@ -1540,7 +1540,7 @@ namespace COM {
 //          const char *win3ptr = win3.c_str();
 //          COM_call_function(FModFunction3_handle,win3ptr);
 //          int win3_handle = COM_get_window_handle(win3.c_str());
-
+/*
       std::string fcwin1("TestFCWin1");
       const char *fcwin1ptr = fcwin1.c_str();
       int fcwin1_func_handle = 0;
@@ -1574,7 +1574,7 @@ namespace COM {
           }
         }
       }
-   
+*/   
       COM_UNLOAD_MODULE_STATIC_DYNAMIC( COMTESTMOD, "TestCWin");
       COM_UNLOAD_MODULE_STATIC_DYNAMIC(COMFTESTMOD, "TestFWin");
       result.UpdateResult("ModuleFunctionTest:Runs", true);
