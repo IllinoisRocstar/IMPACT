@@ -494,7 +494,7 @@ void COM_print_window(const std::string& wName, const std::string& timeStr,
   COM_free_buffer(&attrStr);
 }
 
-COM_EXTERN_MODULE( Rocin);
+COM_EXTERN_MODULE( SimIN);
 
 int main(int argc, char* argv[])
 {
@@ -514,7 +514,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  COM_LOAD_MODULE_STATIC_DYNAMIC(Rocin, "IN");
+  COM_LOAD_MODULE_STATIC_DYNAMIC(SimIN, "IN");
   
   int IN_obtain = COM_get_function_handle("IN.obtain_dataitem");
 
@@ -555,7 +555,7 @@ int main(int argc, char* argv[])
   COM_print_window(win_in, timeStr, file_in, mesh_only);
 
 #ifdef DUMMY_MPI
-  COM_UNLOAD_MODULE_STATIC_DYNAMIC(Rocin,"IN");
+  COM_UNLOAD_MODULE_STATIC_DYNAMIC(SimIN,"IN");
 #endif // DUMMY_MPI
 
   COM_finalize();

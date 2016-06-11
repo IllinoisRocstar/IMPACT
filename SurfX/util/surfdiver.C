@@ -20,7 +20,7 @@ COM_EXTERN_MODULE( SimIN);
 using namespace std;
 
 static void read_file_rocin( const char *fname, 
-			     const string &wname, double alpha) {
+			     const std::string &wname, double alpha) {
   char *lastdot=strrchr( const_cast<char *>(fname), '.');
   //  const char *lastdot=strrchr( fname, '.');
 
@@ -95,7 +95,7 @@ static void read_file_rocin( const char *fname,
   COM_delete_window( bufwin.c_str());
 }
 
-static void read_file( const char *fname, const string &wname, double alpha) {
+static void read_file( const char *fname, const std::string &wname, double alpha) {
   const char *lastdot=strrchr( fname, '.');
 
   if ( strcmp( lastdot, ".off")==0 || strcmp( lastdot, ".OFF")==0) {
