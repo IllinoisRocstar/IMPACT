@@ -15,9 +15,9 @@
 #include <cstdlib>
 #include <sstream>
 #include <iomanip>
-#include "primitive_utilities.H"
-#include "COMM.H" // contains IRAD utilities for MPI
-#include "Pane_communicator.h" // IMPACT's inter-process tools
+//#include "primitive_utilities.H"
+//#include "COMM.H" // contains IRAD utilities for MPI
+//#include "Pane_communicator.h" // IMPACT's inter-process tools
 
 
 COM_EXTERN_MODULE(SimOut);
