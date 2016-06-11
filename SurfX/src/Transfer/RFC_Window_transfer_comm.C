@@ -17,13 +17,13 @@ RFC_BEGIN_NAME_SPACE
 void 
 RFC_Window_transfer::
 incident_faces( std::map< int, std::vector<int> > &opp_subface_lists) const {
+
   RFC_assertion(opp_subface_lists.empty());
 
   // Loop through the panes to generate subface list
   for (Pane_set::const_iterator 
 	 pi=_pane_set.begin(); pi != _pane_set.end(); ++pi) {
     const RFC_Pane_transfer &pane = (const RFC_Pane_transfer &)*pi->second;
-    
     for ( int i=0, size=pane.size_of_subfaces(); i<size; ++i) {
       Face_ID oppf = pane._subface_counterparts[i];
       opp_subface_lists[ oppf.pane_id].push_back( oppf.face_id);
@@ -38,6 +38,7 @@ replicate_metadata( const RFC_Window_transfer &opp_win) {
 
   std::map< int, std::vector<int> > opp_subface_lists;
   opp_win.incident_faces( opp_subface_lists);
+
 
   // First, make local copies of topology information of remote panes.
   std::vector< int> pane_ids; pane_ids.reserve( opp_subface_lists.size());
@@ -159,12 +160,13 @@ RFC_Window_transfer::replicate_metadata( int *pane_ids, int n) {
   std::vector< int>  npanes_recv( comm_size(), 0);
   std::vector< int>  npanes_send( comm_size(), 0);
   int rank=comm_rank();
-
+  
   for ( int i=0; i<n; ++i) {
     RFC_assertion( _pane_map.find(pane_ids[i]) != _pane_map.end());
     std::pair< int, int>  p = _pane_map.find( pane_ids[i])->second;
     if ( p.first != rank) ++npanes_recv[ p.first];
   }
+
 
   if(COMMPI_Initialized())
     MPI_Alltoall( &npanes_recv[0], 1, MPI_INT, 
@@ -523,8 +525,8 @@ COM_EXTERN_MODULE( SimIN);
 
 void
 RFC_Window_transfer::init_recv_buffer( int pane_id, int from_rank) {
-
   RFC_assertion( _pane_set.find( pane_id) == _pane_set.end());
+
 
   COM::Pane *base_pane = new COM::Pane( (COM::Window*)NULL, pane_id);
   RFC_Pane_transfer *pane = new RFC_Pane_transfer( base_pane, color());

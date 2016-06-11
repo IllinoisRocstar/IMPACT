@@ -337,7 +337,10 @@ void Pane_communicator::begin_update( const Buff_type btype,
 
 // Finalizes updating shared nodes by call MPI_Waitall on all send requests. 
 void Pane_communicator::end_update() {
-  if ( _comm!=MPI_COMM_NULL) {
+  // original
+  //if ( _comm!=MPI_COMM_NULL) {
+  // MS: change to debug
+  if ( _comm!=MPI_COMM_NULL && _comm!=MPI_COMM_SELF) {
 
     std::vector< MPI_Status> status( _reqs_send.size());
     int ierr=0;
@@ -390,7 +393,10 @@ void Pane_communicator::reduce_on_shared_nodes( MPI_Op op) {
   while ( !_reqs_recv.empty()) {
     int index;
     // Wait for any receive request to finish and then process the request
-    if ( _comm!=MPI_COMM_NULL) {
+    // original
+    //if ( _comm!=MPI_COMM_NULL) {
+    // MS: change to debug
+    if ( _comm!=MPI_COMM_NULL && _comm!=MPI_COMM_SELF) {
       MPI_Status status;
       int ierr = MPI_Waitany( _reqs_recv.size(), &_reqs_recv[0], 
 			      &index, &status);

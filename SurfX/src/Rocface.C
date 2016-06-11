@@ -52,13 +52,13 @@ overlay( const COM::DataItem *a1,
 
   std::string n1 = a1->window()->name();
   std::string n2 = a2->window()->name();
-
+  
   Overlay ovl( a1->window(), a2->window(), path);
   ovl.set_tolerance( _ctrl.snap); // set tolerance for snapping vertices
-
+  
   // Perform overlay
   ovl.overlay();
-
+   
   // Create new data structures for data transfer.
   std::string wn1, wn2;
   get_name( n1, n2, wn1); get_name( n2, n1, wn2);
@@ -76,7 +76,6 @@ overlay( const COM::DataItem *a1,
     it2 = _trs_windows.
       insert( TRS_Windows::value_type( wn2, NULL)).first;
   }
-
   MPI_Comm com = (comm==NULL)?MPI_COMM_WORLD:*comm;
   it1->second = new RFC_Window_transfer(const_cast<COM::Window*>(a1->window()),
 					BLUE, com);
@@ -84,6 +83,7 @@ overlay( const COM::DataItem *a1,
 					GREEN, com);
 
   ovl.export_windows( it1->second, it2->second);
+  
 }
 
 // Destroy the overlay of two windows.
@@ -394,12 +394,14 @@ void Rocface::transfer( const COM::DataItem *src, COM::DataItem *trg,
 			Real *tol, int *iter, bool load) {
   typedef Transfer_traits<Source_type, Target_type, conserv>  Traits;
 
+
   std::string n1 = src->window()->name();
   std::string n2 = trg->window()->name();
 
   std::string wn1, wn2;
   get_name( n1, n2, wn1); get_name( n2, n1, wn2);
   
+
   TRS_Windows::iterator it1 = _trs_windows.find( wn1);
   TRS_Windows::iterator it2 = _trs_windows.find( wn2);
 
@@ -487,7 +489,6 @@ least_squares_transfer( const COM::DataItem *src,
   int    order = (ord_in == NULL) ? 1+trg->is_nodal() : *ord_in;
 
   COM_assertion( alpha>=0 && alpha<=1);
-
   if ( trg->is_nodal()) {
     Real   tol = (tol_io == NULL) ? 1.e-6 : *tol_io;
     int    iter = (iter_io == NULL) ? 100 : *iter_io;

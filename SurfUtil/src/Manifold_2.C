@@ -156,7 +156,6 @@ void Window_manifold_2::init( const COM::DataItem *pmesh) {
 		     pmesh->id()==COM::COM_PMESH, 
 		     "Input to Window_manifold_2::init must be mesh or pmesh");
   if ( _buf_window) delete _buf_window;
-
   const COM::Window *w = pmesh->window();
 
   // Create a buffer window by inheriting from the given mesh.

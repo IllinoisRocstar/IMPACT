@@ -82,7 +82,7 @@ Overlay::Overlay( const COM::Window *w1, const COM::Window *w2,
 			      out_pre.c_str());
   G = new RFC_Window_overlay( const_cast<COM::Window*>(w2), GREEN, 
 			      out_pre.c_str());
-
+  
 #if DEBUG
   verbose2 = true;
 #endif
@@ -151,7 +151,7 @@ int Overlay::overlay() {
 
   std::cerr << "Detecting features in " << G->name() << "..." << std::endl;
   G->detect_features();
-
+  
   match_features_0();
 
   // Evaluate normals for the nodes.

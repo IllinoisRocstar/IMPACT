@@ -39,17 +39,17 @@ RFC_Window_overlay::RFC_Window_overlay( COM::Window *b,
   for ( ; pit != piend; ++pit) {
     (*pit)->_window = this;
   }
-
+  
   Window_manifold_2::init(b->dataitem(COM::COM_PMESH));
-
+  
   // Preprocess pane connectivity.
   std::cout << "Building pane connectivity..." << std::flush;
-
+  
   build_pc_tables();
 
   // Determine the counterpart for border edges of all panes.
   determine_counterparts();
-
+  
   std::cout << "Done" << std::endl;
 }
 
