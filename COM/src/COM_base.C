@@ -191,12 +191,12 @@ COM_base::load_module( const std::string &lname,
     std::string lname_full = _libdir + lname_short;
 
     // Open the library
-    handle = dlopen( lname_full.c_str(), RTLD_LAZY);
+    handle = dlopen( lname_full.c_str(), RTLD_NOW);
     if (handle == NULL)
       printf("dlopen error: %s\n", dlerror());
 
     if ( handle == NULL && !_libdir.empty()) {
-      handle = dlopen( lname_short.c_str(), RTLD_LAZY);
+      handle = dlopen( lname_short.c_str(), RTLD_NOW);
       if (handle == NULL)
         printf("dlopen error: %s\n", dlerror());
       lname_found = lname_short;
