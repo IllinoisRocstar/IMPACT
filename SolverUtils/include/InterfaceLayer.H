@@ -5,6 +5,10 @@
 #include "SolverAgent.H"
 #include "com_basic.h"
 #include "com.h"
+#include <iostream>
+#include <cstring>
+#include <cstdlib>
+#include <sstream>
 
 
 COM_EXTERN_MODULE( SurfX );
@@ -102,7 +106,9 @@ namespace SolverUtils {
       std::memcpy(nc,mesh.nc[1],number_of_nodes*3*sizeof(double));
     }
     else {
-      COM_set_array((wname+".nc"),pane_id,mesh.nc[1]);
+      // Masoud : adding condition to check any nodes resgistered
+      if (number_of_nodes != 0)
+         COM_set_array((wname+".nc"),pane_id,mesh.nc[1]);
     }
 
     // Connectivities are *always* copied - this is because
@@ -346,6 +352,195 @@ namespace SolverUtils {
     ~TransferObject(){ COM_UNLOAD_MODULE_STATIC_DYNAMIC(SurfX,myname.c_str()); };
   };
     
+
+  class TransferObjectPar {
+  private:
+    std::string surfxWinName;
+    std::string win1;
+    std::string win2;
+   
+    int readhandle;
+    int writehandle;
+    int clearhandle;
+    int verbhandle;
+    int overlayhandle;
+    int transferhandle;
+    int interphandle;
+    int loadtranshandle;
+    int verbLevel;
+
+    int nItrLsqTrans;
+    double tolLsqTrans;
+
+    MPI_Comm _comm;
+    int _rank;
+    int _nProc;
+
+  public:
+    TransferObjectPar(const std::string &inSurfxName, MPI_Comm inComm, int inVerbLevel = 1) :
+      surfxWinName(inSurfxName), _comm(inComm), verbLevel(inVerbLevel), 
+      nItrLsqTrans(100), tolLsqTrans(1.0e-6)
+    {
+      MPI_Comm_rank(inComm, &_rank);
+      MPI_Comm_size(inComm, &_nProc);
+
+      COM_LOAD_MODULE_STATIC_DYNAMIC(SurfX, surfxWinName.c_str());
+      readhandle      = COM_get_function_handle((surfxWinName+std::string(".read_overlay")).c_str());
+      writehandle     = COM_get_function_handle((surfxWinName+std::string(".write_overlay")).c_str());
+      clearhandle     = COM_get_function_handle((surfxWinName+std::string(".clear_overlay")).c_str());
+      verbhandle      = COM_get_function_handle((surfxWinName+std::string(".set_verbose")).c_str());
+      overlayhandle   = COM_get_function_handle((surfxWinName+std::string(".overlay")).c_str());
+      interphandle    = COM_get_function_handle((surfxWinName+std::string(".interpolate")).c_str());
+      transferhandle  = COM_get_function_handle((surfxWinName+std::string(".least_squares_transfer")).c_str());
+      loadtranshandle = COM_get_function_handle((surfxWinName+std::string(".load_transfer")).c_str());
+
+      SetVerbosity();
+    };
+
+    void read_file_rocin( const char *fname, const std::string &wname, MPI_Comm comm) {
+
+	char *lastdot=strrchr( const_cast<char *>(fname), '.');
+	COM_new_window( wname.c_str(), comm);
+
+	// read in HDF files or a Rocin control file
+        std::string siminWinName = "IN";
+        COM_LOAD_MODULE_STATIC_DYNAMIC(SimIN, siminWinName.c_str());
+	int IN_read;
+	if ( strcmp( lastdot, ".hdf")==0 || strcmp( lastdot, ".cgns")==0 )
+	  IN_read = COM_get_function_handle( (siminWinName + ".read_window").c_str());
+	else if ( strcmp( lastdot, ".txt")==0)
+	  IN_read = COM_get_function_handle( (siminWinName + ".read_by_control_file").c_str());
+	
+	std::string bufwin( "bufwin");
+	COM_call_function( IN_read, fname, bufwin.c_str(), &comm);
+
+	int IN_obtain = COM_get_function_handle( (siminWinName + ".obtain_dataitem").c_str());
+
+	// copying contents of the window
+	int buf_mesh = COM_get_dataitem_handle( (bufwin + ".mesh").c_str());
+        COM_call_function( IN_obtain, &buf_mesh, &buf_mesh);
+        COM_clone_dataitem( (wname + ".mesh").c_str(), (bufwin + ".mesh").c_str(), 0);
+	COM_delete_window( bufwin.c_str());
+        COM_UNLOAD_MODULE_STATIC_DYNAMIC(SimIN,siminWinName.c_str()); 
+    }
+
+    void findWinName(std::string& fnameIn, std::string& wname) {
+       std::string::size_type n0 = fnameIn.find_last_of( "/");
+       std::string fname;
+       if ( n0 == std::string::npos) fname=fnameIn;
+       else fname = fnameIn.substr(n0+1, fnameIn.size());
+       std::string::size_type ni;
+       ni = fname.find_first_of( "_.:-*[]?\\\"\'0123456789");
+       COM_assertion_msg( ni, "File name must start with a letter");
+       if (ni == std::string::npos) {
+  	  wname = fname;
+       } else {
+ 	  wname = fname.substr( 0, ni);
+       }
+    }
+
+
+    int Overlay(const std::string &w1,const std::string &w2,
+                const std::string &w1FnameHdf, const std::string &w2FnameHdf)
+    {
+      win1 = w1;
+      win2 = w2;
+      
+      // waiting for all processes to finish
+      MPI_Barrier(_comm);
+ 
+      // generating and writing common refinement
+      if (_rank == 0) {
+         COM_set_default_communicator(MPI_COMM_NULL);
+
+         std::string tmpW1 = w1 + "tmp";
+         std::string tmpW2 = w2 + "tmp";
+
+         read_file_rocin( w1FnameHdf.c_str(), tmpW1, MPI_COMM_SELF);
+         COM_window_init_done(tmpW1);
+         read_file_rocin( w2FnameHdf.c_str(), tmpW2, MPI_COMM_SELF);
+         COM_window_init_done(tmpW2);
+         
+	 int mesh1 = COM_get_dataitem_handle((tmpW1+".mesh").c_str());
+	 int mesh2 = COM_get_dataitem_handle((tmpW2+".mesh").c_str());
+	 if(mesh1 <= 0 || mesh2 <= 0)
+	   return(-1);
+	 COM_call_function(overlayhandle, &mesh1, &mesh2);
+         const char *format = "HDF";
+         COM_call_function(writehandle, &mesh1, &mesh2, w1.c_str(), w2.c_str(), format);
+
+         COM_delete_window(tmpW1);
+         COM_delete_window(tmpW2);
+         COM_set_default_communicator(_comm);
+      }
+
+      // waiting for the overlay step to finish
+      MPI_Barrier(_comm);
+
+      // reading overlay
+      int itm1 = COM_get_dataitem_handle((w1+".mesh").c_str());
+      int itm2 = COM_get_dataitem_handle((w2+".mesh").c_str());
+      if(itm1 <= 0 || itm2 <= 0)
+	return(-1);
+      COM_call_function(readhandle, &itm1, &itm2, &_comm, w1.c_str(), w2.c_str(), "HDF");
+     
+      return(0);
+    };
+
+    void SetVerbosity()
+    {
+      COM_call_function(COM_get_function_handle((surfxWinName+".set_verbose").c_str()),&verbLevel);
+    };
+
+    int Transfer(const std::string &src_att,const std::string &trg_att,bool reverse = false)
+    {
+      std::string srcwin((reverse ? win2 : win1));
+      std::string trgwin((reverse ? win1 : win2));
+      std::string srcatt = srcwin + "." + src_att;
+      std::string trgatt = trgwin + "." + trg_att;
+      int src_handle = COM_get_dataitem_handle(srcatt.c_str());
+      int trg_handle = COM_get_dataitem_handle(trgatt.c_str());
+      if((src_handle <= 0) || (trg_handle <= 0))
+	return(-1);
+      COM_call_function(transferhandle, &src_handle, &trg_handle);
+      //COM_call_function(transferhandle, &src_handle, &trg_handle, NULL, NULL, &tolLsqTrans, &nItrLsqTrans);
+      return(0);
+    };
+
+    int Interpolate(const std::string &src_att,const std::string &trg_att,bool reverse = false)
+    {
+      std::string srcwin((reverse ? win2 : win1));
+      std::string trgwin((reverse ? win1 : win2));
+      std::string srcatt = srcwin + "." + src_att;
+      std::string trgatt = trgwin + "." + trg_att;
+      int src_handle = COM_get_dataitem_handle(srcatt.c_str());
+      int trg_handle = COM_get_dataitem_handle(trgatt.c_str());
+      if((src_handle <= 0) || (trg_handle <= 0))
+	return(-1);
+      COM_call_function(interphandle,&src_handle,&trg_handle);
+      return(0);
+    };
+
+    int TransferLoad(const std::string &src_att,const std::string &trg_att,bool reverse = false)
+    {
+      std::string srcwin((reverse ? win2 : win1));
+      std::string trgwin((reverse ? win1 : win2));
+      std::string srcatt = srcwin + "." + src_att;
+      std::string trgatt = trgwin + "." + trg_att;
+      int src_handle = COM_get_dataitem_handle(srcatt.c_str());
+      int trg_handle = COM_get_dataitem_handle(trgatt.c_str());
+      if((src_handle <= 0) || (trg_handle <= 0))
+	return(-1);
+      COM_call_function(loadtranshandle,&src_handle,&trg_handle);
+      return(0);
+    };
+
+    ~TransferObjectPar()
+    { 
+      COM_UNLOAD_MODULE_STATIC_DYNAMIC(SurfX,surfxWinName.c_str()); 
+    };
+  };
+
   int CreateDataItemsFromSolution(const std::string &name,FEM::SolutionData &soln)
   {
     FEM::SolutionData::DataContainer &data = soln.Data();

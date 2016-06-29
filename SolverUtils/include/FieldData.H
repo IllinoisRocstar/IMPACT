@@ -240,10 +240,15 @@ namespace SolverUtils { namespace FEM {
 				   mdi->loc == 'c' ? number_of_cells :
 				   mdi->loc == 'n' ? number_of_nodes :
 				  0);
+        // Masoud : commenting out non zero-sized assertion check
+        /*
 	if(nitems == 0){
 	  std::cerr << "SolutionData::Create: Error, unknown location: " << mdi->loc << std::endl;
 	}
 	assert(nitems > 0);
+        */
+        // Masoud : end
+        
 	// Total size will be the number of components (i.e. scalar = 1, vector = 2,3, etc) times
 	// the number of items (i.e. number of nodes, elements, etc) times the size of each item
 	Mesh::IndexType total_size = nitems * mdi->dsize * mdi->ncomp;

@@ -2855,6 +2855,7 @@ void Rocin::read_windows(const char* filename_patterns,
                          char* time_level,
                          const int* str_len)
 {
+
   const MPI_Comm default_comm=COM_get_default_communicator();
   const MPI_Comm comm_null=MPI_COMM_NULL;
   const MPI_Comm* myComm = 
