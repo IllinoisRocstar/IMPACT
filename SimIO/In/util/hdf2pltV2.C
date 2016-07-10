@@ -30,14 +30,14 @@
 
 #include "TRAIL.H"
 #include "PrimitiveTypes.H"
-#include "roccom.h"
+#include "com.h"
 
 #include "PaneConnectivity.hpp"					/* Gives high-level dynamic pane connectivity access */
 #include "MeshPointIdToGlobalIdMap.hpp" /* Data-structure for mapping (mesh,point) pairs to assigned global IDs */
 
 /* External Dynamically Linked Modules */
-COM_EXTERN_MODULE( Rocin );		// Used to read in the HDF files.
-COM_EXTERN_MODULE( Rocmap );	// Used to compute the pane connectivity.
+COM_EXTERN_MODULE( SurfIN );		// Used to read in the HDF files.
+COM_EXTERN_MODULE( SurfMap );	// Used to compute the pane connectivity.
 
 using namespace Rocstar::Rocin::Utilities;
 
@@ -220,8 +220,8 @@ struct
 	 */
 	inline void loadModules( )
 	{
-		COM_LOAD_MODULE_STATIC_DYNAMIC( Rocin,  "IN" 	);
-		COM_LOAD_MODULE_STATIC_DYNAMIC( Rocmap, "MAP" );
+		COM_LOAD_MODULE_STATIC_DYNAMIC( SurfIN,  "IN" 	);
+		COM_LOAD_MODULE_STATIC_DYNAMIC( SurfMap, "MAP" );
 	}
 
 	/**
@@ -229,8 +229,8 @@ struct
 	 */
 	inline void unloadModules( )
 	{
-		COM_UNLOAD_MODULE_STATIC_DYNAMIC( Rocin,  "IN" 	);
-		COM_UNLOAD_MODULE_STATIC_DYNAMIC( Rocmap, "MAP" );
+		COM_UNLOAD_MODULE_STATIC_DYNAMIC( SurfIN,  "IN" 	);
+		COM_UNLOAD_MODULE_STATIC_DYNAMIC( SurfMap, "MAP" );
 	}
 
 	/**
@@ -1590,7 +1590,7 @@ std::string getWindow( )
 	COM_window_init_done( win_out.c_str( ) );
 
 	// Delete the old memory layout.
-	COM_delete_attribute(( win_in+".atts").c_str( ) );
+	COM_delete_attribute(( win_in+".data").c_str( ) );
 	COM_delete_window( win_in.c_str( ) );
 
 	// Get the number of panes and the corresponding paneIds

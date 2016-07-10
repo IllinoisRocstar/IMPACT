@@ -66,7 +66,7 @@ void read_file( const char *fname, const string &wname, double alpha) {
   }
 
   // Remove all dataitems except for the mesh
-  COM_delete_dataitem(  (bufwin+".atts").c_str());
+  COM_delete_dataitem(  (bufwin+".data").c_str());
 
   // Read in the mesh.
   int buf_mesh = COM_get_dataitem_handle((bufwin+".mesh").c_str());
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
     COM_new_dataitem( (wnames[k]+".flux").c_str(), 'e', COM_DOUBLE, 3, "m/s");
     COM_new_dataitem( (wnames[k]+".velo").c_str(), 'n', COM_DOUBLE, 3, "m/s");
 
-    COM_resize_array( (wnames[k]+".atts").c_str());
+    COM_resize_array( (wnames[k]+".data").c_str());
     COM_window_init_done( wnames[k].c_str());
   }
 

@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
   COM_set_size( "unstr.:H8:", 1, num_elmts, ghost_elements);
   COM_set_array( "unstr.:H8:", 1, &elmts[0][0]);
   
-  COM_resize_array( "unstr.atts");
+  COM_resize_array( "unstr.data");
 
   for(int i =0; i < num_nodes; ++i){
     cout << "Coors_s[0][" << i <<"] = [" 
