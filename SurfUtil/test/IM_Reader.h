@@ -68,7 +68,7 @@ public:
 
       if ( del) {
 	// Delete all dataitems and leave alone the mesh.
-	COM_delete_dataitem( (wname+".atts").c_str());
+	COM_delete_dataitem( (wname+".data").c_str());
       }
 
       int npanes; COM_get_panes( wname.c_str(), &npanes, NULL);

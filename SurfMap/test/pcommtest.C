@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
 
   // Delete all dataitems and leave alone the mesh.
   //std::cout << "deleting the dataitem" << endl;
-  //COM_delete_dataitem( (wname+".atts").c_str());
+  //COM_delete_dataitem( (wname+".data").c_str());
 
   int npanes; 
   int* pane_ids;

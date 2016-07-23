@@ -22,12 +22,13 @@ set (LIB_SRCS src/GeoPrimitives.C src/PGeoPrim.C src/Mesh.C src/PMesh.C src/BSMe
 SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
+find_path(IMPACT_INC com.h HINTS ../COM/include)
 FILE(GLOB H_FILES include/*.H)
 FILE(GLOB h_FILES include/*.h)
 FILE(GLOB hpp_FILES include/*.hpp)
 SET(SolverUtil_INC_FILES ${H_FILES} ${h_FILES} ${hpp_FILES})
 
-include_directories(include ${CMAKE_BINARY_DIR}/include)
+include_directories(include ${IMPACT_INC} ${CMAKE_BINARY_DIR}/include)
 
 
 IF(NOT BUILD_STATIC)

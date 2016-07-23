@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
   COM_resize_array( (wname+".mesh").c_str(), 0, NULL, 0);
   // Delete all dataitems and leave alone the mesh.
   std::cout << "deleting the dataitem" << endl;
-  COM_delete_dataitem( (wname+".atts").c_str());
+  COM_delete_dataitem( (wname+".data").c_str());
 
   int npanes; COM_get_panes( wname.c_str(), &npanes, NULL);
 
