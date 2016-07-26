@@ -189,8 +189,8 @@ class Window_manifold_2 {
 public:
   typedef std::vector< Pane_manifold_2*>::iterator PM_iterator;
   typedef std::vector< Pane_manifold_2*>::const_iterator PM_const_iterator;
-//  typedef std::vector< Pane_manifold_2>::iterator PM_iterator;
-//  typedef std::vector< Pane_manifold_2>::const_iterator PM_const_iterator;
+  /* typedef std::vector< Pane_manifold_2>::iterator PM_iterator; */
+  /* typedef std::vector< Pane_manifold_2>::const_iterator PM_const_iterator; */
 
   /// Default constructor
   Window_manifold_2() : _buf_window(NULL), _cc(NULL), _pconn_nb(0) {}

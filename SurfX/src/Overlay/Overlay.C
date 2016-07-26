@@ -152,10 +152,13 @@ int Overlay::overlay() {
   std::cerr << "Detecting features in " << G->name() << "..." << std::endl;
   G->detect_features();
   
+  std::cerr << "Matching features..." << std::endl;
   match_features_0();
 
+  std::cerr << "Getting node normals for " << B->name() << "..." << std::endl;
   // Evaluate normals for the nodes.
   B->evaluate_normals();
+  std::cerr << "Getting node normals for " << G->name() << "..." << std::endl;
   G->evaluate_normals();
 
   std::cout << "Performing mesh overlay..." << std::flush;

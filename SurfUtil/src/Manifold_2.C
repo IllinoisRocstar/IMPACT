@@ -1144,12 +1144,14 @@ reduce_on_shared_nodes( COM::DataItem *attr, MPI_Op op) {
   }
   _cc->init( attr_inherited);
   _cc->begin_update_shared_nodes();
-  if ( op == OP_MAXABS) 
+
+  if ( op == OP_MAXABS) {
     _cc->reduce_maxabs_on_shared_nodes();
-  else if ( op == OP_DIFF)
+  } else if ( op == OP_DIFF) {
     _cc->reduce_diff_on_shared_nodes();
-  else
+  } else {
     _cc->reduce_on_shared_nodes( op);
+  }
   _cc->end_update_shared_nodes();
   
   if ( attr_inherited != attr) {

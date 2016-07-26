@@ -138,8 +138,8 @@ int COMMPI_Isend( void *buf, int count, MPI_Datatype datatype,
 		  int dest, int tag,
 		  MPI_Comm comm, MPI_Request *request ) {
 #ifndef DUMMY_MPI
-  //  if ( COMMPI_Initialized())
-  if ( COMMPI_Initialized() && dest!=COMMPI_Comm_rank(comm))
+  if ( COMMPI_Initialized())
+    //  if ( COMMPI_Initialized() && dest!=COMMPI_Comm_rank(comm))
     return MPI_Isend( buf, count, datatype, dest, tag, comm, request);
 #endif
   try {
@@ -158,8 +158,8 @@ int COMMPI_Irecv( void *buf, int count, MPI_Datatype datatype,
 		  int src, int tag,
 		  MPI_Comm comm, MPI_Request *request ) { 
 #ifndef DUMMY_MPI
-  //  if ( COMMPI_Initialized())
-  if ( COMMPI_Initialized() && src!=COMMPI_Comm_rank( comm))
+  if ( COMMPI_Initialized())
+    //  if ( COMMPI_Initialized() && src!=COMMPI_Comm_rank( comm))
     return MPI_Irecv( buf, count, datatype, src, tag, comm, request);
 #endif
   try {

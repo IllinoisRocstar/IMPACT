@@ -114,6 +114,7 @@ static void read_file( const char *fname, const std::string &wname, double alpha
 }
 
 int main(int argc, char *argv[]) {
+  //  MPI_Init(&argc,&argv);
   COM_init( &argc, &argv);
   
   if ( argc < 3) {
@@ -159,7 +160,9 @@ int main(int argc, char *argv[]) {
     else fname = fnames[k].substr( n0+1, fnames[k].size());
 
     string::size_type ni;
-    ni = fname.find_first_of( ".:*[]?\\\"\'");
+
+    ni = fname.find_first_of( ".:_-*[]?\\\"\'0123456789");
+
     COM_assertion_msg(ni, "File name must not start with any of the following letters: .:*[]?\\\"\'");
 
     if ( ni == std::string::npos) {
