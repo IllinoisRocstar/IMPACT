@@ -189,6 +189,7 @@ void Pane_communicator::begin_update( const Buff_type btype,
 				      std::vector<std::vector<bool> > *involved) {
   COM_assertion_msg(_reqs_recv.empty(),
 		    "Cannot begin a new update until all prior updates are finished.");
+
   // Define and initialize variables
   int rank = COMMPI_Initialized() ? COMMPI_Comm_rank( _comm) : 0;
 
@@ -339,6 +340,7 @@ void Pane_communicator::begin_update( const Buff_type btype,
 
 // Finalizes updating shared nodes by call MPI_Waitall on all send requests. 
 void Pane_communicator::end_update() {
+
   // original
   //if ( _comm!=MPI_COMM_NULL) {
   // MS: change to debug
@@ -393,49 +395,24 @@ void reduce_real( MPI_Op op, T *a, T *b, int size) throw(int) {
 // nodes, assuming begin_update_shared_nodes() has been called.
 void Pane_communicator::reduce_on_shared_nodes( MPI_Op op) {
   while ( !_reqs_recv.empty()) {
-    int rank = 0;
-    MPI_Comm_rank(_comm,&rank);
-    int index = 0;
-    int nproc = 0;
-    MPI_Comm_size(_comm,&nproc);
-    MPI_Comm_set_errhandler(_comm,MPI_ERRORS_RETURN);
 
+    int index = 0;
     // Wait for any receive request to finish and then process the request
     // original
     //if ( _comm!=MPI_COMM_NULL) {
     // MS: change to debug
     if ( _comm!=MPI_COMM_NULL ) {
-      MPI_Status status;
-      // std::cout << "Rank(" << rank << "): Waitany(" << _reqs_recv.size()
-      // 		<< "," << _reqs_recv[0] << ")" << std::endl;
       int ierr = 0;
+      MPI_Status status;
       ierr = MPI_Waitany( _reqs_recv.size(), &_reqs_recv[0], 
 			      &index, &status);
       COM_assertion_msg(ierr == MPI_SUCCESS,"MPI_Waitany failed.");
-      if(ierr != MPI_SUCCESS){
-	if(ierr == MPI_ERR_IN_STATUS)
-	  ierr = status.MPI_ERROR;
-	if(ierr == MPI_ERR_REQUEST){
-	  std::cout << "PROBLEM WITH REQUESTS ARRAY." << std::endl;
-	}
-	char errorString[MPI_MAX_ERROR_STRING];
-	int errSize = 0;
-	MPI_Error_string(ierr,errorString,&errSize);
-	errorString[errSize] = '\0';
-	std::cout << "Rank(" << rank << "): MPI_ERROR = [" << errorString 
-		  << "]" << std::endl;	
-    }
     } else{
       index = _reqs_recv.size()-1;
     }
+
     // Obtain the indices in _shr_buffs for the receive request
     int i=_reqs_indices[index].first, j=(_reqs_indices[index].second>>4);
-    // std::cout << "reduce on shared nodes" << std::endl
-    // 	      << "comm == " << _comm << std::endl
-    // 	      << "MPI_COMM_NULL == " << MPI_COMM_NULL << std::endl
-    // 	      << "MPI_COMM_SELF == " << MPI_COMM_SELF << std::endl
-    // 	      << "indices == (" << index << "," << i << ","
-    // 	      << j << ")" << std::endl;
 
     int strd_bytes = COM_get_sizeof( _type, _strds[i]);
     // Shift the pointer by -1 because node IDs in pconn start from 1
@@ -519,7 +496,6 @@ void Pane_communicator::reduce_maxabs_on_shared_nodes() {
   while ( !_reqs_recv.empty()) {
     int index;
 
-    //    std::cout << "reduce maxabs" << std::endl;
     // Wait for any receive request to finish and then process the request
     if ( _comm!=MPI_COMM_NULL) {
       MPI_Status status;
