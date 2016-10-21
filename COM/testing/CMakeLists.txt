@@ -67,6 +67,8 @@ SET_TARGET_PROPERTIES(ComTestDriver PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}
 SET_TARGET_PROPERTIES(ComTestFDriver PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS}")
 SET_TARGET_PROPERTIES(com_parallel_test PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 
+INSTALL(TARGETS COMTESTMOD COMFTESTMOD com_test ComTestDriver ComTestFDriver com_parallel_test RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
+
 # This line runs the unit tests from the "com_test" executable
 ADD_TEST(COM::RunUnitTests ${CMAKE_BINARY_DIR}/bin/com_test -o com_testresults.txt)
 
