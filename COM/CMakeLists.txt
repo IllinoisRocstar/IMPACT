@@ -21,11 +21,7 @@ if(APPLE)
  add_definitions(-DDARWIN)
 endif()
 
-#INCLUDE(CTest)
-#IF(BUILD_TESTING)
-#  SET(BUILDNAME "${BUILDNAME}" CACHE STRING "Name of build on the dashboard")
-#  MARK_AS_ADVANCED(BUILDNAME)
-#ENDIF(BUILD_TESTING)
+
 
 find_library(DL_LIB dl)
 set (LIB_SRCS src/com_c.C src/assertion.C src/com_exception.C src/commpi.C src/COM_base.C src/DataItem.C src/Connectivity.C src/ComponentInterface.C src/Pane.C src/Element_accessors.C)
@@ -64,7 +60,7 @@ target_link_libraries(SITCOMF SITCOM ${MPI_Fortran_LIBRARIES})
 SET_TARGET_PROPERTIES(SITCOM PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 SET_TARGET_PROPERTIES(SITCOMF PROPERTIES LINK_FLAGS "${MPI_Fortran_LINK_FLAGS}")
 
-add_subdirectory(testing)
+
 
 FILE(GLOB H_FILES include/*.H)
 FILE(GLOB h_FILES include/*.h)
