@@ -22,7 +22,7 @@ ENDIF()
 
 #find_library(DL_LIB dl)
 find_path(COM_INC roccom.h HINT ../COM/include)
-set (MAPLIB_SRCS src/Rocmap.C src/Pane_boundary.C src/Pane_connectivity.C src/Pane_communicator.C 
+set (MAPLIB_SRCS src/Rocmap.C src/Pane_boundary.C src/Pane_connectivity.C src/Pane_communicator.C
                  src/Dual_connectivity.C src/Simple_manifold_2.C src/Pane_ghost_connectivity.C src/KD_tree_3.C)
 set (UTIL_SRCS util/addpconn.C)
 set (ALL_MAP_SRCS "${MAPLIB_SRCS} ${UTIL_SRCS}")
@@ -37,11 +37,11 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 include_directories(include ${CMAKE_BINARY_DIR}/include ${COM_INC})
 
-FILE(GLOB H_FILES include/*.H)
-FILE(GLOB h_FILES include/*.h)
-FILE(GLOB hpp_FILES include/*.hpp)
-SET(MAP_INC_FILES ${H_FILES} ${h_FILES} ${hpp_FILES})
-MESSAGE(STATUS "MAP_INC_FILES=" $MAP_INC_FILES)
+file(GLOB H_FILES include/*.H)
+file(GLOB h_FILES include/*.h)
+file(GLOB hpp_FILES include/*.hpp)
+set(MAP_INC_FILES ${H_FILES} ${h_FILES} ${hpp_FILES})
+message(STATUS "MAP_INC_FILES=" $MAP_INC_FILES)
 
 IF(NOT BUILD_STATIC)
   add_library(SurfMap SHARED ${MAPLIB_SRCS})

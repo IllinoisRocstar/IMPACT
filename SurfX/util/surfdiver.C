@@ -184,6 +184,9 @@ int main(int argc, char *argv[]) {
   int tri2_mesh = COM_get_dataitem_handle( (wnames[1]+".mesh").c_str());
 
   const char *format = "HDF";
+#ifdef USE_CGNS
+  format = "CGNS";
+#endif
   
   std::cout << "Starting mesh overlay..." << std::endl;
   COM_call_function( RFC_overlay, &tri1_mesh, &tri2_mesh);

@@ -206,43 +206,43 @@ class AutoCDer
 /** Boeing Fix
  ** Convert CGNS ElementType_t (defined in cgnslib.h) to a Roccom string 
  **/
-bool elementType_to_string(ElementType_t etype, std::string & roccom_elem)
+bool elementType_to_string(CG_ElementType_t etype, std::string & roccom_elem)
 {
 
 switch (etype)                  /* type of CGNS element */
     {
 
-    case BAR_2: roccom_elem = ":b2:";
+    case CG_BAR_2: roccom_elem = ":b2:";
       break;
-    case BAR_3: roccom_elem = ":b3:" ;
+    case CG_BAR_3: roccom_elem = ":b3:" ;
       break;
-    case TRI_3: roccom_elem = ":t3:";
+    case CG_TRI_3: roccom_elem = ":t3:";
         break;
-    case TRI_6: roccom_elem = ":t6:" ;
+    case CG_TRI_6: roccom_elem = ":t6:" ;
         break;
-    case QUAD_4: roccom_elem = ":q4:" ;
+    case CG_QUAD_4: roccom_elem = ":q4:" ;
         break;
-    case QUAD_8: roccom_elem = ":q8:" ;
+    case CG_QUAD_8: roccom_elem = ":q8:" ;
         break;
-    case QUAD_9: roccom_elem = ":q9:" ;
+    case CG_QUAD_9: roccom_elem = ":q9:" ;
       break;
-    case TETRA_4: roccom_elem = ":T4:" ;
+    case CG_TETRA_4: roccom_elem = ":T4:" ;
         break;
-    case TETRA_10: roccom_elem = ":T10:";
+    case CG_TETRA_10: roccom_elem = ":T10:";
       break;
-    case PYRA_5: roccom_elem = ":P5:";
+    case CG_PYRA_5: roccom_elem = ":P5:";
         break;
-    case PYRA_14: roccom_elem = ":P14:" ;
+    case CG_PYRA_14: roccom_elem = ":P14:" ;
         break;
-    case PENTA_6: roccom_elem = ":P6:" ;
+    case CG_PENTA_6: roccom_elem = ":P6:" ;
         break;
-    case PENTA_15: roccom_elem = ":P15:" ;
+    case CG_PENTA_15: roccom_elem = ":P15:" ;
         break;
-    case PENTA_18: roccom_elem = ":P18:" ;
+    case CG_PENTA_18: roccom_elem = ":P18:" ;
       break;
-    case HEXA_8: roccom_elem = ":B8:" ;
+    case CG_HEXA_8: roccom_elem = ":B8:" ;
         break;
-    case HEXA_20: roccom_elem = ":B20:";
+    case CG_HEXA_20: roccom_elem = ":B20:";
       break;
       //case 19: roccom_elem = ":B27:";
       //break;
@@ -1141,7 +1141,7 @@ static void load_data_HDF4( BlockMM_HDF4::iterator p,
  **/
 static void scan_files_CGNS( int pathc, char* pathv[],
                              BlockMM_CGNS& blocks, std::string& time,
-                             std::map<DataType_t, COM_Type>& CGNS2COM)
+                             std::map<CG_DataType_t, COM_Type>& CGNS2COM)
 {
   bool has_timesteps = true; //Boeing fix
   double t = -1.0;
@@ -1220,7 +1220,7 @@ static void scan_files_CGNS( int pathc, char* pathv[],
 
           std::vector<double> times(nSteps);
 
-          CG_CHECK(cg_array_read_as, (1, RealDouble, &times[0]));
+          CG_CHECK(cg_array_read_as, (1, CG_RealDouble, &times[0]));
 
           int ti;
           for (ti=0; ti<nSteps; ++ti)
@@ -1300,7 +1300,7 @@ static void scan_files_CGNS( int pathc, char* pathv[],
         int gridSize[3], coreSize[9];
         CG_CHECK_RET(cg_zone_read, (fn, B, Z, zoneName, coreSize), continue);
 
-        ZoneType_t zoneType;
+        CG_ZoneType_t zoneType;
         CG_CHECK_RET(cg_zone_type, (fn, B, Z, &zoneType), continue);
 
         int nGrids;
@@ -1320,7 +1320,7 @@ static void scan_files_CGNS( int pathc, char* pathv[],
           if (cg_rind_read(rind) != 0)
             std::fill_n(rind, 6, 0);
 
-          if (zoneType == Structured) {
+          if (zoneType == CG_Structured) {
             gridSize[0] = coreSize[0] + rind[0] + rind[1];
             gridSize[cellDim] = coreSize[cellDim] + rind[0] + rind[1];
             nPoints = gridSize[0];
@@ -1384,7 +1384,7 @@ static void scan_files_CGNS( int pathc, char* pathv[],
         block = new Block_CGNS(pathv[i], B, Z, G, paneId, timeLevel, units,
                                nPoints, nGhostPoints);
 
-        if (zoneType == Structured) {
+        if (zoneType == CG_Structured) {
           block->m_gridInfo.push_back(GridInfo_CGNS(gridSize, cellDim,
                                                     nGhostPoints));
         } else {
@@ -1396,7 +1396,7 @@ static void scan_files_CGNS( int pathc, char* pathv[],
 
           int totalGhostElems = 0, S;
           for (S=1; S<=nSections; ++S) {
-            ElementType_t elemType;
+            CG_ElementType_t elemType;
             int iStart, iEnd, iBoundry, pFlag;
             CG_CHECK_RET(cg_section_read,
                          (fn, B, Z, S, buffer, &elemType, &iStart, &iEnd, &iBoundry, &pFlag),
@@ -1464,7 +1464,7 @@ static void scan_files_CGNS( int pathc, char* pathv[],
                 CG_CHECK_RET(cg_goto, (fn, B, "IntegralData_t", I, "end"),
                              break);
 
-                DataType_t dataType;
+                CG_DataType_t dataType;
                 int rank, size[3];
                 CG_CHECK_RET(cg_array_info, (A, buffer, &dataType, &rank, size),
                              continue);
@@ -1580,7 +1580,7 @@ static void scan_files_CGNS( int pathc, char* pathv[],
                              (fn, B, "Zone_t", Z, "IntegralData_t", I, "end"),
                              break);
 
-                DataType_t dataType;
+                CG_DataType_t dataType;
                 int rank, size[3];
                 CG_CHECK_RET(cg_array_info, (A, buffer, &dataType, &rank, size),
                              continue);
@@ -1664,7 +1664,7 @@ static void scan_files_CGNS( int pathc, char* pathv[],
           std::cerr << "cg_nsols() failed in Zone " << Z << " of Base "
                     << B << " in file " << pathv[i] << std::endl;
         } else {
-          GridLocation_t loc;
+          CG_GridLocation_t loc;
           int S, found = 0;
           for (S=1; S<=nSols && found<2; ++S) {
             CG_CHECK_RET(cg_sol_info, (fn, B, Z, S, buffer, &loc), continue);
@@ -1690,7 +1690,7 @@ static void scan_files_CGNS( int pathc, char* pathv[],
 
             int nItems;
             int start = isNodal ? 0 : 1;
-            if (zoneType == Structured) {
+            if (zoneType == CG_Structured) {
               start *= cellDim;
               // Note: the rind values should always be the same.
               nItems = coreSize[start] + rind[0] + rind[1];
@@ -1709,7 +1709,7 @@ static void scan_files_CGNS( int pathc, char* pathv[],
 
             int F;
             for (F=1; F<=nFields; ++F) {
-              DataType_t dataType;
+              CG_DataType_t dataType;
               CG_CHECK_RET(cg_field_info, (fn, B, Z, S, F, &dataType, buffer),
                            continue);
 
@@ -1809,7 +1809,7 @@ static void scan_files_CGNS( int pathc, char* pathv[],
               std::fill_n(rind, 6, 0);
 
             int nItems;
-            if (zoneType == Structured) {
+            if (zoneType == CG_Structured) {
               // Note: the rind values should always be the same.
               nItems = coreSize[0] + rind[0] + rind[1];
               if (cellDim > 1) {
@@ -1831,7 +1831,7 @@ static void scan_files_CGNS( int pathc, char* pathv[],
                            (fn, B, "Zone_t", Z, "DiscreteData_t", S, "end"),
                            break);
 
-              DataType_t dataType;
+              CG_DataType_t dataType;
               int rank, size[3];
               CG_CHECK_RET(cg_array_info, (A, buffer, &dataType, &rank, size),
                            continue);
@@ -1840,7 +1840,7 @@ static void scan_files_CGNS( int pathc, char* pathv[],
               // 'rank' should equal the cell dimension for structured,
               // 1 for unstructured grids.  'size' should be the core size
               // plus rind layers.
-              COM_assertion_msg(rank = (zoneType == Structured ? cellDim : 1),
+              COM_assertion_msg(rank = (zoneType == CG_Structured ? cellDim : 1),
                                 ("Bad rank for nodal dataitem '"
                                  + label + "'\n").c_str());
               // TODO: Verify the size, too.
@@ -2429,10 +2429,10 @@ void Rocin::init(const std::string &mname) {
 
 #ifdef USE_CGNS
   /// This data structure maps CGNS data types to roccom data types.
-  rin->m_CGNS2COM[Character] = COM_CHAR;
-  rin->m_CGNS2COM[Integer] = COM_INT;
-  rin->m_CGNS2COM[RealSingle] = COM_FLOAT;
-  rin->m_CGNS2COM[RealDouble] = COM_DOUBLE;
+  rin->m_CGNS2COM[CG_Character] = COM_CHAR;
+  rin->m_CGNS2COM[CG_Integer] = COM_INT;
+  rin->m_CGNS2COM[CG_RealSingle] = COM_FLOAT;
+  rin->m_CGNS2COM[CG_RealDouble] = COM_DOUBLE;
 #endif // USE_CGNS
 
   COM_new_window( mname.c_str(), MPI_COMM_SELF);

@@ -31,7 +31,7 @@
  ** \param mode Write == 0, append == 1. (Input)
  **/
 void write_dataitem_CGNS(const std::string& fname, const std::string& mfile, 
-                         const COM::Attribute* attr, const char* material, 
+                         const COM::DataItem* attr, const char* material, 
                          const char* timelevel, int pane_id,
                          const std::string& ghosthandle,
                          const std::string& errorhandle, int mode);

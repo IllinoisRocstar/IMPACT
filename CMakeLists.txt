@@ -9,6 +9,7 @@ project(IMPACT)
 # Setup switches
 set (BUILD_STATIC FALSE CACHE BOOL "Build static libraries")
 set (ENABLE_MPI TRUE CACHE BOOL "Build with MPI Support")
+set (ENABLE_CGNS FALSE CACHE BOOL "Build with CGNS Support")
 
 # Compiled objects output paths
 set (EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single directory for all executables.")
@@ -26,6 +27,13 @@ ELSE()
   FIND_PACKAGE(MPI REQUIRED)
   add_definitions( -DMPICH_IGNORE_CXX_SEEK )
   INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
+ENDIF()
+
+IF(ENABLE_CGNS)
+  find_package(HDF5)
+  find_library(CGNS_LIB cgns)
+  find_path(CGNS_INC cgnslib.h)
+  add_definitions ( -DUSE_CGNS )
 ENDIF()
 
 # Building modules

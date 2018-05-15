@@ -22,6 +22,7 @@
 
 #ifdef USE_CGNS
 #include "cgnslib.h"
+#define MODE_READ CG_MODE_READ
 #endif // USE_CGNS
 
 #ifdef USE_VTK
@@ -227,7 +228,7 @@ protected:
 
   std::map<int32, COM_Type> m_HDF2COM;
 #ifdef USE_CGNS
-  std::map<DataType_t, COM_Type> m_CGNS2COM;
+  std::map<CG_DataType_t, COM_Type> m_CGNS2COM;
 #endif // USE_CGNS
 #ifdef USE_VTK
   std::map<DataType_t, COM_Type> m_VTK2COM;

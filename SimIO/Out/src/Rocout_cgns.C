@@ -20,13 +20,18 @@
 #include "Rocout.h"
 #include "Element_accessors.hpp"
 #include "Rocout_cgns.h"
+#include <unistd.h>
 
+// MS
+char cwd[FILENAME_MAX];
+#define GetCurrentDir getcwd
+// MS End
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 USE_COM_NAME_SPACE
 #endif
 
 // #define DEBUG_DUMP_PREFIX "."
-// #define DEBUG_MSG(x) std::cout << "ROCOUT DEBUG: " << __LINE__ << ": " << x << std::endl
+//#define DEBUG_MSG(x) std::cout << "ROCOUT DEBUG: " << __LINE__ << ": " << x << std::endl
 #define DEBUG_MSG(x)
 
 /**
@@ -126,31 +131,31 @@ class AutoCDer
  ** \param dType The Roccom data type. (Input)
  ** \returns The equivalent CGNS data type.
  **/
-static DataType_t COM2CGNS(int dType)
+static CG_DataType_t COM2CGNS(int dType)
 {
   switch (dType) {
     case COM_CHAR:
     case COM_CHARACTER:
-      return Character;
+      return CG_Character;
 
     case COM_INT:
     case COM_INTEGER:
-      return Integer;
+      return CG_Integer;
 
     case COM_FLOAT:
     case COM_REAL:
-      return RealSingle;
+      return CG_RealSingle;
 
     case COM_DOUBLE:
     case COM_DOUBLE_PRECISION:
-      return RealDouble;
+      return CG_RealDouble;
 
     default:
       std::cerr << "ROCOUT ERROR: Cannot convert COM type " << dType
                 << " to a CGNS type." << std::endl;
   }
 
-  return DataTypeNull;
+  return CG_DataTypeNull;
 }
 
 /**
@@ -176,93 +181,93 @@ static int WriteElements(int fn, int B, int Z, int eType, int nElems,
                          int offset, const std::string& label,
                          const std::string& errorhandle)
 {
-  ElementType_t elemType;
+  CG_ElementType_t elemType;
   int nNodes;
 
   // Determine the number of nodes per element and the CGNS element type.
   switch (eType) {
     case Connectivity::BAR2:
-      elemType = BAR_2;
+      elemType = CG_BAR_2;
       nNodes = 2;
       break;
 
     case Connectivity::BAR3:
-      elemType = BAR_3;
+      elemType = CG_BAR_3;
       nNodes = 3;
       break;
 
     case Connectivity::TRI3:
-      elemType = TRI_3;
+      elemType = CG_TRI_3;
       nNodes = 3;
       break;
 
     case Connectivity::TRI6:
-      elemType = TRI_6;
+      elemType = CG_TRI_6;
       nNodes = 6;
       break;
 
     case Connectivity::QUAD4:
-      elemType = QUAD_4;
+      elemType = CG_QUAD_4;
       nNodes = 4;
       break;
 
     case Connectivity::QUAD8:
-      elemType = QUAD_8;
+      elemType = CG_QUAD_8;
       nNodes = 8;
       break;
 
     case Connectivity::QUAD9:
-      elemType = QUAD_9;
+      elemType = CG_QUAD_9;
       nNodes = 9;
       break;
 
     case Connectivity::TET4:
-      elemType = TETRA_4;
+      elemType = CG_TETRA_4;
       nNodes = 4;
       break;
 
     case Connectivity::TET10:
-      elemType = TETRA_10;
+      elemType = CG_TETRA_10;
       nNodes = 10;
       break;
 
     case Connectivity::PYRIMID5:
-      elemType = PYRA_5;
+      elemType = CG_PYRA_5;
       nNodes = 5;
       break;
 
     case Connectivity::PYRIMID14:
-      elemType = PYRA_14;
+      elemType = CG_PYRA_14;
       nNodes = 14;
       break;
 
     case Connectivity::PRISM6:
-      elemType = PENTA_6;
+      elemType = CG_PENTA_6;
       nNodes = 6;
       break;
 
     case Connectivity::PRISM15:
-      elemType = PENTA_15;
+      elemType = CG_PENTA_15;
       nNodes = 15;
       break;
 
     case Connectivity::PRISM18:
-      elemType = PENTA_18;
+      elemType = CG_PENTA_18;
       nNodes = 18;
       break;
 
     case Connectivity::HEX8:
-      elemType = HEXA_8;
+      elemType = CG_HEXA_8;
       nNodes = 8;
       break;
 
     case Connectivity::HEX20:
-      elemType = HEXA_20;
+      elemType = CG_HEXA_20;
       nNodes = 20;
       break;
 
     case Connectivity::HEX27:
-      elemType = HEXA_27;
+      elemType = CG_HEXA_27;
       nNodes = 27;
       break;
   };
@@ -562,7 +567,7 @@ void ModifyExponents(const std::string& unit, float* exponents, float dir)
 }
 
 template <typename T>
-static int cg_array_core_write_internal(char const* name, DataType_t dType,
+static int cg_array_core_write_internal(char const* name, CG_DataType_t dType,
                                         int rank, int* rind, int const* size,
                                         T const* data)
 {
@@ -587,7 +592,7 @@ static int cg_array_core_write_internal(char const* name, DataType_t dType,
   return cg_array_write(name, dType, rank, newSize, &buffer[0]);
 }
 
-static int cg_array_core_write(char const* name, DataType_t dType,
+static int cg_array_core_write(char const* name, CG_DataType_t dType,
                                int rank, int* rind, int const* size,
                                void const* data)
 {
@@ -600,16 +605,16 @@ static int cg_array_core_write(char const* name, DataType_t dType,
     return cg_array_write(name, dType, rank, size, data);
 
   switch (dType) {
-    case Character:
+    case CG_Character:
        return cg_array_core_write_internal(name, dType, rank, rind, size,
                                            static_cast<char const*>(data));
-    case Integer:
+    case CG_Integer:
        return cg_array_core_write_internal(name, dType, rank, rind, size,
                                            static_cast<int const*>(data));
-    case RealSingle:
+    case CG_RealSingle:
        return cg_array_core_write_internal(name, dType, rank, rind, size,
                                            static_cast<float const*>(data));
-    case RealDouble:
+    case CG_RealDouble:
        return cg_array_core_write_internal(name, dType, rank, rind, size,
                                            static_cast<double const*>(data));
   }
@@ -653,7 +658,7 @@ static void cg_exponents_as_string_write(std::string unit,
   if (!bottom.empty() && bottom != "1")
     ModifyExponents(bottom, exponents, -1.f);
 
-  CG_CHECK(cg_exponents_write, (RealSingle, exponents));
+  CG_CHECK(cg_exponents_write, (CG_RealSingle, exponents));
 }
 //@}
 
@@ -712,7 +717,7 @@ static int cg_base_find_or_create(int fn, const char* name, int cellDim,
  ** \returns 0 on success, 1 otherwise.
  **/
 static int cg_zone_find_or_create(int fn, int B, const char* name,
-                                  const int* sizes, ZoneType_t zType, int* Z,
+                                  const int* sizes, CG_ZoneType_t zType, int* Z,
                                   const std::string& errorhandle)
 {
   char zoneName[33];
@@ -724,11 +729,13 @@ static int cg_zone_find_or_create(int fn, int B, const char* name,
     CG_CHECK(cg_zone_read, (fn, B, *Z, zoneName, &(sz2[0])));
     if (std::strncmp(name, zoneName, 32) == 0) {
       if (sz1 != sz2) {
-        DEBUG_MSG("ERROR: Zone dimensions don't match");
-        return 1;
+        // MS
+        //DEBUG_MSG("ERROR: Zone dimensions don't match");
+        //return 1;
+        // MS End
       }
 
-      ZoneType_t zt;
+      CG_ZoneType_t zt;
       CG_CHECK(cg_zone_type, (fn, B, *Z, &zt));
       if (zType == zt)
         return 0;
@@ -738,7 +745,7 @@ static int cg_zone_find_or_create(int fn, int B, const char* name,
     }
   }
 
-  if (zType == Unstructured && sizes[2] > sizes[0])
+  if (zType == CG_Unstructured && sizes[2] > sizes[0])
     std::cerr << "ROCOUT ERROR: Creating unstructured zone \"" << name
               << "\" with invalid dimensions { " << sizes[0] << ", " << sizes[1]
               << ", " << sizes[2] << " }" << std::endl;
@@ -788,11 +795,11 @@ static int cg_integral_find_or_create(const char* name, int* I,
  ** \returns 0 on success, 1 otherwise.
  **/
 static int cg_sol_find_or_create(int fn, int B, int Z, const char* name,
-                                 GridLocation_t location, int* S,
+                                 CG_GridLocation_t location, int* S,
                                  const std::string& errorhandle)
 {
   char solName[33];
-  GridLocation_t loc;
+  CG_GridLocation_t loc;
   int nSols;
   CG_CHECK(cg_nsols, (fn, B, Z, &nSols));
   for (*S=1; *S<=nSols; ++(*S)) {
@@ -820,15 +827,18 @@ static int cg_sol_find_or_create(int fn, int B, int Z, const char* name,
  ** \param size The size of each dimension of the data. (Output)
  ** \returns 0 on success, 1 otherwise.
  **/
-static int cg_array_info_by_name(const char* name, int* A, DataType_t* dType,
+static int cg_array_info_by_name(const char* name, int* A, CG_DataType_t* dType,
                                  int* rank, int* size,
                                  const std::string& errorhandle)
 {
   char arrayName[33];
   int nArrays;
   CG_CHECK(cg_narrays, (&nArrays));
+  //std::cout << __FILE__<< __LINE__ << std::endl;
+  //std::cout << " nArrays = " << nArrays << std::endl;
   for (*A=1; *A<=nArrays; ++(*A)) {
     CG_CHECK(cg_array_info, (*A, arrayName, dType, rank, size));
+    //std::cout << " arrayName = " << arrayName << std::endl;
     if (std::strncmp(name, arrayName, 32) == 0)
       return 0;
   }
@@ -849,17 +859,28 @@ static int cg_array_info_by_name(const char* name, int* A, DataType_t* dType,
  ** \param pane_id The id for the local pane. (Input)
  ** \param mode Write == 0, append == 1. (Input)
  **/
-void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
+void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
                      const COM::DataItem* attr, const char* material,
                      const char* timelevel, int pane_id,
                      const std::string& ghosthandle,
                      const std::string& errorhandle, int mode)
 {
+  /*
+  std::cout << " ------------------------------------------------------" << std::endl;
+  std::cout << " Starting to write \n Data File = " << fname_in << std::endl;
+  std::cout << " Mesh File = " << mfile << std::endl;
+  std::cout << " timelevel = " << timelevel << std::endl;
+  std::cout << " pane_id = " << pane_id << std::endl;
+  std::cout << " mode = " << mode << std::endl;
+  std::cout << " ------------------------------------------------------" << std::endl;
+  */
+
   std::string fname(fname_in);
   bool writeGhost = (ghosthandle == "write");
   const Window* w = attr->window();
   COM_assertion(w != NULL);
   const Pane& pane = w->pane(pane_id);
+
 
   // Convert the timelevel from a string to a number.
   double timeValue;
@@ -881,18 +902,28 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
   DEBUG_MSG("Using mesh file '" << mfile << "'");
   AutoCDer autoCD;
   std::string::size_type loc = fname.rfind('/');
+  // MS
+  GetCurrentDir(cwd, sizeof(cwd));
+  //std::cout << __FILE__ << __LINE__ << "\n" << cwd << std::endl;
+  std::string prefix = fname.substr(0, loc+1);
+  // original
+  /*
   if (loc != std::string::npos) {
+    std::cout << __FILE__ << __LINE__ << " <<<<<<<<<<<<<<";
     chdir(fname.substr(0, loc).c_str());
     fname.erase(0, loc + 1);
   }
+  */
+  // original
+  // MS
 
   // Open or create the file.
   int fn;
   if (mode == 0) {
-    CG_CHECK(cg_open, (fname.c_str(), MODE_WRITE, &fn));
+    CG_CHECK(cg_open, (fname.c_str(), CG_MODE_WRITE, &fn));
     CG_CHECK(cg_close, (fn));
   }
-  CG_CHECK(cg_open, (fname.c_str(), MODE_MODIFY, &fn));
+  CG_CHECK(cg_open, (fname.c_str(), CG_MODE_MODIFY, &fn));
 
   // The file will be closed automagically when we exit this function.
   AutoCloser autoCloser(fn, errorhandle);
@@ -904,14 +935,36 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
   std::string label;
   int cellDim = pane.dimension();
   int physDim = pane.dataitem(COM::COM_NC)->size_of_components();
+  //std::cout << __FILE__ << __LINE__ << std::endl;
+  //std::cout << " cell dim = " << cellDim << std::endl;
+  //std::cout << " phys dim = " << physDim << std::endl;
+  // MS 
+  if (cellDim == 0) 
+      cellDim = 3;
+  // MS End
   CG_CHECK(cg_base_find_or_create, (fn, material, cellDim, physDim, &B,
                                     errorhandle));
+  //std::cout << __FILE__ << __LINE__ << std::endl;
 
   // Write the default Roccom units at the top.
   CG_CHECK(cg_goto, (fn, B, "end"));
-  CG_CHECK(cg_units_write, (Kilogram, Meter, Second, Kelvin, Degree));
+  CG_CHECK(cg_units_write, (CG_Kilogram, CG_Meter, CG_Second, CG_Kelvin, CG_Degree));
 
   // Read the time values in the BaseIterativeData_t node.
+  // MS
+  if (timeValue == 0){
+     times.resize(1);
+  } else {
+     if (mode > 0 && cg_biter_read(fn, B, buffer, &nSteps) == 0) {
+       CG_CHECK(cg_goto, (fn, B, "BaseIterativeData_t", 1, "end"));
+       times.resize(nSteps + 1);
+       CG_CHECK(cg_array_read_as, (1, CG_RealDouble, &(times[0])));
+     } else {
+       times.resize(1);
+     }
+  }
+  // MS End
+  /* Original
   if (mode > 0 && cg_biter_read(fn, B, buffer, &nSteps) == 0) {
     CG_CHECK(cg_goto, (fn, B, "BaseIterativeData_t", 1, "end"));
     times.resize(nSteps + 1);
@@ -919,22 +972,26 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
   } else {
     times.resize(1);
   }
+  */
 
   // Search for the current time.
   int timeIndex;
   for (timeIndex=0; timeIndex<nSteps; ++timeIndex)
-    if (times[timeIndex] == timeValue)
+    if (times[timeIndex] == timeValue) {
+      //std::cout << " timeIndex = " << timeIndex << std::endl; 
       break;
+    }
 
   // Update the time values in the BaseIterativeData_t node if necessary.
   if (timeIndex == nSteps) {
+    //std::cout << __FILE__ << __LINE__ << std::endl;
     times[timeIndex] = timeValue;
     ++nSteps;
 
     // Write/rewrite the time values to the BaseIterativeData_t node.
     CG_CHECK(cg_biter_write, (fn, B, "TimeIterValues", nSteps));
     CG_CHECK(cg_goto, (fn, B, "BaseIterativeData_t", 1, "end"));
-    CG_CHECK(cg_array_write, ("TimeValues", RealDouble, 1, &nSteps,
+    CG_CHECK(cg_array_write, ("TimeValues", CG_RealDouble, 1, &nSteps,
                               &(times[0])));
     --nSteps;
   }
@@ -950,9 +1007,10 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
 
   // Set up the sizes based on dimensionality and zone type.
   int Z, sizes[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-  ZoneType_t zType;
+  CG_ZoneType_t zType;
   i = 0;
   if (pane.is_structured()) {
+    //std::cout << __FILE__ << __LINE__ << std::endl;
     // Sizes should be core nodes/elements only.
     int ghost = pane.size_of_ghost_layers();
     sizes[i++] = pane.size_i() - 2 * ghost;
@@ -963,15 +1021,33 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
     sizes[i++] = sizes[1] - 1;
     if (physDim > 2 && cellDim > 2)
       sizes[i++] = sizes[2] - 1;
-    zType = Structured;
+    zType = CG_Structured;
   } else {
+    //std::cout << __FILE__ << __LINE__ << std::endl;
     sizes[0] = pane.size_of_real_nodes();
     sizes[1] = pane.size_of_real_elements();
-    zType = Unstructured;
+    zType = CG_Unstructured;
   }
-
+  
+  //std::cout << __FILE__ << __LINE__ << std::endl;
+  // MS
+  if (sizes[0] == 0){
+     int meshfn;
+     char zName[33];
+     //std::vector<int> sz2(9);
+     if (!mfile.empty()) {
+      CG_CHECK(cg_open,
+               ((prefix + mfile).c_str(), CG_MODE_READ, &meshfn));
+      cg_zone_read(meshfn, 1, 1, zName, &(sizes[0]));
+      CG_CHECK(cg_close, (meshfn));
+     } else {
+     sizes[0] = 1;
+     }
+  }
+  // MS End
   CG_CHECK(cg_zone_find_or_create, (fn, B, zoneName.c_str(), sizes,
                                     zType, &Z, errorhandle));
+  //std::cout << __FILE__ << __LINE__ << std::endl;
 
   // Create the name for the GridCoordinates_t node.
   std::string gridName("Grid");
@@ -1015,6 +1091,8 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
   char (*nodeNames)[32] = NULL;
   int rank, size[3];
   if (mode > 0 && cg_ziter_read(fn, B, Z, buffer) == 0) {
+    //std::cout << __FILE__ << __LINE__ << std::endl;
+    //std::cout << " Going to " << "Base = " << B << " Zone = "<< Z << std::endl;
     CG_CHECK(cg_goto, (fn, B, "Zone_t", Z, "ZoneIterativeData_t", 1, "end"));
     int numStr = nSteps;
     if (timeIndex >= nSteps)
@@ -1026,13 +1104,13 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
     std::fill_n((char*)nodeNames, 32 * numStr, '\0');
 
     int A;
-    DataType_t dataType;
+    CG_DataType_t dataType;
     // Add the grid coordinates name to the GridCoordinatesPointers array,
     // unless it's already there.
     CG_CHECK(cg_array_info_by_name,
              ("GridCoordinatesPointers", &A, &dataType, &rank, size,
                errorhandle));
-    COM_assertion_msg((dataType == Character && rank == 2
+    COM_assertion_msg((dataType == CG_Character && rank == 2
                        && size[1] == numStr),
                     "GridCoordinatesPointers in ZoneIterativeData is corrupt");
     CG_CHECK(cg_array_read, (A, gridNames));
@@ -1048,7 +1126,7 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
     CG_CHECK(cg_array_info_by_name,
              ("FlowSolutionsPointers", &A, &dataType, &rank, size,
               errorhandle));
-    COM_assertion_msg((dataType == Character && rank == 2
+    COM_assertion_msg((dataType == CG_Character && rank == 2
                        && size[1] == numStr),
                       "FlowSolutionsPointers in ZoneIterativeData is corrupt");
     CG_CHECK(cg_array_read, (A, nodeNames));
@@ -1058,7 +1136,10 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
     } else {
       std::strncpy(nodeNames[timeIndex], nodeName.c_str(), 32);
     }
+    //std::cout << __FILE__ << __LINE__ << std::endl;
   } else {
+    //std::cout << __FILE__ << __LINE__ << std::endl;
+    //std::cout << "Writing ZoneIterativeData" << std::endl;
     cg_ziter_write(fn, B, Z, "ZoneIterativeData");
 
     gridNames = (char(*)[32])new char[32];
@@ -1069,19 +1150,27 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
     std::fill_n((char*)nodeNames, 32, '\0');
     std::strncpy(nodeNames[timeIndex], nodeName.c_str(), 32);
   }
-
+  //std::cout << __FILE__ << __LINE__ << std::endl;
+  //std::cout << " timeIndex = " << timeIndex
+  //          << " nSteps  = " << nSteps << std::endl;
   if (timeIndex == nSteps) {
+    //std::cout << " Writing under ZoneIterativeData " 
+    //          << " timeIndex = " << timeIndex
+    //          << " nSteps = " << nSteps << std::endl;
     size[0] = 32;
     size[1] = ++nSteps;
 
     // Write/rewrite the grid coordinate and solution names in the
     // ZoneIterativeData_t node.
     CG_CHECK(cg_goto, (fn, B, "Zone_t", Z, "ZoneIterativeData_t", 1, "end"));
+    //std::cout << __FILE__ << __LINE__ << std::endl;
     CG_CHECK(cg_array_write,
-             ("GridCoordinatesPointers", Character, 2, size, gridNames));
+             ("GridCoordinatesPointers", CG_Character, 2, size, gridNames));
+    //std::cout << __FILE__ << __LINE__ << std::endl;
     CG_CHECK(cg_array_write,
-             ("FlowSolutionsPointers", Character, 2, size, nodeNames));
+             ("FlowSolutionsPointers", CG_Character, 2, size, nodeNames));
   }
+  //std::cout << __FILE__ << __LINE__ << std::endl;
 
   delete[] (char*)gridNames;
   delete[] (char*)nodeNames;
@@ -1095,25 +1184,50 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
   path += '/' + zoneName + '/';
 
   // Write the grid coordinates and the connectivity tables, if any.
+  /*
+  std::cout << " COM::COM_MESH = " << COM::COM_MESH << "\n"
+            << " COM::COM_PMESH = " << COM::COM_PMESH << "\n"
+            << " COM::COM_CONN = " << COM::COM_CONN << "\n"
+            << " COM::COM_NC1 = " << COM::COM_NC1 << "\n"
+            << " COM::COM_NC3 = " << COM::COM_NC3 << "\n"
+            << " COM::COM_NC = " << COM::COM_NC << "\n"
+            << " COM::COM_ALL = " << COM::COM_ALL << "\n"
+            << " attr->id()= " << attr->id()  << "\n"
+            << " attr->fullname()= " << attr->fullname()  << "\n" 
+            << " attr->location()= " << attr->location()  << "\n" 
+            << " attr->is_panel()= " << attr->is_panel()  << "\n" 
+            << " attr->is_windowed()= " << attr->is_windowed()  << "\n" 
+            << " attr->is_elemental()= " << attr->is_elemental()  << "\n" 
+            << " attr->is_nodal()= " << attr->is_nodal()  << "\n" 
+            << " attr->size_of_real_items()= " << attr->size_of_real_items()  << "\n"
+            << " attr->size_of_ghost_items()= " << attr->size_of_ghost_items()  << std::endl;
+  */
   if (attr->id() == COM::COM_MESH || attr->id() == COM::COM_PMESH
       || attr->id() == COM::COM_CONN
       || (attr->id() >= COM::COM_NC1 && attr->id() <= COM::COM_NC3)
       || attr->id() == COM::COM_NC || attr->id() == COM::COM_ALL) {
+    //std::cout << __FILE__ << __LINE__ << std::endl;
     // Find or create the grid coordinates and element tables.  If they're in a
     // different file, then we should create links from the main file to the
     // mesh file nodes.
     if (!mfile.empty()) {
       DEBUG_MSG("Writing to mesh file '" << mfile << "', mode == '"
                 << (mode ? "append'" : "write'"));
+      GetCurrentDir(cwd, sizeof(cwd));
+      //std::cout << __FILE__ << __LINE__ << std::endl;
       CG_CHECK(cg_open,
-               (mfile.c_str(), mode ? MODE_MODIFY : MODE_WRITE, &mfn));
+               ((prefix + mfile).c_str(), mode ? CG_MODE_MODIFY : CG_MODE_WRITE, &mfn));
+      //std::cout << __FILE__ << __LINE__ << std::endl;
 
+      //std::cout << __FILE__ << __LINE__ << std::endl;
       CG_CHECK(cg_base_find_or_create, (mfn, material, cellDim, physDim, &mB,
                                         errorhandle));
+      //std::cout << __FILE__ << __LINE__ << std::endl;
 
       CG_CHECK(cg_zone_find_or_create, (mfn, mB, zoneName.c_str(),
                                         sizes, zType, &mZ, errorhandle));
     }
+    //std::cout << __FILE__ << __LINE__ << std::endl;
 
     // The GridCoordinates node is referenced by the GridCoordinatesPointers,
     // so we should create it even if we don't put any data in it.
@@ -1133,10 +1247,10 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
         CG_CHECK(cg_goto, (fn, B, "Zone_t", Z, "end"));
         CG_CHECK(cg_ngrids, (fn, B, Z, &nGC));
         if (nGC == 0) {
-          CG_CHECK(cg_link_write, ("GridCoordinates", mfile.c_str(),
+          CG_CHECK(cg_link_write, ("GridCoordinates", (mfile).c_str(),
                                    (path + "GridCoordinates").c_str()));
         }
-        CG_CHECK(cg_link_write, (gridName.c_str(), mfile.c_str(),
+        CG_CHECK(cg_link_write, (gridName.c_str(), (mfile).c_str(),
                                  (path + "GridCoordinates").c_str()));
       }
     } else {
@@ -1147,17 +1261,19 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
         CG_CHECK(cg_goto, (fn, B, "Zone_t", Z, "end"));
         CG_CHECK(cg_ngrids, (fn, B, Z, &nGC));
         if (nGC == 0) {
-          CG_CHECK(cg_link_write, ("GridCoordinates", mfile.c_str(),
+          CG_CHECK(cg_link_write, ("GridCoordinates", (mfile).c_str(),
                                    (path + "GridCoordinates").c_str()));
         }
-        CG_CHECK(cg_link_write, (gridName.c_str(), mfile.c_str(),
+        CG_CHECK(cg_link_write, (gridName.c_str(), (mfile).c_str(),
                                  (path + "GridCoordinates").c_str()));
       }
     }
+    //std::cout << __FILE__ << __LINE__ << std::endl;
 
     if (attr->id() == COM::COM_MESH || attr->id() == COM::COM_PMESH
         || attr->id() == COM::COM_NC || attr->id() == COM::COM_ALL
         || (attr->id() >= COM::COM_NC1 && attr->id() <= COM::COM_NC3)) {
+      //std::cout << __FILE__ << __LINE__ << std::endl;
       // Write the actual mesh data.
       if (G > 0) {
         CG_CHECK(cg_goto, (mfn, mB, "Zone_t", mZ, "GridCoordinates_t", G,
@@ -1332,16 +1448,29 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
 
           // Write out a table of ghost nodes.
           if (nGhost > 0) {
+            //std::cout << __FILE__ << __LINE__ << " Writing Gost node data " << std::endl; 
             int elemRind[2] = { 0, nGhost };
             CG_CHECK(cg_goto, (mfn, mB, "Zone_t", mZ, "Elements_t", S, "end"));
             CG_CHECK(cg_rind_write, (elemRind));
           }
-
+          
           // Link from the real file to the mesh file.
           if (!mfile.empty()) {
-            CG_CHECK(cg_link_write, (label.c_str(), mfile.c_str(),
+             /*
+             std::cout << __FILE__ << __LINE__ 
+                       << " label =" << label.c_str()
+                       << std::endl;
+             std::cout << __FILE__ << __LINE__ 
+                       << " mfile =" << mfile.c_str()
+                       << std::endl;
+             std::cout << __FILE__ << __LINE__ 
+                       << " path + label =" << (path + label).c_str()
+                       << std::endl;
+             */
+             CG_CHECK(cg_link_write, (label.c_str(), (mfile).c_str(),
                                      (path + label).c_str()));
           }
+          
         }
       }
     }
@@ -1349,23 +1478,34 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
     // If we have a mesh file, we must link to the eternal GridCoordinates_t
     // and Elements_t nodes, even if attr->id() doesn't include mesh data.
     // First link the GridCoordinates_t node.
+    //std::cout << __FILE__ << __LINE__ << std::endl; 
     CG_CHECK(cg_goto, (fn, B, "Zone_t", Z, "end"));
     CG_CHECK(cg_ngrids, (fn, B, Z, &nGC));
+       
     if (nGC == 0) {
-      CG_CHECK(cg_link_write, ("GridCoordinates", mfile.c_str(),
+      CG_CHECK(cg_link_write, ("GridCoordinates", (mfile).c_str(),
                                (path + "GridCoordinates").c_str()));
     }
-    CG_CHECK(cg_link_write, (gridName.c_str(), mfile.c_str(),
-                             (path + "GridCoordinates").c_str()));
-
+    if (nGC == 0) {
+    if (fname_in.compare(mfile)!=0){
+       //std::cout << __FILE__ << __LINE__ << std::endl; 
+       CG_CHECK(cg_link_write, (gridName.c_str(), (mfile).c_str(),
+				(path + "GridCoordinates").c_str()));
+    } else {
+       //std::cout << __FILE__ << __LINE__ << std::endl; 
+       CG_CHECK(cg_link_write, (gridName.c_str(), "",
+				(path + "GridCoordinates").c_str()));
+    }
+    
     // Then link any Elements_t nodes.
     if (pane.is_unstructured()) {
       CG_CHECK(cg_open,
-               (mfile.c_str(), MODE_READ, &mfn));
+               ((prefix+mfile).c_str(), CG_MODE_MODIFY, &mfn));
 
       CG_CHECK(cg_base_find_or_create, (mfn, material, cellDim, physDim, &mB,
                                         errorhandle));
 
+      //std::cout << __FILE__ << __LINE__ << std::endl;
       CG_CHECK(cg_zone_find_or_create, (mfn, mB, zoneName.c_str(),
                                         sizes, zType, &mZ, errorhandle));
 
@@ -1375,29 +1515,39 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
       CG_CHECK(cg_nsections, (mfn, mB, mZ, &nS));
 
       char label[33];
-      ElementType_t eType;
+      CG_ElementType_t eType;
       int min, max, nBoundary, parent;
       for (S=1; S<=nS; ++S) {
         CG_CHECK(cg_section_read, (mfn, mB, mZ, S, label, &eType, &min, &max,
                                    &nBoundary, &parent));
 
-        CG_CHECK(cg_link_write, (label, mfile.c_str(), (path + label).c_str()));
+        CG_CHECK(cg_link_write, (label, (mfile).c_str(), (path + label).c_str()));
       }
     }
-  }
 
-  if (mfn != fn)
+    }
+
+  }
+  //std::cout << __FILE__ << __LINE__ << std::endl;
+
+  if (mfn != fn){
+    //std::cout << __FILE__ << __LINE__ << std::endl;
     CG_CHECK(cg_close, (mfn));
+  }
 
   // This node is referenced in the FlowSolutionPointers, so we should make
   // sure it exists even if its left empty.
   int T;
-  CG_CHECK(cg_sol_find_or_create, (fn, B, Z, nodeName.c_str(), Vertex, &T,
+  //std::cout << " nodeName = " << nodeName << std::endl;
+  //std::cout << " Vertex = " << Vertex << std::endl;
+  CG_CHECK(cg_sol_find_or_create, (fn, B, Z, nodeName.c_str(), CG_Vertex, &T,
                                    errorhandle));
+  //std::cout << __FILE__ << __LINE__ << std::endl;
 
   if (attr->id() == COM::COM_CONN || attr->id() == COM::COM_NC
       || (attr->id() >= COM::COM_NC1 && attr->id() <= COM::COM_NC3))
     return;
+  //std::cout << __FILE__ << __LINE__ << std::endl;
 
   // Write out dataitems.  Window dataitems should be stored in IntegralData
   // nodes under the base node.  Pane, element, and node dataitems should be
@@ -1408,22 +1558,41 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
   if (attr->id() != COM::COM_MESH && attr->id() != COM::COM_PMESH
       && attr->id() != COM::COM_PCONN && attr->id() != COM::COM_RIDGES)
     pane.dataitems(attrs);
+  // MS Listing existing dataitems in the pane
+  /*
+  std::cout << " //////////////////////////////////////////////////// " << std::endl;
+  std::vector<const DataItem*> paneAttrs;
+  pane.dataitems(paneAttrs);
+  std::vector<const DataItem*>::const_iterator ii;
+  std::cout << " Listing existing dataitems in the pane : " << std::endl;
+  for (ii = paneAttrs.begin(); ii!=paneAttrs.end(); ii++)
+     std::cout << " DataItem = " << (*ii)->fullname() << std::endl;
+  std::cout << " //////////////////////////////////////////////////// " << std::endl;
+  */
+  // MS End
+  //std::cout << __FILE__ << __LINE__ << std::endl;
 
   if (attr->id() == COM::COM_ALL || attr->id() == COM::COM_PMESH) {
+    //std::cout << __FILE__ << __LINE__ << std::endl;
     attrs.insert(attrs.begin(), pane.dataitem(COM::COM_RIDGES));
     attrs.insert(attrs.begin(), pane.dataitem(COM::COM_PCONN));
   } else if (attr->id() == COM::COM_MESH) {
+    //std::cout << __FILE__ << __LINE__ << std::endl;
     attrs.insert(attrs.begin(), pane.dataitem(COM::COM_RIDGES));
   } else if (COM::COM_PCONN) {
+    //std::cout << __FILE__ << __LINE__ << std::endl;
     attrs.insert(attrs.begin(), pane.dataitem(COM::COM_PCONN));
   } else if (attr->id() == COM::COM_RIDGES) {
+    //std::cout << __FILE__ << __LINE__ << std::endl;
     attrs.insert(attrs.begin(), pane.dataitem(COM::COM_RIDGES));
   }
+  //std::cout << "Number of dataitems to write = " << attrs.size() << std::endl;
+  //std::cout << __FILE__ << __LINE__ << std::endl;
 
   std::vector<const DataItem*>::const_iterator begin = attrs.begin();
   std::vector<const DataItem*>::const_iterator end = attrs.end();
-  if (attr->id() == COM::COM_MESH && attr->id() != COM::COM_PMESH
-      && attr->id() != COM::COM_ATTS && attr->id() != COM::COM_ALL) {
+  if ((attr->id() == COM::COM_MESH || attr->id() > COM::COM_ALL)  && attr->id() != COM::COM_PMESH
+      && attr->id() != COM::COM_DATA && attr->id() != COM::COM_ALL) {
     while (begin != end && (*begin)->id() != attr->id())
       ++begin;
     COM_assertion_msg(begin != end,
@@ -1432,16 +1601,24 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
   }
 
   std::vector<const DataItem*>::const_iterator a;
+  // MS
+  bool goToNextItem;
+  char arrName[33];
+  int tt2, tt1;
+  CG_DataType_t dT;
+  // MS End
   for (a=begin; a!=end; ++a) {
     DEBUG_MSG("Writing dataitem '" << (*a)->name() << "', id == "
               << (*a)->id() << ", components == " << (*a)->size_of_components()
               << ", location == '" << (*a)->location() << "\', datatype == "
               << (*a)->data_type());
+    goToNextItem = false;
     int A, size[3], nComp = (*a)->size_of_components(), offset;
     const void* pData[9];
     dType = (*a)->data_type();
     switch ((*a)->location()) {
       case 'w':
+        //std::cout << __FILE__ << __LINE__ << std::endl;
         size[0] = numItems = (*a)->size_of_items();
         size[1] = size[2] = 1;
         rind[0] = 0;
@@ -1453,6 +1630,23 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
 
         CG_CHECK(cg_goto, (fn, B, "IntegralData_t", T, "end"));
         CG_CHECK(cg_narrays, (&offset));
+        //++offset;
+        // MS
+        // If the dataitem we are trying to write is already written to
+        // the file we just skip it. 
+	//std::cout << __FILE__ << __LINE__ << std::endl;
+	//std::cout << " Zone = " << Z << " IntegralData_t = " << T << std::endl;
+	for (int ii=1; ii<=offset; ii++)
+	{
+	   cg_array_info(ii, arrName, &dT, &tt1, &tt2);
+	   //std::cout << "offset = " << ii <<" arrayName = " << arrName << std::endl;
+	   if ((std::string(arrName)).find(std::string((*a)->name())) != std::string::npos) {
+	      //std::cout << "The request for duplicate dataitem is ignored." << std::endl;
+	      goToNextItem = true;
+	   }
+	}
+        if (goToNextItem)
+           break;
         ++offset;
 
         for (A=0; A<nComp; ++A) {
@@ -1569,6 +1763,7 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
         size[1] = size[2] = 1;
         rind[0] = 0;
         rind[1] = (*a)->size_of_ghost_items();
+        //std::cout << __FILE__ << __LINE__ << std::endl;
         DEBUG_MSG("numItems == " << numItems << ", numGhostItems == "
                   << rind[1]);
 
@@ -1578,7 +1773,27 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
 
         CG_CHECK(cg_goto, (fn, B, "Zone_t", Z, "IntegralData_t", T, "end"));
         CG_CHECK(cg_narrays, (&offset));
+        //++offset;
+        // MS
+        // If the dataitem we are trying to write is already written to
+        // the file we just skip it. 
+	//std::cout << __FILE__ << __LINE__ << std::endl;
+	//std::cout << " Zone = " << Z << " IntegralData_t = " << T << std::endl;
+	for (int ii=1; ii<=offset; ii++)
+	{
+	   cg_array_info(ii, arrName, &dT, &tt1, &tt2);
+	   //std::cout << "offset = " << ii <<" arrayName = " << arrName << std::endl;
+	   if ((std::string(arrName)).find(std::string((*a)->name())) != std::string::npos) {
+	      //std::cout << "The request for duplicate dataitem is ignored." << std::endl;
+	      goToNextItem = true;
+	   }
+	}
+        if (goToNextItem)
+           break;
         ++offset;
+        //if (offset == 4)
+        //   return;
+        // MS End
 
         for (A=0; A<nComp; ++A) {
           CG_CHECK(cg_goto, (fn, B, "Zone_t", Z, "IntegralData_t", T, "end"));
@@ -1666,7 +1881,11 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
             CG_CHECK(cg_array_core_write, (label.c_str(), COM2CGNS(dType),
                                            1, rind, size, pData[A]));
           }
-
+          //std::cout << __FILE__ << __LINE__ 
+          //          << " B = " << B << " Z = " << Z 
+          //          << " T = " << T << " A = " << A
+          //          << " offset = " << offset
+          //          << std::endl;
           CG_CHECK(cg_goto, (fn, B, "Zone_t", Z, "IntegralData_t", T,
                              "DataArray_t", A + offset, "end"));
 
@@ -1695,7 +1914,7 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
                     << ", size_of_components() == "
                     << (*a)->size_of_components() << ", size_of_items() == "
                     << (*a)->size_of_items());
-          if (zType == Unstructured && (*a)->size_of_components() == 2
+          if (zType == CG_Unstructured && (*a)->size_of_components() == 2
               && (*a)->size_of_items() > 0) {
             // Create parallel base and zone with BAR_2 elements.
             std::string newName(material);
@@ -1708,7 +1927,7 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
 
             // Write the default Roccom units at the top.
             CG_CHECK(cg_goto, (fn, RB, "end"));
-            CG_CHECK(cg_units_write, (Kilogram, Meter, Second, Kelvin, Degree));
+            CG_CHECK(cg_units_write, (CG_Kilogram, CG_Meter, CG_Second, CG_Kelvin, CG_Degree));
 
             std::string rpath("/");
             rpath += material;
@@ -1731,8 +1950,9 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
             rsizes[1] = (*a)->size_of_real_items();
             DEBUG_MSG("Creating zone \"" << zoneName << "\", size == [ "
                       << rsizes[0] << ", " << rsizes[1] << " ]");
+            //std::cout << __FILE__ << " line : " << __LINE__ << std::endl;
             CG_CHECK(cg_zone_find_or_create, (fn, RB, zoneName.c_str(), rsizes,
-                                              Unstructured, &RZ, errorhandle));
+                                              CG_Unstructured, &RZ, errorhandle));
 
             // Check to see if a ZoneIterativeData node exists.
             if (cg_goto(fn, RB, "Zone_t", RZ,
@@ -1950,11 +2170,11 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
           rind[1] = (*a)->size_of_ghost_items();
         }
 
-        CG_CHECK(cg_sol_find_or_create, (fn, B, Z, nodeName.c_str(), Vertex, &T,
+        CG_CHECK(cg_sol_find_or_create, (fn, B, Z, nodeName.c_str(), CG_Vertex, &T,
                                          errorhandle));
 
         CG_CHECK(cg_goto, (fn, B, "Zone_t", Z, "FlowSolution_t", T, "end"));
-        CG_CHECK(cg_gridlocation_write, (Vertex));
+        CG_CHECK(cg_gridlocation_write, (CG_Vertex));
 
         // Write rind data.
         if (writeGhost) {
@@ -2128,11 +2348,11 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
           rind[1] = (*a)->size_of_ghost_items();
         }
 
-        CG_CHECK(cg_sol_find_or_create, (fn, B, Z, elemName.c_str(), CellCenter,
+        CG_CHECK(cg_sol_find_or_create, (fn, B, Z, elemName.c_str(), CG_CellCenter,
                                          &T, errorhandle));
 
         CG_CHECK(cg_goto, (fn, B, "Zone_t", Z, "FlowSolution_t", T, "end"));
-        CG_CHECK(cg_gridlocation_write, (CellCenter));
+        CG_CHECK(cg_gridlocation_write, (CG_CellCenter));
 
         // Write rind data.
         if (writeGhost) {
@@ -2141,12 +2361,37 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
         }
 
         CG_CHECK(cg_narrays, (&offset));
+        //++offset;
+        // MS
+        // If the dataitem we are trying to write is already written to
+        // the file we just skip it. 
+	//std::cout << __FILE__ << __LINE__ << std::endl;
+	//std::cout << " Zone = " << Z << " IntegralData_t = " << T << std::endl;
+	//std::cout << " Read offset = " << offset << std::endl;
+	for (int ii=1; ii<=offset; ii++)
+	{
+	   cg_array_info(ii, arrName, &dT, &tt1, &tt2);
+	   //std::cout << "offset = " << ii <<" arrayName = " << arrName << std::endl;
+	   if ((std::string(arrName)).find(std::string((*a)->name())) != std::string::npos) {
+	      //std::cout << "The request for duplicate dataitem is ignored." << std::endl;
+	      goToNextItem = true;
+	   }
+	}
+        if (goToNextItem)
+           break;
         ++offset;
+        //if (offset == 4)
+        //   return;
+        // MS End
+	//std::cout << __FILE__ << __LINE__ << std::endl;
 
         for (A=0; A<nComp; ++A) {
+          //std::cout << __FILE__ << __LINE__ << " Component = " << A << std::endl;
           CG_CHECK(cg_goto, (fn, B, "Zone_t", Z, "FlowSolution_t", T, "end"));
+	  //std::cout << __FILE__ << __LINE__ << std::endl;
 
           label = (*a)->name();
+	  //std::cout << __FILE__ << __LINE__ << std::endl;
 
           const DataItem* pa;
           if (nComp == 1)
@@ -2164,19 +2409,23 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
               label = sout.str();
             }
           }
+	  //std::cout << __FILE__ << __LINE__ << std::endl;
 
 #ifdef DEBUG_DUMP_PREFIX
           std::ofstream fout((DEBUG_DUMP_PREFIX + std::string(material) + '.' + (*a)->name() + '_' + timeLevel + ".cgns").c_str(), std::ios_base::app);
 #endif // DEBUG_DUMP_PREFIX
           bool isNull = false;
           pData[A] = pa->pointer();
+	  //std::cout << __FILE__ << __LINE__ << " numItems = " << numItems << std::endl;
           if (numItems <= 0) {
+	    //std::cout << __FILE__ << __LINE__ << std::endl;
             buf.resize(COM::DataItem::get_sizeof(dType, 1), '\0');
             std::fill(buf.begin(), buf.end(), '\0');
             pData[A] = &(buf[0]);
             size[0] = size[1] = size[2] = 1;
             range = "EMPTY";
           } else if (pData[A] == NULL) {
+	    //std::cout << __FILE__ << __LINE__ << std::endl;
             buf.resize(COM::DataItem::get_sizeof(dType, std::max(numItems, 1)),
                                                   '\0');
             std::fill(buf.begin(), buf.end(), '\0');
@@ -2185,14 +2434,19 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
             // size[0] = size[1] = size[2] = 1;
             range = "NULL";
           } else {
+	    //std::cout << __FILE__ << __LINE__ << std::endl;
             int stride = pa->stride();
+	    //std::cout << __FILE__ << __LINE__ << std::endl;
             if (stride > 1) {
+	      //std::cout << __FILE__ << __LINE__ << std::endl;
               int dSize = COM::DataItem::get_sizeof(dType, 1);
               buf.resize(dSize * std::max(numItems, 1));
+	      //std::cout << __FILE__ << __LINE__ << std::endl;
               for (i=0; i<numItems; ++i) {
                 std::memcpy(&(buf[i*dSize]),
                             &(((const char*)pData[A])[i*stride*dSize]), dSize);
               }
+	      //std::cout << __FILE__ << __LINE__ << std::endl;
               pData[A] = &(buf[0]);
             }
 #ifdef DEBUG_DUMP_PREFIX
@@ -2265,6 +2519,7 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
             CG_CHECK(cg_descriptor_write, ("Units", pa->unit().c_str()));
           }
         }
+	//std::cout << __FILE__ << __LINE__ << std::endl;
 
         // Vectors and tensors need a MagnitudeRange or TraceRange
         // descriptor under the first DataArray_t node.
@@ -2288,6 +2543,4 @@ void write_attr_CGNS(const std::string& fname_in, const std::string& mfile,
     }
   }
 }
-
-
 

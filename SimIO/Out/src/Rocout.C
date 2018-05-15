@@ -121,6 +121,9 @@ void Rocout::init(const std::string &mname) {
   Rocout *rout = new Rocout();
 
   rout->_options["format"] = "HDF4";
+#ifdef USE_CGNS
+  rout->_options["format"] = "CGNS";
+#endif
   rout->_options["async"] = "off";
   rout->_options["mode"] = "w";
   rout->_options["localdir"] = "";
