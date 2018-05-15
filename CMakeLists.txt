@@ -36,6 +36,10 @@ IF(ENABLE_CGNS)
   add_definitions ( -DUSE_CGNS )
 ENDIF()
 
+# HDF4 libs
+find_library(HDF4_LIB NAMES hdf4 libdf df PATHS /usr/lib /usr/lib64 HINTS df libdf hdf)
+find_library(MFHDF_LIB NAMES mfhdf4 mfhdf PATHS /usr/lib /usr/lib64 HINTS mfhdf mfhdf4)
+
 # Building modules
 IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/COM/")
   add_subdirectory(COM)
