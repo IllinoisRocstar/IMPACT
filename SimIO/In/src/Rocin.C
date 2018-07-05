@@ -2894,8 +2894,9 @@ void Rocin::read_windows(const char* filename_patterns,
   buffer = new char[strlen(filename_patterns)+1];
   strcpy(buffer, filename_patterns);
 
+#ifndef USE_CGNS
   BlockMM_HDF4 blocks_HDF4;
-#ifdef USE_CGNS
+#else
   BlockMM_CGNS blocks_CGNS;
 #endif // USE_CGNS
 
