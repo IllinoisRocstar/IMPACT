@@ -120,8 +120,9 @@ void Rocout::init(const std::string &mname) {
 
   Rocout *rout = new Rocout();
 
+#ifndef USE_CGNS
   rout->_options["format"] = "HDF4";
-#ifdef USE_CGNS
+#else
   rout->_options["format"] = "CGNS";
 #endif
   rout->_options["async"] = "off";
@@ -537,7 +538,7 @@ void Rocout::set_option( const char* option_name, const char* option_val)
     return;
   }
 
-#ifndef USE_CGNS
+#ifdef USE_CGNS
   COM_assertion_msg(name != "format" || val != "CGNS",
                     "Roccom not built with option CGNS=1.\n");
 #endif // USE_CGNS
