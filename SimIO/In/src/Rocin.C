@@ -3001,9 +3001,10 @@ void Rocin::read_windows(const char* filename_patterns,
     // Default value of material_names is NULL
     // we assume the file only contains one type of material, and 
     // the window name is the window_prefix.
+#ifndef USE_CGNS
     range_HDF4.first = blocks_HDF4.begin();
     range_HDF4.second = blocks_HDF4.end();
-#ifdef USE_CGNS
+#else
     range_CGNS.first = blocks_CGNS.begin();
     range_CGNS.second = blocks_CGNS.end();
 #endif // USE_CGNS
@@ -3040,9 +3041,10 @@ void Rocin::read_windows(const char* filename_patterns,
 
     // Iterate through each material (one window per material).
     while (p != materials.end()) {
+#ifndef USE_CGNS
       if (blocks_HDF4.count(*p) == 0
-#ifdef USE_CGNS
-          && blocks_CGNS.count(*p) == 0
+#else
+      if (blocks_CGNS.count(*p) == 0
 #endif // USE_CGNS
           ) {
         std::cerr << "read_windows: could not find '" << *p << "'."
@@ -3051,8 +3053,9 @@ void Rocin::read_windows(const char* filename_patterns,
         continue;
       }
 
+#ifndef USE_CGNS
       range_HDF4 = blocks_HDF4.equal_range(*p);
-#ifdef USE_CGNS
+#else
       range_CGNS = blocks_CGNS.equal_range(*p);
 #endif // USE_CGNS
       name = window_prefix + *p;
@@ -3090,8 +3093,9 @@ void Rocin::read_windows(const char* filename_patterns,
   }
 
   // Free memory.
+#ifndef USE_CGNS
   free_blocks(blocks_HDF4);
-#ifdef USE_CGNS
+#else
   free_blocks(blocks_CGNS);
 #endif // USE_CGNS
 }
