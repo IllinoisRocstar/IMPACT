@@ -433,12 +433,12 @@ void Rocout::write_rocin_control_file(const char* window_name,
 	      sout << _options["separator"];
             sout << "%0" << pw << 'i';
           }
-
-          if ( fmt == "HDF4" || fmt == "HDF")
+         
+          if ( fmt.compare("HDF4") == 0 || fmt.compare("HDF") == 0)
             sout << ".hdf";
-          else if (fmt == "HDF5")
+          else if (fmt.compare("HDF5") == 0)
             sout << ".hdf5";
-          else if (fmt == "CGNS")
+          else if (fmt.compare("CGNS") == 0)
             sout << ".cgns";
         }
 	fout << sout.str() << std::endl;
@@ -539,8 +539,8 @@ void Rocout::set_option( const char* option_name, const char* option_val)
   }
 
 #ifdef USE_CGNS
-  COM_assertion_msg(name != "format" || val != "CGNS",
-                    "Roccom not built with option CGNS=1.\n");
+  COM_assertion_msg(!(name.compare("format") == 0 && val.compare("CGNS") != 0),
+                    "Impact is not built with option CGNS=1.\n");
 #endif // USE_CGNS
 
   _options[name] = val;
