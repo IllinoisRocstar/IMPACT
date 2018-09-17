@@ -556,9 +556,12 @@ update_bd_flags( const COM::DataItem *flags) {
 
   // Allocate buffer arrays
   if ( flags->window()!=_buf_window)
+  {
+    std::cout << __FILE__ << __LINE__ << std::endl;
     flags_inherited = _buf_window->inherit
       ( const_cast< COM::DataItem *>(flags), "faceflags__CNNTEMP", 
 	false, true, NULL, 0);
+  }
   COM::DataItem *flg=_buf_window->new_dataitem( "flags__PMTEMP", 
 						  'p', COM_INT, 1, "");
   COM::DataItem *pconn_g=_buf_window->new_dataitem( "pconn__PMTEMP", 
@@ -566,7 +569,9 @@ update_bd_flags( const COM::DataItem *flags) {
   COM::DataItem *pconn_e=_buf_window->dataitem( "pconn_e");
 
   // Fill in flags and pconn
+  int nbm = 0;
   for ( PM_iterator it=pm_begin(), iend=pm_end(); it != iend; ++it) {
+    nbm++;
     //    COM::Pane *pn = const_cast<COM::Pane*>(it->pane());
     COM::Pane *pn = const_cast<COM::Pane*>((*it)->pane());
     const int *flgs_face = reinterpret_cast<int *>
@@ -595,8 +600,10 @@ update_bd_flags( const COM::DataItem *flags) {
     (*it)->convert_pconn_edge2ghost( pn->dataitem( pconn_e->id()), 
 				  pn->dataitem( pconn_g->id()));
   }
+  std::cout << "Number of boundary manifolds " << nbm << std::endl;
   _buf_window->init_done(false);
 
+  // MS: following line causes the memory leak for rocburn
   // Perform communication
   MAP::Rocmap::update_ghosts( flg, pconn_g);
 

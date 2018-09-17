@@ -63,6 +63,11 @@ void Pane_communicator::init( COM::DataItem *att,
     pointers[i] = dataitem->pointer();
     sizes[i] = dataitem->size_of_real_items();
     strides[i] = dataitem->stride();
+    std::cout << "Pane " << i 
+        << " with size of real items " << sizes[i]
+        << " stride " << strides[i]
+        << " of type " << att->data_type()
+        << std::endl;
   }
   init(pointers, att->data_type(), att->size_of_components(), sizes, strides);
   delete[] pointers;  pointers = NULL;
@@ -100,6 +105,8 @@ void Pane_communicator::init( void** ptrs, COM_Type type,
   _strds.clear(); 
   if ( strds) _strds.insert( _strds.end(), strds, strds+local_npanes);
   else _strds.resize( local_npanes, _ncomp);
+
+  std::cout << " Number of local panes = " << local_npanes << std::endl;
 
   // Allocate buffer space for outbuf and ghosts
   for ( int i=0; i<local_npanes; ++i) {
@@ -200,7 +207,8 @@ void Pane_communicator::begin_update( const Buff_type btype,
   if ( involved) { involved->clear(); involved->resize( local_npanes); }
 
   // Now copy data to outbuf. First loop through local panes
-  for ( int i=0; i<local_npanes; ++i) {
+  for ( int i=0; i<local_npanes; ++i) 
+  {
     if ( involved) (*involved)[i].resize( _sizes[i], false);
     
     // Obtain the pane connectivity for the current pane
@@ -214,126 +222,131 @@ void Pane_communicator::begin_update( const Buff_type btype,
     // Obtain the current buffer
     std::vector< Pane_comm_buffers>   *buffs =NULL;
 
-    if (btype == RNS)                  buffs = &_rns_buffs[i];
-
-    else if (btype == RCS)             buffs = &_rcs_buffs[i]; 
-
-    else if (btype == SHARED_NODE)     buffs = &_shr_buffs[i];
-
-    else if (btype == GNR) {
-      buffs = &_gnr_buffs[i];
-    }
-    else if (btype == GCR) 
-    {
-      buffs = &_gcr_buffs[i]; 
-    }
+    if (btype == RNS)             
+        buffs = &_rns_buffs[i];
+    else if (btype == RCS)
+        buffs = &_rcs_buffs[i];
+    else if (btype == SHARED_NODE)
+        buffs = &_shr_buffs[i];
+    else if (btype == GNR)
+        buffs = &_gnr_buffs[i];
+    else if (btype == GCR)
+        buffs = &_gcr_buffs[i];
     else
       COM_assertion_msg(false,"Invalid buffer type");
 
     // Loop through the communicating panes of the current pane
-    for ( int j=0, nj=buffs->size(); j<nj; ++j) {
+    for ( int j=0, nj=buffs->size(); j<nj; ++j) 
+    {
       Pane_comm_buffers* pcb  = &(*buffs)[j];// The current buffer.
      
       // Fill in outgoing buffers if sending.
       int bufsize=_ncomp_bytes * vs[ pcb->index+1];
 
-      if ( btype != SHARED_NODE || _panes[i]->id() != vs[pcb->index]) { 
-	// If not sending shared nodes to itself
-	if(btype <= SHARED_NODE){
-	  pcb->outbuf.resize( bufsize);
+      if ( btype != SHARED_NODE || _panes[i]->id() != vs[pcb->index]) 
+      { 
+        // If not sending shared nodes to itself
+        if(btype <= SHARED_NODE)
+        {
+          pcb->outbuf.resize( bufsize);
 
-	  if ( involved) {
-	    for ( int k=0, from=pcb->index+2,n=vs[pcb->index+1]; 
-		  k<n; ++k, ++from)
-	      (*involved)[i][vs[ from]-1] = true;
-	  }
+          if ( involved) {
+            for ( int k=0, from=pcb->index+2,n=vs[pcb->index+1]; 
+              k<n; ++k, ++from)
+              (*involved)[i][vs[ from]-1] = true;
+          }
 
-	  for ( int k=0, from=pcb->index+2,n=vs[pcb->index+1]; 
-		k<n; ++k, ++from) {
-	    std::memcpy( &pcb->outbuf[ _ncomp_bytes*k], 
-			 &ptr[ strd_bytes*vs[ from]], _ncomp_bytes);
-	  }
+          for ( int k=0, from=pcb->index+2,n=vs[pcb->index+1]; 
+            k<n; ++k, ++from) {
+            std::memcpy( &pcb->outbuf[ _ncomp_bytes*k], 
+                 &ptr[ strd_bytes*vs[ from]], _ncomp_bytes);
+          }
 
-	  // Initiates send operations either locally or remotely
-	  // if on same communicating process
-	  if ( rank == pcb->rank) {
-	    int tag = pcb->tag;
+          // Initiates send operations either locally or remotely
+          // if on same communicating process
+          if ( rank == pcb->rank) {
+            int tag = pcb->tag;
 
-	    // If send locally, shift the tag in one of the two directions
-	    if ( _panes[i]->id() > vs[pcb->index]) tag += tag_max;
-	    //	    tag = tag%32768;
-	    // COMMPI uses DUMMY_MPI if MPI not initialized
-	    int ierr=COMMPI_Isend( &pcb->outbuf[0], pcb->outbuf.size(), 
-				   MPI_BYTE, 0, tag, MPI_COMM_SELF, &req);
-	    COM_assertion( ierr==0);
-	    _reqs_send.push_back( req);
-	  }
-	  else {
-	    //	    int tag = pcb->tag%32768;
-	    //	    int ierr=MPI_Isend( &pcb->outbuf[0], pcb->outbuf.size(), MPI_BYTE, 
-	    //				pcb->rank, pcb->tag, _comm, &req);
-	    int tag = pcb->tag;
-	    int ierr=MPI_Isend( &pcb->outbuf[0], pcb->outbuf.size(), MPI_BYTE, 
-				pcb->rank, tag, _comm, &req);
-	    COM_assertion( ierr==0);
-    
-	    _reqs_send.push_back( req);
-	  }
-	}
+            // If send locally, shift the tag in one of the two directions
+            if ( _panes[i]->id() > vs[pcb->index]) tag += tag_max;
+            //	    tag = tag%32768;
+            // COMMPI uses DUMMY_MPI if MPI not initialized
+            int ierr=COMMPI_Isend( &pcb->outbuf[0], pcb->outbuf.size(), 
+                       MPI_BYTE, 0, tag, MPI_COMM_SELF, &req);
+            COM_assertion( ierr==0);
+            _reqs_send.push_back( req);
+          }
+          else {
+            //	    int tag = pcb->tag%32768;
+            //	    int ierr=MPI_Isend( &pcb->outbuf[0], pcb->outbuf.size(), MPI_BYTE, 
+            //				pcb->rank, pcb->tag, _comm, &req);
+            int tag = pcb->tag;
+            int ierr=MPI_Isend( &pcb->outbuf[0], pcb->outbuf.size(), MPI_BYTE, 
+                    pcb->rank, tag, _comm, &req);
+            COM_assertion( ierr==0);
+        
+            _reqs_send.push_back( req);
+          }
+        }
 
-	// Initiates receive operations either locally or remotely
-	if(btype >=SHARED_NODE){
-	  pcb->inbuf.resize( bufsize);
+        // Initiates receive operations either locally or remotely
+        if(btype >=SHARED_NODE)
+        {
+          pcb->inbuf.resize( bufsize);
 
-	  if ( rank == pcb->rank) {
-	    int tag = pcb->tag;
-	    
-	    // If recv locally, shift the tag in one of the two directions
-	    // have to have unique tags for send/receive when we are sending
-	    // between panes on the same process.
-	    if ( _panes[i]->id() < vs[pcb->index]) tag += tag_max;
-	    //	    tag = tag%32768;
-	    int ierr=COMMPI_Irecv( &pcb->inbuf[0], pcb->inbuf.size(), 
-				   MPI_BYTE, 0, tag, MPI_COMM_SELF, &req);
-	    COM_assertion( ierr==0);
-	    
-	    // Push the receive request into _reqs_recv and _reqs_indices
-	    _reqs_recv.push_back( req); 
-	    _reqs_indices.push_back( std::make_pair(i,(j<<4)+btype));
-	  }
-	  else {
-	    //	    int tag = pcb->tag%32768;
-	    //	    int ierr=MPI_Irecv( &pcb->inbuf[0], pcb->inbuf.size(), MPI_BYTE, 
-	    //				pcb->rank,pcb->tag, _comm, &req);
-	    int tag = pcb->tag;
-	    int ierr=MPI_Irecv( &pcb->inbuf[0], pcb->inbuf.size(), MPI_BYTE, 
-				pcb->rank,tag, _comm, &req);
-	    COM_assertion( ierr==0);
-	    
-	    // Push the receive request into _reqs_recv and _reqs_indices
-	    _reqs_recv.push_back( req);
-	    _reqs_indices.push_back( std::make_pair(i,(j<<4)+btype));
-	  }
-	}
+          if ( rank == pcb->rank) 
+          {
+            int tag = pcb->tag;
+            
+            // If recv locally, shift the tag in one of the two directions
+            // have to have unique tags for send/receive when we are sending
+            // between panes on the same process.
+            if ( _panes[i]->id() < vs[pcb->index]) tag += tag_max;
+            //	    tag = tag%32768;
+            int ierr=COMMPI_Irecv( &pcb->inbuf[0], pcb->inbuf.size(), 
+                       MPI_BYTE, 0, tag, MPI_COMM_SELF, &req);
+            COM_assertion( ierr==0);
+            
+            // Push the receive request into _reqs_recv and _reqs_indices
+            _reqs_recv.push_back( req); 
+            _reqs_indices.push_back( std::make_pair(i,(j<<4)+btype));
+          }
+          else 
+          {
+            //	    int tag = pcb->tag%32768;
+            //	    int ierr=MPI_Irecv( &pcb->inbuf[0], pcb->inbuf.size(), MPI_BYTE, 
+            //				pcb->rank,pcb->tag, _comm, &req);
+            int tag = pcb->tag;
+            int ierr=MPI_Irecv( &pcb->inbuf[0], pcb->inbuf.size(), MPI_BYTE, 
+                    pcb->rank,tag, _comm, &req);
+            COM_assertion( ierr==0);
+            
+            // Push the receive request into _reqs_recv and _reqs_indices
+            _reqs_recv.push_back( req);
+            _reqs_indices.push_back( std::make_pair(i,(j<<4)+btype));
+          }
+        }
       }
-      
-      else { // btype == SHARED_NODE &&_panes[i]->id()==vs[pcb->index]
-	pcb->inbuf.resize( bufsize);
-	// A pane is sending to itself.
-	// In a list of nodes which a pane shares with itself, the nodes are
-	// listed in pairs.  IE a node list { 1,16,2,17,...} indicates that nodes
-	// 1 and 3 are the same and nodes 5 and 13 are the same.
-	// So, we copy the data value of a node into the outbuf of its shared node.
-	// Then we can transfer the data directly.
-	for (int k=0,from=pcb->index+2,n=vs[pcb->index+1]; k<n; k+=2, from+=2){
-	  std::memcpy( &pcb->inbuf[ _ncomp_bytes*(k+1)], 
-		       &ptr[strd_bytes*vs[ from]], _ncomp_bytes);
-	  std::memcpy( &pcb->inbuf[ _ncomp_bytes*k], 
-		       &ptr[strd_bytes*vs[ from+1]], _ncomp_bytes);
-	}
+      else 
+      { // btype == SHARED_NODE &&_panes[i]->id()==vs[pcb->index]
+        pcb->inbuf.resize( bufsize);
+        // A pane is sending to itself.
+        // In a list of nodes which a pane shares with itself, the nodes are
+        // listed in pairs.  IE a node list { 1,16,2,17,...} indicates that nodes
+        // 1 and 3 are the same and nodes 5 and 13 are the same.
+        // So, we copy the data value of a node into the outbuf of its shared node.
+        // Then we can transfer the data directly.
+        for (int k=0,from=pcb->index+2,n=vs[pcb->index+1]; k<n; k+=2, from+=2){
+          std::memcpy( &pcb->inbuf[ _ncomp_bytes*(k+1)], 
+                   &ptr[strd_bytes*vs[ from]], _ncomp_bytes);
+          std::memcpy( &pcb->inbuf[ _ncomp_bytes*k], 
+                   &ptr[strd_bytes*vs[ from+1]], _ncomp_bytes);
+        }
       }
     }
   }
+  std::cout << "Rank " << rank << " number of sent requests " << _reqs_send.size() << std::endl;
+  std::cout << "Rank " << rank << " number of receive requests " << _reqs_recv.size() << std::endl;
   if(COMMPI_Initialized())
     MPI_Barrier(_comm);
 }
@@ -348,8 +361,10 @@ void Pane_communicator::end_update() {
 
     std::vector< MPI_Status> status( _reqs_send.size());
     int ierr=0;
-    if (_reqs_send.size())
+    std::cout << "Rank " << COMMPI_Comm_rank(_comm) << " number of send requests waiting for " << _reqs_send.size() << std::endl;
+    if (_reqs_send.size()){
       ierr=MPI_Waitall( _reqs_send.size(), &_reqs_send[0], &status[0]);
+    }
     COM_assertion( ierr==0);
   }
   _reqs_send.resize(0);

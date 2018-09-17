@@ -69,14 +69,18 @@ void Rocmap::reduce_maxabs_on_shared_nodes(COM::DataItem *att,
 // Update ghost nodal or elemental values for the given dataitem.
 void Rocmap::update_ghosts(COM::DataItem *att,
 			   const COM::DataItem *pconn){
+  std::cout << "Updating ghost nodes for dataitem " << att->name() << std::endl;   
   Pane_communicator pc(att->window(), att->window()->get_communicator());
   pc.init(att, pconn);
 
+  // MS: following lines cause memory leak issue with rocburn
   if (att->is_elemental()){
+    std::cout << __FILE__ << __LINE__ << std::endl;
     pc.begin_update_ghost_cells();
     pc.end_update_ghost_cells();
   }
   else{
+    std::cout << __FILE__ << __LINE__ << std::endl;
     pc.begin_update_ghost_nodes();
     pc.end_update_ghost_nodes();
   }
