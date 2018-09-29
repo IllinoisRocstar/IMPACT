@@ -166,7 +166,9 @@ public:
       _start += _conn->size_of_nodes_pe();
   }
   
-  int operator[]( int i) const  { return _start[i]; }
+  int operator[]( int i) const  { 
+      return _start[i]; 
+  }
   int size_of_nodes()   const   { return _conn->size_of_nodes_pe();  }
 };
 

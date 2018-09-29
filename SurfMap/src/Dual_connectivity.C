@@ -73,7 +73,6 @@ void Pane_dual_connectivity::construct_connectivity_str_2() {
 void Pane_dual_connectivity::construct_connectivity_unstr() {
 
   int nnodes, nelems;
-
   if ( _with_ghost) {
     nnodes=_pane.size_of_nodes();
     nelems=_pane.size_of_elements();
@@ -82,6 +81,7 @@ void Pane_dual_connectivity::construct_connectivity_unstr() {
     nnodes=_pane.size_of_real_nodes();
     nelems=_pane.size_of_real_elements();
   }
+
   
   { // First, count the number of incident elements of each node.
     std::vector<char> nielems(nnodes);
@@ -89,8 +89,12 @@ void Pane_dual_connectivity::construct_connectivity_unstr() {
 
     Element_node_enumerator_uns ene( &_pane, 1);
     for ( int i=1; i<=nelems; ++i, ene.next())
+    {
       for ( int k=0, nn=ene.size_of_nodes(); k<nn; ++k) 
-	++nielems[ ene[k]-1];
+      {
+    	++nielems[ ene[k]-1];
+      }
+    }
     
     // Now construct a vector for storing the offsets
     _offsets.clear(); _offsets.resize(nnodes+1);

@@ -24,6 +24,7 @@ Element_node_enumerator( const Pane *pane, int i,
     if ( _conn) {
       COM_assertion( i>=0 && i<std::max(int(_conn->size_of_elements()),1));
       _start = _conn->pointer()+i*_conn->size_of_nodes_pe();
+      COM_assertion_msg( _start[0] >=0, "The pane connectivity starts with a negative number!");
       _res = _conn->size_of_elements() - i;
     }
     else {
