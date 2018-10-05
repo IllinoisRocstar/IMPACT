@@ -557,7 +557,6 @@ update_bd_flags( const COM::DataItem *flags) {
   // Allocate buffer arrays
   if ( flags->window()!=_buf_window)
   {
-    std::cout << __FILE__ << __LINE__ << std::endl;
     flags_inherited = _buf_window->inherit
       ( const_cast< COM::DataItem *>(flags), "faceflags__CNNTEMP", 
 	false, true, NULL, 0);
@@ -600,7 +599,6 @@ update_bd_flags( const COM::DataItem *flags) {
     (*it)->convert_pconn_edge2ghost( pn->dataitem( pconn_e->id()), 
 				  pn->dataitem( pconn_g->id()));
   }
-  std::cout << "Number of boundary manifolds " << nbm << std::endl;
   _buf_window->init_done(false);
 
   // MS: following line causes the memory leak for rocburn
@@ -664,6 +662,7 @@ update_bdedge_bitmap( const COM::DataItem *bitmap) {
   _buf_window->init_done(false);
 
   // Perform communication
+  // MS: following line causes the memory leak for rocburn  
   MAP::Rocmap::update_ghosts( bm, pconn_g);
 
   _buf_window->delete_dataitem( pconn_g->name());

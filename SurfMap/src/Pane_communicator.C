@@ -63,11 +63,12 @@ void Pane_communicator::init( COM::DataItem *att,
     pointers[i] = dataitem->pointer();
     sizes[i] = dataitem->size_of_real_items();
     strides[i] = dataitem->stride();
-    std::cout << "Pane " << i 
-        << " with size of real items " << sizes[i]
-        << " stride " << strides[i]
-        << " of type " << att->data_type()
-        << std::endl;
+    //std::cout << "Pane " << i 
+    //    << " Name " << dataitem->name()
+    //    << " with size of real items " << sizes[i]
+    //    << " stride " << strides[i]
+    //    << " of type " << att->data_type()
+    //    << std::endl;
   }
   init(pointers, att->data_type(), att->size_of_components(), sizes, strides);
   delete[] pointers;  pointers = NULL;
@@ -106,7 +107,6 @@ void Pane_communicator::init( void** ptrs, COM_Type type,
   if ( strds) _strds.insert( _strds.end(), strds, strds+local_npanes);
   else _strds.resize( local_npanes, _ncomp);
 
-  std::cout << " Number of local panes = " << local_npanes << std::endl;
 
   // Allocate buffer space for outbuf and ghosts
   for ( int i=0; i<local_npanes; ++i) {
@@ -116,6 +116,10 @@ void Pane_communicator::init( void** ptrs, COM_Type type,
     const COM::DataItem *pconn = _panes[i]->dataitem(_my_pconn_id);
     const int *vs = (const int*)pconn->pointer();
     int vs_size=pconn->size_of_real_items();
+    //std::cout << "name = " << pconn->name() 
+    //    << " vs_gsize = " << pconn->size_of_items() 
+    //    << " vs_size = " << vs_size 
+    //    << std::endl;
 
     // Note that the pane connectivity may be inherited from a parent
     // window, and the current window may contain only a subset of the
@@ -196,12 +200,18 @@ void Pane_communicator::begin_update( const Buff_type btype,
 				      std::vector<std::vector<bool> > *involved) {
   COM_assertion_msg(_reqs_recv.empty(),
 		    "Cannot begin a new update until all prior updates are finished.");
+  // MS
+  //COM_assertion_msg(_reqs_send.empty(),
+  //	    "Cannot begin a new update until all prior updates are finished.");
 
   // Define and initialize variables
   int rank = COMMPI_Initialized() ? COMMPI_Comm_rank( _comm) : 0;
 
   MPI_Request req;
-  _reqs_send.clear(); _reqs_recv.clear(); _reqs_indices.clear();
+  // original
+  //_reqs_send.clear(); _reqs_recv.clear(); _reqs_indices.clear();
+  // MS
+  _reqs_recv.clear(); _reqs_indices.clear();
   int local_npanes = _panes.size();
   int tag_max = _total_npanes*_total_npanes;
   if ( involved) { involved->clear(); involved->resize( local_npanes); }
@@ -271,8 +281,13 @@ void Pane_communicator::begin_update( const Buff_type btype,
             if ( _panes[i]->id() > vs[pcb->index]) tag += tag_max;
             //	    tag = tag%32768;
             // COMMPI uses DUMMY_MPI if MPI not initialized
-            int ierr=COMMPI_Isend( &pcb->outbuf[0], pcb->outbuf.size(), 
-                       MPI_BYTE, 0, tag, MPI_COMM_SELF, &req);
+            // MS
+            //int ierr=COMMPI_Isend( &pcb->outbuf[0], pcb->outbuf.size(), 
+            //           MPI_BYTE, 0, tag, MPI_COMM_SELF, &req);
+            // switching to MPI itself
+            int ierr=MPI_Isend( &pcb->outbuf[0], pcb->outbuf.size(), 
+                       MPI_BYTE, rank, tag, _comm, &req);
+            // MS
             COM_assertion( ierr==0);
             _reqs_send.push_back( req);
           }
@@ -303,8 +318,13 @@ void Pane_communicator::begin_update( const Buff_type btype,
             // between panes on the same process.
             if ( _panes[i]->id() < vs[pcb->index]) tag += tag_max;
             //	    tag = tag%32768;
-            int ierr=COMMPI_Irecv( &pcb->inbuf[0], pcb->inbuf.size(), 
-                       MPI_BYTE, 0, tag, MPI_COMM_SELF, &req);
+            // MS
+            //int ierr=COMMPI_Irecv( &pcb->inbuf[0], pcb->inbuf.size(), 
+            //           MPI_BYTE, 0, tag, MPI_COMM_SELF, &req);
+            // switching to regular MPI
+            int ierr=MPI_Irecv( &pcb->inbuf[0], pcb->inbuf.size(), 
+                       MPI_BYTE, rank, tag, _comm, &req);
+            // MS
             COM_assertion( ierr==0);
             
             // Push the receive request into _reqs_recv and _reqs_indices
@@ -345,8 +365,8 @@ void Pane_communicator::begin_update( const Buff_type btype,
       }
     }
   }
-  std::cout << "Rank " << rank << " number of sent requests " << _reqs_send.size() << std::endl;
-  std::cout << "Rank " << rank << " number of receive requests " << _reqs_recv.size() << std::endl;
+  //std::cout << "Rank " << rank << " number of sent requests " << _reqs_send.size() << std::endl;
+  //std::cout << "Rank " << rank << " number of receive requests " << _reqs_recv.size() << std::endl;
   if(COMMPI_Initialized())
     MPI_Barrier(_comm);
 }
@@ -361,12 +381,38 @@ void Pane_communicator::end_update() {
 
     std::vector< MPI_Status> status( _reqs_send.size());
     int ierr=0;
-    std::cout << "Rank " << COMMPI_Comm_rank(_comm) << " number of send requests waiting for " << _reqs_send.size() << std::endl;
+    // original
     if (_reqs_send.size()){
       ierr=MPI_Waitall( _reqs_send.size(), &_reqs_send[0], &status[0]);
+      COM_assertion( ierr==0);
     }
-    COM_assertion( ierr==0);
+    // MS: using waitany
+    //int size_of_reqs = _reqs_send.size();
+    //int nDel = 0;
+    //int myRank = COMMPI_Comm_rank(_comm); 
+    //std::cout << "Rank " << COMMPI_Comm_rank(_comm) << " number of send requests waiting for " << size_of_reqs << std::endl;
+    //while (nDel<size_of_reqs)
+    //{
+    //    MPI_Status stat;
+    //    int indx = -1;
+    //    MPI_Waitany(_reqs_send.size(), &_reqs_send[0], &indx, &stat);
+    //    if (indx >= 0)
+    //    {
+    //        nDel++;
+    //        _reqs_send.erase(_reqs_send.begin()+indx);
+    //        if (myRank == 30)
+    //            std::cout << "Rank " << myRank
+    //                << " deleting send request " << indx 
+    //                << " new size for the send request vector is " << _reqs_send.size() 
+    //                << std::endl;
+    //    }
+    //}
+    // MS
+    //MPI_Barrier(_comm);
   }
+  // MS 
+  MPI_Barrier(_comm);
+
   _reqs_send.resize(0);
 }
 
@@ -766,6 +812,13 @@ void Pane_communicator::update_ghost_values() {
     // Remove the received message from the list
     _reqs_recv.erase(_reqs_recv.begin()+index);
     _reqs_indices.erase(_reqs_indices.begin()+index);
+
+    //int myRank = COMMPI_Comm_rank(_comm);
+    //if (myRank == 0)
+    //    std::cout << "Rank " << myRank
+    //        << " deleting recieve request " << index 
+    //        << " new size for the receive request vector is " << _reqs_recv.size() 
+    //        << std::endl;
   }
 }
 

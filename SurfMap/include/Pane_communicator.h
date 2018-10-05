@@ -65,14 +65,14 @@ public:
   // MS added
   ~Pane_communicator()
   {
-     std::cout << "Size of _reqs_send " << _reqs_send.size() << "\n"; 
-     std::cout << "Size of _reqs_recv " << _reqs_recv.size() << "\n"; 
-     std::cout << "Size of _reqs_indices " << _reqs_indices.size() << "\n"; 
-     std::cout << "Size of _shr_buffer " << _shr_buffs.size() << "\n"; 
-     std::cout << "Size of _rns_buffer " << _rns_buffs.size() << "\n"; 
-     std::cout << "Size of _gnr_buffer " << _gnr_buffs.size() << "\n"; 
-     std::cout << "Size of _rcs_buffer " << _rcs_buffs.size() << "\n"; 
-     std::cout << "Size of _gcr_buffer " << _gcr_buffs.size() << "\n"; 
+     //std::cout << "Size of _reqs_send " << _reqs_send.size() << "\n"; 
+     //std::cout << "Size of _reqs_recv " << _reqs_recv.size() << "\n"; 
+     //std::cout << "Size of _reqs_indices " << _reqs_indices.size() << "\n"; 
+     //std::cout << "Size of _shr_buffer " << _shr_buffs.size() << "\n"; 
+     //std::cout << "Size of _rns_buffer " << _rns_buffs.size() << "\n"; 
+     //std::cout << "Size of _gnr_buffer " << _gnr_buffs.size() << "\n"; 
+     //std::cout << "Size of _rcs_buffer " << _rcs_buffs.size() << "\n"; 
+     //std::cout << "Size of _gcr_buffer " << _gcr_buffs.size() << "\n"; 
 
      // cleaning up 
      for (int i=0; i<_shr_buffs.size(); i++)
@@ -125,6 +125,7 @@ public:
          }
      }
      _gcr_buffs.clear();
+
   }
   // MS end
   
