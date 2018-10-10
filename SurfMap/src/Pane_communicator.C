@@ -212,6 +212,7 @@ void Pane_communicator::begin_update( const Buff_type btype,
   //_reqs_send.clear(); _reqs_recv.clear(); _reqs_indices.clear();
   // MS
   _reqs_recv.clear(); _reqs_indices.clear();
+  // MS end
   int local_npanes = _panes.size();
   int tag_max = _total_npanes*_total_npanes;
   if ( involved) { involved->clear(); involved->resize( local_npanes); }
@@ -282,12 +283,12 @@ void Pane_communicator::begin_update( const Buff_type btype,
             //	    tag = tag%32768;
             // COMMPI uses DUMMY_MPI if MPI not initialized
             // MS
-            //int ierr=COMMPI_Isend( &pcb->outbuf[0], pcb->outbuf.size(), 
-            //           MPI_BYTE, 0, tag, MPI_COMM_SELF, &req);
-            // switching to MPI itself
-            int ierr=MPI_Isend( &pcb->outbuf[0], pcb->outbuf.size(), 
-                       MPI_BYTE, rank, tag, _comm, &req);
-            // MS
+            int ierr=COMMPI_Isend( &pcb->outbuf[0], pcb->outbuf.size(), 
+                       MPI_BYTE, 0, tag, MPI_COMM_SELF, &req);
+            //// switching to MPI itself
+            //int ierr=MPI_Isend( &pcb->outbuf[0], pcb->outbuf.size(), 
+            //           MPI_BYTE, rank, tag, _comm, &req);
+            //// MS
             COM_assertion( ierr==0);
             _reqs_send.push_back( req);
           }
@@ -319,11 +320,11 @@ void Pane_communicator::begin_update( const Buff_type btype,
             if ( _panes[i]->id() < vs[pcb->index]) tag += tag_max;
             //	    tag = tag%32768;
             // MS
-            //int ierr=COMMPI_Irecv( &pcb->inbuf[0], pcb->inbuf.size(), 
-            //           MPI_BYTE, 0, tag, MPI_COMM_SELF, &req);
+            int ierr=COMMPI_Irecv( &pcb->inbuf[0], pcb->inbuf.size(), 
+                       MPI_BYTE, 0, tag, MPI_COMM_SELF, &req);
             // switching to regular MPI
-            int ierr=MPI_Irecv( &pcb->inbuf[0], pcb->inbuf.size(), 
-                       MPI_BYTE, rank, tag, _comm, &req);
+            //int ierr=MPI_Irecv( &pcb->inbuf[0], pcb->inbuf.size(), 
+            //           MPI_BYTE, rank, tag, _comm, &req);
             // MS
             COM_assertion( ierr==0);
             
@@ -411,7 +412,7 @@ void Pane_communicator::end_update() {
     //MPI_Barrier(_comm);
   }
   // MS 
-  MPI_Barrier(_comm);
+  //MPI_Barrier(_comm);
 
   _reqs_send.resize(0);
 }
