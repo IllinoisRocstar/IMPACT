@@ -72,6 +72,7 @@ void Rocmap::update_ghosts(COM::DataItem *att,
   Pane_communicator pc(att->window(), att->window()->get_communicator());
   pc.init(att, pconn);
 
+  // MS: following lines cause memory leak issue in rocstar
   if (att->is_elemental()){
     pc.begin_update_ghost_cells();
     pc.end_update_ghost_cells();

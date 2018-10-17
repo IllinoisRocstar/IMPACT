@@ -62,6 +62,73 @@ public:
   /// in particular the internal pane IDs.
   explicit Pane_communicator( COM::Window *w, MPI_Comm c=MPI_COMM_WORLD);
   
+  // MS added
+  ~Pane_communicator()
+  {
+     //std::cout << "Size of _reqs_send " << _reqs_send.size() << "\n"; 
+     //std::cout << "Size of _reqs_recv " << _reqs_recv.size() << "\n"; 
+     //std::cout << "Size of _reqs_indices " << _reqs_indices.size() << "\n"; 
+     //std::cout << "Size of _shr_buffer " << _shr_buffs.size() << "\n"; 
+     //std::cout << "Size of _rns_buffer " << _rns_buffs.size() << "\n"; 
+     //std::cout << "Size of _gnr_buffer " << _gnr_buffs.size() << "\n"; 
+     //std::cout << "Size of _rcs_buffer " << _rcs_buffs.size() << "\n"; 
+     //std::cout << "Size of _gcr_buffer " << _gcr_buffs.size() << "\n"; 
+
+     // cleaning up 
+     for (int i=0; i<_shr_buffs.size(); i++)
+     {
+         std::vector< Pane_comm_buffers> pcbv = _shr_buffs[i];
+         for (int j=0; j<pcbv.size(); j++)
+         {
+             pcbv[j].outbuf.clear();
+             pcbv[j].inbuf.clear();
+         }
+     }
+     _shr_buffs.clear();
+     for (int i=0; i<_rns_buffs.size(); i++)
+     {
+         std::vector< Pane_comm_buffers> pcbv = _rns_buffs[i];
+         for (int j=0; j<pcbv.size(); j++)
+         {
+             pcbv[j].outbuf.clear();
+             pcbv[j].inbuf.clear();
+         }
+     }
+     _rns_buffs.clear();
+     for (int i=0; i<_gnr_buffs.size(); i++)
+     {
+         std::vector< Pane_comm_buffers> pcbv = _gnr_buffs[i];
+         for (int j=0; j<pcbv.size(); j++)
+         {
+             pcbv[j].outbuf.clear();
+             pcbv[j].inbuf.clear();
+         }
+     }
+     _gnr_buffs.clear();
+     for (int i=0; i<_rcs_buffs.size(); i++)
+     {
+         std::vector< Pane_comm_buffers> pcbv = _rcs_buffs[i];
+         for (int j=0; j<pcbv.size(); j++)
+         {
+             pcbv[j].outbuf.clear();
+             pcbv[j].inbuf.clear();
+         }
+     }
+     _rcs_buffs.clear();
+     for (int i=0; i<_gcr_buffs.size(); i++)
+     {
+         std::vector< Pane_comm_buffers> pcbv = _gcr_buffs[i];
+         for (int j=0; j<pcbv.size(); j++)
+         {
+             pcbv[j].outbuf.clear();
+             pcbv[j].inbuf.clear();
+         }
+     }
+     _gcr_buffs.clear();
+
+  }
+  // MS end
+  
   /// Initialize the communication buffers.
   ///  ptrs is an array of pointers to the data for all local panes
   ///  type is the base data type (such as MPI_INT)
