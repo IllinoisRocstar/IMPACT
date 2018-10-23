@@ -11,42 +11,10 @@
 #include <algorithm>
 #include <iostream>
 
-//#include "kdtree_d.h"
 #include "Pane_connectivity.h"
 #include "Pane_boundary.h"
 
 MAP_BEGIN_NAMESPACE
-
-// class Point_3_ref : protected Point_3<Real> {
-// public:
-//   Point_3_ref() : offs_(-1) {}
-//   Point_3_ref( Real x, Real y, Real z) : Point_3<Real>(x,y,z), offs_(-1) {}
-//   Point_3_ref( const Point_3<Real> &r, int k) : Point_3<Real>(r), offs_(k) {}
-
-//   using Point_3<Real>::operator[];
-
-//   int offset() const 
-//   { assert( offs_>1); return offs_; }
-  
-// private:
-//   int offs_;
-// };
-
-// class KD_tree_3 : 
-//   public CGAL::Kdtree_d<CGAL::Kdtree_interface<Point_3<Real> > > 
-// {
-//   typedef CGAL::Kdtree_d<CGAL::Kdtree_interface<Point_3<Real> > > Base;
-// public:
-//   KD_tree_3() : Base(3) {}
-// };
-
-// class KD_tree_pntref_3 : 
-//   public CGAL::Kdtree_d<CGAL::Kdtree_interface<Point_3_ref > > 
-// {
-//   typedef CGAL::Kdtree_d<CGAL::Kdtree_interface<Point_3_ref > > Base;
-// public:
-//   KD_tree_pntref_3() : Base(3) {}
-// };
 
 typedef std::pair<int,int>                      pair_int;
 typedef std::pair<int,int>                      Node_ID;
@@ -168,38 +136,11 @@ determine_coisolated_nodes( const COM::Pane &pn,
   is_co.clear(); is_co.resize( n, false);
   assert(tree);
 
-  // Build a kd-tree from the points in pnts if not give at input
-//   KD_tree_3 ktree_local;
-
-//   if ( tree == NULL) {
-//     ktree_local.build( pnts);
-//     tree = &ktree_local;
-//   }
-
-//   // Define a temporary buffer for holding the matching points.
-//   std::vector< Point_3>  outList; outList.reserve(4);
-
   // Loop through the nodes in the current pane to determine coisolated nodes
   const COM::DataItem *attr = pn.dataitem( COM::COM_NC);
-  //  const int d = attr->size_of_components();
 
   for ( int j=0; j<n; ++j) {
-//     Point_3 q(0,0,0);
-//     for ( int k=0; k<d; ++k)
-//       q[k] = *(const double*)attr->get_addr( j, k);
-
-//     Point_3 lb(q.x()-tol, q.y()-tol, q.z()-tol);
-//     Point_3 ub(q.x()+tol, q.y()+tol, q.z()+tol);
-//     KD_tree_3::Box box( lb, ub, 3);
-
-    // If found match in the tree, then the current node is coisolated.
-//     outList.clear();
-
-//     tree->search( std::back_inserter( outList), box);
-
-//     if ( outList.size()) is_co[j]=true;
     is_co[j] = tree->search( (const double*)attr->get_addr( j, 0), tol)>0;
-    
   }
 }
 
@@ -287,8 +228,6 @@ get_local_boundary_nodes( std::vector<int> &nodes,
     
       if ( pnts_g.size()>0) {
 	// Build a kd-tree from the points in pnts_g
-	// 	KD_tree_3 ktree;
-	// 	ktree.build( pnts_g);
         KD_tree_3 tree(&pnts_g[0][0], pnts_g.size());
 
 	for ( int i=0, s=_panes.size(); i<s; ++i) {
@@ -323,15 +262,12 @@ make_kd_tree( const std::vector<int> &nodes,
 	      std::vector<Point_3<Real> > &bbox,
               std::vector<int> &offsets,
 	      KD_tree_3 &tree) {
-  //	      KD_tree_pntref_3 &ktree) {
   if ( nodes.empty()) return;
   assert( nodes.size() == pnts.size());
   std::vector< Point_3<Real> > b; b.reserve( nodes.size());
   offsets.reserve(nodes.size());
  
   bbox.clear();  offsets.clear();
-  //  std::vector< Point_3_ref> b; b.reserve( pnts.size());
-  //  bbox.clear();
 
   unsigned int count = 0;
   while (count<nodes.size()) {
@@ -340,10 +276,8 @@ make_kd_tree( const std::vector<int> &nodes,
     for ( int i=0, n = nodes[count++]; i<n; ++i, ++count) {
       b.push_back( pnts[count]);
       offsets.push_back( count);
-      //      b.push_back( Point_3_ref(pnts[count],count));
     }
   }
-  //  ktree.build( b);
   tree.build( &b[0][0], b.size());
 }
 
@@ -375,7 +309,6 @@ static void
 collect_coincident_nodes( const std::vector<int> &r_nodes, 
 			  const std::vector<Point_3<Real> > &r_pnts, 
 			  const std::vector<Point_3<Real> > &bbox,
-			  //			  KD_tree_pntref_3 &ktree, double tol, 
 			  const std::vector<int > &offsets,
 			  KD_tree_3 &tree, double tol, 
 			  std::vector<int> &nodes, 
@@ -392,13 +325,6 @@ collect_coincident_nodes( const std::vector<int> &r_nodes,
     int nn = 0;
     for ( int i=0, n = r_nodes[count++]; i<n; ++i, ++count) {
       const Point_3<Real> &p=r_pnts[count];
-//       Point_3_ref lb(p.x()-tol, p.y()-tol, p.z()-tol);
-//       Point_3_ref ub(p.x()+tol, p.y()+tol, p.z()+tol);
-//       KD_tree_pntref_3::Box box( lb, ub, 3);
-
-//       std::vector< Point_3_ref>  outList; outList.reserve(4);
-//       ktree.search( std::back_inserter( outList), box);
-//       if ( !outList.empty()) {
       if ( tree.search( &p[0], tol)) {
 	if ( nn==0) {
 	  nodes.push_back( -pane); // Use negative for remote panes
@@ -460,8 +386,6 @@ collect_boundary_nodes( std::vector<int>     &nodes,
 	       102, _comm, &req); reqs.push_back(req);
   }
 
-  //  KD_tree_pntref_3 local_rtree;
-  //  std::vector< Point_3> bbox;
   KD_tree_3 local_rtree;
   std::vector< Point_3> bbox; bbox.reserve( 2*comm_size);
   std::vector< int>     offsets;
@@ -483,13 +407,10 @@ collect_boundary_nodes( std::vector<int>     &nodes,
 
     // Overlap computation with communication.
     if ( i==comm_size-1) {
-      //      make_kd_tree( r_nodes_pre, pnts, bbox, local_rtree);
       make_kd_tree( r_nodes_pre, pnts, bbox, offsets, local_rtree);
 
     }
     else {
-      //      collect_coincident_nodes( r_nodes_pre, r_pnts_pre, bbox, local_rtree,
-      //				tol, nodes, pnts);
       collect_coincident_nodes( r_nodes_pre, r_pnts_pre, bbox,  offsets,
 				local_rtree, tol, nodes, pnts);
     }
@@ -544,9 +465,6 @@ create_b2map( std::vector< std::vector<int> > &b2v,
       ++npanes;
     }
     
-    //    std::vector< Point_3>  bbox;
-    //    KD_tree_pntref_3 ktree;
-    //    make_kd_tree( nodes, pnts, bbox, ktree);
     std::vector< Point_3>  bbox; bbox.reserve(2*npanes);
     std::vector< int>  offsets;
     KD_tree_3 tree;
@@ -567,18 +485,6 @@ create_b2map( std::vector< std::vector<int> > &b2v,
         int *indices;
 
 	const Point_3 &p = pnts[count];
-	// 	Point_3_ref lb(p.x()-tol, p.y()-tol, p.z()-tol);
-	// 	Point_3_ref ub(p.x()+tol, p.y()+tol, p.z()+tol);
-	// 	KD_tree_pntref_3::Box box( lb, ub, 3);
-	
-	// 	std::vector< Point_3_ref>  outList; outList.reserve(4);
-	// 	ktree.search( std::back_inserter( outList), box);
-	// 	assert( !outList.empty());
-	
-	// 	std::vector< Node_ID> ids; ids.reserve( outList.size());
-	// 	for ( std::vector< Point_3_ref>::iterator 
-	// 		i=outList.begin(); i!=outList.end(); ++i) {
-	// 	  int offset=i->offset();
 	int nfound = tree.search( &p[0], tol, &indices);
 	assert( nfound);
 	
