@@ -6,7 +6,7 @@ Multiphysics application coupling toolkit
 ## Getting Started ##
 To acquire IMPACT, you can clone it with the following command:
 ```
-$ git clone git@git.illinois.rocstar:IR/IMPACT-NO-IRAD.git
+$ git clone https://github.com/IllinoisRocstar/IMPACT.git
 ```
 ## Build Instructions ##
 ### Build Dependencies ###
@@ -37,11 +37,3 @@ $ make install
 ```
 
 Executing the commands above will build all libraries and executables.
-
-## Testing IMPACT ##
-NOTE: Disregard the testing for now, currently heavily depend on IRAD project. Will be changed as we go.
-From the build directory, execute the following command to test the installation:
-```
-$ make test
-```
-This will execute several tests in `$ROCSTAR_PROJECT_PATH/testing`. See the testing directories here for more details.
