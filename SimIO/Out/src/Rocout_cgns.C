@@ -297,7 +297,8 @@ static int WriteElements(int fn, int B, int Z, int eType, int nElems,
   // Write out the Elements_t node.
   int S = 0;
   CG_CHECK(cg_section_write, (fn, B, Z, label.c_str(), elemType, offset,
-                              offset + nElems - 1, 0, &(pData[0]), &S));
+                              offset + nElems - 1, 0, 
+			      reinterpret_cast<const cgsize_t*>(&(pData[0]) ), &S));
 
   return S;
 }
@@ -589,7 +590,7 @@ static int cg_array_core_write_internal(char const* name, CG_DataType_t dType,
       for (i=lMin[0]; i<lMax[0]; ++i,++x)
         buffer[x] = data[i+j*lSize[0]+k*lSize[0]*lSize[1]];
 
-  return cg_array_write(name, dType, rank, newSize, &buffer[0]);
+  return cg_array_write(name, dType, rank, reinterpret_cast<const cgsize_t*>(newSize), &buffer[0]);
 }
 
 static int cg_array_core_write(char const* name, CG_DataType_t dType,
@@ -602,7 +603,7 @@ static int cg_array_core_write(char const* name, CG_DataType_t dType,
   for (i=0; i<rank && full; ++i)
     full = (rind[2*i] == 0 && rind[2*i+1] == 0);
   if (full)
-    return cg_array_write(name, dType, rank, size, data);
+    return cg_array_write(name, dType, rank, reinterpret_cast<const cgsize_t*>(size), data);
 
   switch (dType) {
     case CG_Character:
@@ -726,7 +727,7 @@ static int cg_zone_find_or_create(int fn, int B, const char* name,
   std::vector<int> sz2(9);
   CG_CHECK(cg_nzones, (fn, B, &nZones));
   for (*Z=1; *Z<=nZones; ++(*Z)) {
-    CG_CHECK(cg_zone_read, (fn, B, *Z, zoneName, &(sz2[0])));
+    CG_CHECK(cg_zone_read, (fn, B, *Z, zoneName, reinterpret_cast<cgsize_t*>(&(sz2[0]))));
     if (std::strncmp(name, zoneName, 32) == 0) {
       if (sz1 != sz2) {
         // MS
@@ -750,7 +751,7 @@ static int cg_zone_find_or_create(int fn, int B, const char* name,
               << "\" with invalid dimensions { " << sizes[0] << ", " << sizes[1]
               << ", " << sizes[2] << " }" << std::endl;
 
-  CG_CHECK(cg_zone_write, (fn, B, name, sizes, zType, Z));
+  CG_CHECK(cg_zone_write, (fn, B, name, reinterpret_cast<const cgsize_t*>(sizes), zType, Z));
   return 0;
 }
 
@@ -837,7 +838,7 @@ static int cg_array_info_by_name(const char* name, int* A, CG_DataType_t* dType,
   //std::cout << __FILE__<< __LINE__ << std::endl;
   //std::cout << " nArrays = " << nArrays << std::endl;
   for (*A=1; *A<=nArrays; ++(*A)) {
-    CG_CHECK(cg_array_info, (*A, arrayName, dType, rank, size));
+    CG_CHECK(cg_array_info, (*A, arrayName, dType, rank, reinterpret_cast<cgsize_t*>(size)));
     //std::cout << " arrayName = " << arrayName << std::endl;
     if (std::strncmp(name, arrayName, 32) == 0)
       return 0;
@@ -991,7 +992,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
     // Write/rewrite the time values to the BaseIterativeData_t node.
     CG_CHECK(cg_biter_write, (fn, B, "TimeIterValues", nSteps));
     CG_CHECK(cg_goto, (fn, B, "BaseIterativeData_t", 1, "end"));
-    CG_CHECK(cg_array_write, ("TimeValues", CG_RealDouble, 1, &nSteps,
+    CG_CHECK(cg_array_write, ("TimeValues", CG_RealDouble, 1, reinterpret_cast<const cgsize_t*>(&nSteps),
                               &(times[0])));
     --nSteps;
   }
@@ -1038,7 +1039,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
      if (!mfile.empty()) {
       CG_CHECK(cg_open,
                ((prefix + mfile).c_str(), CG_MODE_READ, &meshfn));
-      cg_zone_read(meshfn, 1, 1, zName, &(sizes[0]));
+      cg_zone_read(meshfn, 1, 1, zName, reinterpret_cast<cgsize_t*>(&(sizes[0])));
       CG_CHECK(cg_close, (meshfn));
      } else {
      sizes[0] = 1;
@@ -1165,10 +1166,10 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
     CG_CHECK(cg_goto, (fn, B, "Zone_t", Z, "ZoneIterativeData_t", 1, "end"));
     //std::cout << __FILE__ << __LINE__ << std::endl;
     CG_CHECK(cg_array_write,
-             ("GridCoordinatesPointers", CG_Character, 2, size, gridNames));
+             ("GridCoordinatesPointers", CG_Character, 2, reinterpret_cast<cgsize_t*>(size), gridNames));
     //std::cout << __FILE__ << __LINE__ << std::endl;
     CG_CHECK(cg_array_write,
-             ("FlowSolutionsPointers", CG_Character, 2, size, nodeNames));
+             ("FlowSolutionsPointers", CG_Character, 2, reinterpret_cast<cgsize_t*>(size), nodeNames));
   }
   //std::cout << __FILE__ << __LINE__ << std::endl;
 
@@ -1373,7 +1374,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
           label += (char)('X' + n);
           if (writeGhost) {
             CG_CHECK(cg_array_write, (label.c_str(), COM2CGNS(dType), rank,
-                                      size, pData));
+                                      reinterpret_cast<const cgsize_t*>(size), pData));
           } else {
             CG_CHECK(cg_array_core_write, (label.c_str(), COM2CGNS(dType), rank,
                                            rind, size, pData));
@@ -1518,7 +1519,8 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
       CG_ElementType_t eType;
       int min, max, nBoundary, parent;
       for (S=1; S<=nS; ++S) {
-        CG_CHECK(cg_section_read, (mfn, mB, mZ, S, label, &eType, &min, &max,
+        CG_CHECK(cg_section_read, (mfn, mB, mZ, S, label, &eType, 
+		reinterpret_cast<cgsize_t*>(&min), reinterpret_cast<cgsize_t*>(&max),
                                    &nBoundary, &parent));
 
         CG_CHECK(cg_link_write, (label, (mfile).c_str(), (path + label).c_str()));
@@ -1638,7 +1640,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
 	//std::cout << " Zone = " << Z << " IntegralData_t = " << T << std::endl;
 	for (int ii=1; ii<=offset; ii++)
 	{
-	   cg_array_info(ii, arrName, &dT, &tt1, &tt2);
+	   cg_array_info(ii, arrName, &dT, &tt1, reinterpret_cast<cgsize_t*>(&tt2));
 	   //std::cout << "offset = " << ii <<" arrayName = " << arrName << std::endl;
 	   if ((std::string(arrName)).find(std::string((*a)->name())) != std::string::npos) {
 	      //std::cout << "The request for duplicate dataitem is ignored." << std::endl;
@@ -1731,7 +1733,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
           }
           if (writeGhost) {
             CG_CHECK(cg_array_write, (label.c_str(), COM2CGNS(dType),
-                                      1, size, pData[A]));
+		1, reinterpret_cast<const cgsize_t*>(size), pData[A]));
           } else {
             CG_CHECK(cg_array_core_write, (label.c_str(), COM2CGNS(dType),
                                            1, rind, size, pData[A]));
@@ -1781,7 +1783,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
 	//std::cout << " Zone = " << Z << " IntegralData_t = " << T << std::endl;
 	for (int ii=1; ii<=offset; ii++)
 	{
-	   cg_array_info(ii, arrName, &dT, &tt1, &tt2);
+	   cg_array_info(ii, arrName, &dT, &tt1, reinterpret_cast<cgsize_t*>(&tt2));
 	   //std::cout << "offset = " << ii <<" arrayName = " << arrName << std::endl;
 	   if ((std::string(arrName)).find(std::string((*a)->name())) != std::string::npos) {
 	      //std::cout << "The request for duplicate dataitem is ignored." << std::endl;
@@ -1876,7 +1878,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
           }
           if (writeGhost) {
             CG_CHECK(cg_array_write, (label.c_str(), COM2CGNS(dType),
-                                      1, size, pData[A]));
+                                      1, reinterpret_cast<cgsize_t*>(size), pData[A]));
           } else {
             CG_CHECK(cg_array_core_write, (label.c_str(), COM2CGNS(dType),
                                            1, rind, size, pData[A]));
@@ -2123,7 +2125,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
           }
           if (writeGhost) {
             CG_CHECK(cg_array_write, (label.c_str(), COM2CGNS(dType),
-                                      1, size, pData[A]));
+                                      1, reinterpret_cast<cgsize_t*>(size), pData[A]));
           } else {
             CG_CHECK(cg_array_core_write, (label.c_str(), COM2CGNS(dType),
                                            1, rind, size, pData[A]));
@@ -2278,7 +2280,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
                       << ", rank == " << rank << ", size[] = { " << size[0]
                       << ", " << size[1] << ", " << size[2] << " } )");
             CG_CHECK(cg_array_write, (label.c_str(), COM2CGNS(dType),
-                                      rank, size, pData[A]));
+                                      rank, reinterpret_cast<cgsize_t*>(size), pData[A]));
           } else {
             DEBUG_MSG("Calling cg_array_core_write( name == '" << label
                       << "', dataType == "
@@ -2370,7 +2372,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
 	//std::cout << " Read offset = " << offset << std::endl;
 	for (int ii=1; ii<=offset; ii++)
 	{
-	   cg_array_info(ii, arrName, &dT, &tt1, &tt2);
+	   cg_array_info(ii, arrName, &dT, &tt1, reinterpret_cast<cgsize_t*>(&tt2));
 	   //std::cout << "offset = " << ii <<" arrayName = " << arrName << std::endl;
 	   if ((std::string(arrName)).find(std::string((*a)->name())) != std::string::npos) {
 	      //std::cout << "The request for duplicate dataitem is ignored." << std::endl;
@@ -2490,7 +2492,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
                       << ", rank == " << rank << ", size[] = { " << size[0]
                       << ", " << size[1] << ", " << size[2] << " } )");
             CG_CHECK(cg_array_write, (label.c_str(), COM2CGNS(dType),
-                                      rank, size, pData[A]));
+                                      rank, reinterpret_cast<cgsize_t*>(size), pData[A]));
           } else {
             DEBUG_MSG("Calling cg_array_core_write( name == '" << label
                       << "', dataType == "

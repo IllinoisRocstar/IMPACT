@@ -34,6 +34,7 @@ IF(ENABLE_CGNS)
   find_library(CGNS_LIB cgns)
   find_path(CGNS_INC cgnslib.h)
   add_definitions ( -DUSE_CGNS )
+  INCLUDE_DIRECTORIES(${CGNS_INC})
 ENDIF()
 
 # HDF4 libs

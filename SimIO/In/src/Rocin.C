@@ -1298,7 +1298,7 @@ static void scan_files_CGNS( int pathc, char* pathv[],
         std::string units;
         char zoneName[33];
         int gridSize[3], coreSize[9];
-        CG_CHECK_RET(cg_zone_read, (fn, B, Z, zoneName, coreSize), continue);
+        CG_CHECK_RET(cg_zone_read, (fn, B, Z, zoneName, reinterpret_cast<cgsize_t*>(coreSize)), continue);
 
         CG_ZoneType_t zoneType;
         CG_CHECK_RET(cg_zone_type, (fn, B, Z, &zoneType), continue);
@@ -1399,7 +1399,9 @@ static void scan_files_CGNS( int pathc, char* pathv[],
             CG_ElementType_t elemType;
             int iStart, iEnd, iBoundry, pFlag;
             CG_CHECK_RET(cg_section_read,
-                         (fn, B, Z, S, buffer, &elemType, &iStart, &iEnd, &iBoundry, &pFlag),
+                         (fn, B, Z, S, buffer, &elemType, 
+			  reinterpret_cast<cgsize_t*>(&iStart), 
+			  reinterpret_cast<cgsize_t*>(&iEnd), &iBoundry, &pFlag),
                          delete block; continue);
 
             int nElems = iEnd - iStart + 1;
@@ -1466,7 +1468,8 @@ static void scan_files_CGNS( int pathc, char* pathv[],
 
                 CG_DataType_t dataType;
                 int rank, size[3];
-                CG_CHECK_RET(cg_array_info, (A, buffer, &dataType, &rank, size),
+                CG_CHECK_RET(cg_array_info, (A, buffer, &dataType, &rank, 
+			     reinterpret_cast<cgsize_t*>(size)),
                              continue);
 
                 CG_CHECK_RET(cg_goto, (fn, B, "IntegralData_t", I, "DataArray_t", A, "end"),
@@ -1582,7 +1585,8 @@ static void scan_files_CGNS( int pathc, char* pathv[],
 
                 CG_DataType_t dataType;
                 int rank, size[3];
-                CG_CHECK_RET(cg_array_info, (A, buffer, &dataType, &rank, size),
+                CG_CHECK_RET(cg_array_info, (A, buffer, &dataType, &rank, 
+			     reinterpret_cast<cgsize_t*>(size)),
                              continue);
 
                 CG_CHECK_RET(cg_goto,
@@ -1833,7 +1837,8 @@ static void scan_files_CGNS( int pathc, char* pathv[],
 
               CG_DataType_t dataType;
               int rank, size[3];
-              CG_CHECK_RET(cg_array_info, (A, buffer, &dataType, &rank, size),
+              CG_CHECK_RET(cg_array_info, (A, buffer, &dataType, &rank, 
+			   reinterpret_cast<cgsize_t*>(size)),
                            continue);
               std::string label = buffer;
 
@@ -1998,7 +2003,8 @@ static void load_data_CGNS( BlockMM_CGNS::iterator p,
           in >> nn;
           std::vector<int> cbuf((*s).m_numElements * nn);
           CG_CHECK_RET(cg_elements_read,
-                       (fn, block->m_B, block->m_Z, i, &cbuf[0], NULL),
+                       (fn, block->m_B, block->m_Z, i, 
+		       reinterpret_cast<cgsize_t*>(&cbuf[0]), NULL),
                        continue);
 
           // Scramble the conn table the way Roccom likes it.
