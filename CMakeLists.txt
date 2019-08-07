@@ -33,6 +33,7 @@ IF(ENABLE_CGNS)
   find_package(HDF5)
   find_library(CGNS_LIB cgns)
   find_path(CGNS_INC cgnslib.h)
+  include_directories(${CGNS_INC})
   add_definitions ( -DUSE_CGNS )
 ENDIF()
 
