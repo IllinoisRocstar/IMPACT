@@ -1,39 +1,42 @@
 //
 //  Copyright@2013, Illinois Rocstar LLC. All rights reserved.
-//        
+//
 //  See LICENSE file included with this source or
-//  (opensource.org/licenses/NCSA) for license information. 
+//  (opensource.org/licenses/NCSA) for license information.
 //
 
-#include <functional>
 #include <cmath>
 #include <cstdlib>
+#include <functional>
 #include <iostream>
 #include "Rocblas.h"
 
-//Function object that implements an assignment.
+// Function object that implements an assignment.
 template <class T_src, class T_trg>
-struct Rocblas::assn : std::unary_function<T_src,T_trg> {
-  void operator()(T_trg &x, const T_src &y) 
-  { x = y; }
+struct Rocblas::assn : std::unary_function<T_src, T_trg> {
+  void operator()(T_trg &x, const T_src &y) { x = y; }
 };
 
-//Function object that implements a random number generator.
+// Function object that implements a random number generator.
 template <class T>
-struct Rocblas::random : std::unary_function<T,T> {
-  void operator()(T &z, const T &a) 
-  { int s = std::rand(); z = s%a; }
+struct Rocblas::random : std::unary_function<T, T> {
+  void operator()(T &z, const T &a) {
+    int s = std::rand();
+    z = s % a;
+  }
 };
 
 template <>
-struct Rocblas::random<double> : std::unary_function<double,double> {
-  void operator()(double &z, const double &a) 
-  { int s = std::rand(); z = (a*s)/RAND_MAX; }
+struct Rocblas::random<double> : std::unary_function<double, double> {
+  void operator()(double &z, const double &a) {
+    int s = std::rand();
+    z = (a * s) / RAND_MAX;
+  }
 };
 
-//Function object that implements a swap.
+// Function object that implements a swap.
 template <class T>
-struct Rocblas::swapp : std::unary_function<T,T> {
+struct Rocblas::swapp : std::unary_function<T, T> {
   void operator()(T &x, T &y) {
     T temp = x;
     x = y;
@@ -41,729 +44,753 @@ struct Rocblas::swapp : std::unary_function<T,T> {
   }
 };
 
-//Function object that implements a max operation.
+// Function object that implements a max operation.
 template <class T>
-struct Rocblas::maxv : std::unary_function<T,T> {
-  void operator()(const T &x, T &y) {
-    y = std::max( x, y);
-  }
+struct Rocblas::maxv : std::unary_function<T, T> {
+  void operator()(const T &x, T &y) { y = std::max(x, y); }
 };
 
-//Function object that implements a min operation.
+// Function object that implements a min operation.
 template <class T>
-struct Rocblas::minv : std::unary_function<T,T> {
-  void operator()(const T &x, T &y) {
-    y = std::min( x, y);
-  }
+struct Rocblas::minv : std::unary_function<T, T> {
+  void operator()(const T &x, T &y) { y = std::min(x, y); }
 };
 
-//Function object that implements a sum operation.
+// Function object that implements a sum operation.
 template <class T>
-struct Rocblas::sumv : std::unary_function<T,T> {
-  void operator()(const T &x, T &y) {
-    y = x + y;
-  }
+struct Rocblas::sumv : std::unary_function<T, T> {
+  void operator()(const T &x, T &y) { y = x + y; }
 };
 
-//Function object that implements a negation.
+// Function object that implements a negation.
 template <class T>
-struct Rocblas::nega : std::unary_function<T,T> {
-  void operator()(T &x, const T &y) {
-    x = -y;
-  }
+struct Rocblas::nega : std::unary_function<T, T> {
+  void operator()(T &x, const T &y) { x = -y; }
 };
 
-//Function object that implements sqrt.
+// Function object that implements sqrt.
 template <class T>
-struct Rocblas::sqrta : std::unary_function<T,T> {
-  void operator()(T &x, const T &y) {
-    x = (T)std::sqrt((double)y);
-  }
+struct Rocblas::sqrta : std::unary_function<T, T> {
+  void operator()(T &x, const T &y) { x = (T)std::sqrt((double)y); }
 };
 
-//Function object that implements acos.
+// Function object that implements acos.
 template <class T>
-struct Rocblas::acosa : std::unary_function<T,T> {
-  void operator()(T &x, const T &y) {
-    x = (T)std::acos((double)y);
-  }
+struct Rocblas::acosa : std::unary_function<T, T> {
+  void operator()(T &x, const T &y) { x = (T)std::acos((double)y); }
 };
 
-template < class T1, class T2> bool compare_types() { return true; }
-template <> bool compare_types<int,int>() { return false; }
-template <> bool compare_types<char,char>() { return false; }
-template <> bool compare_types<double,double>() { return false; }
+template <class T1, class T2>
+bool compare_types() {
+  return true;
+}
+template <>
+bool compare_types<int, int>() {
+  return false;
+}
+template <>
+bool compare_types<char, char>() {
+  return false;
+}
+template <>
+bool compare_types<double, double>() {
+  return false;
+}
 
 // Performs the operation:  y op z
 template <class FuncType, int ytype>
-void Rocblas::gen2arg( DataItem *z, void *yin, FuncType opp) {
-  typedef typename FuncType::argument_type  argument_type;
-  typedef typename FuncType::result_type    result_type;
-  
+void Rocblas::gen2arg(DataItem *z, void *yin, FuncType opp) {
+  typedef typename FuncType::argument_type argument_type;
+  typedef typename FuncType::result_type result_type;
+
   int num_dims = z->size_of_components();
 
-  std::vector<Pane*> zpanes;
-  std::vector<Pane*>::iterator zit, zend;
+  std::vector<Pane *> zpanes;
+  std::vector<Pane *>::iterator zit, zend;
   z->window()->panes(zpanes);
 
-  std::vector<Pane*> ypanes;
-  Pane **yit=NULL;
-  DataItem *y=NULL;
-  argument_type *yval=NULL;
-  
-  if ( ytype == BLAS_VOID) {
-    yval = reinterpret_cast<argument_type *>( yin);
+  std::vector<Pane *> ypanes;
+  Pane **yit = NULL;
+  DataItem *y = NULL;
+  argument_type *yval = NULL;
 
-    COM_assertion_msg( yval, std::string("Caught NULL pointer in scalar \
-operand when processing "+z->fullname()).c_str());
-  }
-  else {
+  if (ytype == BLAS_VOID) {
+    yval = reinterpret_cast<argument_type *>(yin);
+
+    COM_assertion_msg(yval, std::string("Caught NULL pointer in scalar \
+operand when processing " + z->fullname())
+                                .c_str());
+  } else {
     y = reinterpret_cast<DataItem *>(yin);
-    bool type_coercion = compare_types<argument_type,result_type>();
+    bool type_coercion = compare_types<argument_type, result_type>();
 
-    COM_assertion_msg( type_coercion || 
-		       COM_compatible_types(z->data_type(), y->data_type()),
-		       (std::string("Incompatible data types between ")+
-			z->fullname()+" and "+y->fullname()).c_str());
+    COM_assertion_msg(
+        type_coercion || COM_compatible_types(z->data_type(), y->data_type()),
+        (std::string("Incompatible data types between ") + z->fullname() +
+         " and " + y->fullname())
+            .c_str());
 
-    if ( !y->is_windowed()) {
+    if (!y->is_windowed()) {
       y->window()->panes(ypanes);
       COM_assertion_msg(zpanes.size() == ypanes.size(),
-			(std::string("Numbers of panes do not match between ")+
-			 y->window()->name()+" and "+z->window()->name()).c_str());
+                        (std::string("Numbers of panes do not match between ") +
+                         y->window()->name() + " and " + z->window()->name())
+                            .c_str());
       yit = &ypanes[0];
-    }
-    else {
-      if ( y->size_of_items()!=1) {
-	std::cout << "Rocbals Error: The size-of-items of dataitem "
-		  << y->fullname() << " on pane " << y->pane()->id()
-		  << " is " << y->size_of_items() << std::endl;
-	COM_assertion_msg( y->size_of_items()==1, "If an argument is a window \
+    } else {
+      if (y->size_of_items() != 1) {
+        std::cout << "Rocbals Error: The size-of-items of dataitem "
+                  << y->fullname() << " on pane " << y->pane()->id() << " is "
+                  << y->size_of_items() << std::endl;
+        COM_assertion_msg(y->size_of_items() == 1,
+                          "If an argument is a window \
 dataitem, then its number of items must be 1.");
       }
 
-      yval = reinterpret_cast<argument_type *>( y->pointer());
+      yval = reinterpret_cast<argument_type *>(y->pointer());
 
-      COM_assertion_msg( yval, (std::string("Caught NULL pointer in ")+
-				y->fullname()).c_str());
+      COM_assertion_msg(
+          yval,
+          (std::string("Caught NULL pointer in ") + y->fullname()).c_str());
     }
   }
 
-  const int ynum_dims = ytype != BLAS_VOID?y->size_of_components():0;
-  COM_assertion_msg( ytype==BLAS_VOID || (ynum_dims==1 || ynum_dims==num_dims),
-		     (std::string("Numbers of components do not match between ")+
-		      y->fullname()+" and "+z->fullname()).c_str());
+  const int ynum_dims = ytype != BLAS_VOID ? y->size_of_components() : 0;
+  COM_assertion_msg(
+      ytype == BLAS_VOID || (ynum_dims == 1 || ynum_dims == num_dims),
+      (std::string("Numbers of components do not match between ") +
+       y->fullname() + " and " + z->fullname())
+          .c_str());
 
-  if ( z->is_windowed()) {
-    COM_assertion_msg( ytype == BLAS_VOID || y->is_windowed(),
-		       (std::string("Wrong type of operand")+
-			y->fullname()).c_str());
-    int zs=get_stride<BLAS_VEC2D>(z);
-    int ys=get_stride<ytype>(y);
+  if (z->is_windowed()) {
+    COM_assertion_msg(
+        ytype == BLAS_VOID || y->is_windowed(),
+        (std::string("Wrong type of operand") + y->fullname()).c_str());
+    int zs = get_stride<BLAS_VEC2D>(z);
+    int ys = get_stride<ytype>(y);
     result_type *zval = (result_type *)z->pointer();
-    int   length = z->size_of_items();
+    int length = z->size_of_items();
 
-    COM_assertion_msg( length==0 || ytype == BLAS_VOID || zval && yval, 
-		       (std::string("Caught NULL pointer in w-dataitem ")+
-			z->fullname()+" or "+y->fullname()).c_str());
+    COM_assertion_msg(length == 0 || ytype == BLAS_VOID || (zval && yval),
+                      (std::string("Caught NULL pointer in w-dataitem ") +
+                       z->fullname() + " or " + y->fullname())
+                          .c_str());
 
-    if (  (length==1 || num_dims == zs) && ytype != BLAS_VEC) {
-      for ( Size i = 0, s = num_dims*length; i < s; ++i, ++zval)
-	opp( *zval, getref<argument_type,ytype,0>(yval,i,0,1));
-    }
-    else {
-      for(int i = 0; i < num_dims; ++i) {
-	DataItem *z_i = num_dims==1?z:z+i+1;
-	zval = (result_type *)z_i->pointer();
-	zs = get_stride<BLAS_VEC2D>(z_i);
+    if ((length == 1 || num_dims == zs) && ytype != BLAS_VEC) {
+      for (Size i = 0, s = num_dims * length; i < s; ++i, ++zval)
+        opp(*zval, getref<argument_type, ytype, 0>(yval, i, 0, 1));
+    } else {
+      for (int i = 0; i < num_dims; ++i) {
+        DataItem *z_i = num_dims == 1 ? z : z + i + 1;
+        zval = (result_type *)z_i->pointer();
+        zs = get_stride<BLAS_VEC2D>(z_i);
 
-	if ( ytype != BLAS_VOID) {
-	  DataItem *y_i=ynum_dims==1?y:y+i+1;
-	  yval = reinterpret_cast<argument_type *>( y_i->pointer());
-	  ys = get_stride<ytype>( y_i);
-	}
+        if (ytype != BLAS_VOID) {
+          DataItem *y_i = ynum_dims == 1 ? y : y + i + 1;
+          yval = reinterpret_cast<argument_type *>(y_i->pointer());
+          ys = get_stride<ytype>(y_i);
+        }
 
-	for(int j=0; j<length; ++j, zval+=zs)
-	  opp( *zval, getref<argument_type,ytype,1>(yval,j,i,ys));
+        for (int j = 0; j < length; ++j, zval += zs)
+          opp(*zval, getref<argument_type, ytype, 1>(yval, j, i, ys));
       }
     }
     return;
   }
   // otherwise:
-  
-  for( zit=zpanes.begin(), zend=zpanes.end(); zit!=zend; 
-       ++zit, yit+=( ytype!=BLAS_VOID&&yit)) {
-    DataItem *pz = (*zit)->dataitem(z->id());
-    const int  length = pz->size_of_items();
-    int  zstrd=get_stride<BLAS_VEC2D>(pz);
-    const bool zstg = length>1 && num_dims!=zstrd;
 
-    DataItem *py = ytype!=BLAS_VOID&&yit?(*yit)->dataitem(y->id()):y;
+  for (zit = zpanes.begin(), zend = zpanes.end(); zit != zend;
+       ++zit, yit += (ytype != BLAS_VOID && yit)) {
+    DataItem *pz = (*zit)->dataitem(z->id());
+    const int length = pz->size_of_items();
+    int zstrd = get_stride<BLAS_VEC2D>(pz);
+    const bool zstg = length > 1 && num_dims != zstrd;
+
+    DataItem *py = ytype != BLAS_VOID && yit ? (*yit)->dataitem(y->id()) : y;
     int ystrd = get_stride<ytype>(py);
-    const bool ystg = py && (ynum_dims!=num_dims || ynum_dims!=ystrd);
-    COM_assertion_msg( ytype!=BLAS_SCNE && ytype!=BLAS_VEC2D ||
-		       length == int(py->size_of_items()) || ystrd==0,
-		       (std::string("Numbers of items do not match between ")+
-			y->fullname()+" and "+z->fullname()+
-			" on pane "+to_str((*zit)->id())).c_str());
+    const bool ystg = py && (ynum_dims != num_dims || ynum_dims != ystrd);
+    COM_assertion_msg(
+        (ytype != BLAS_SCNE && ytype != BLAS_VEC2D) ||
+            length == int(py->size_of_items()) || ystrd == 0,
+        (std::string("Numbers of items do not match between ") + y->fullname() +
+         " and " + z->fullname() + " on pane " + to_str((*zit)->id()))
+            .c_str());
 
     // Optimized version for contiguous dataitems
-    if ( !zstg && !ystg && ytype != BLAS_VEC &&
-	 (ytype != BLAS_SCNE || num_dims==1)) {
+    if (!zstg && !ystg && ytype != BLAS_VEC &&
+        (ytype != BLAS_SCNE || num_dims == 1)) {
       result_type *zval = reinterpret_cast<result_type *>(pz->pointer());
 
-      if ( ytype != BLAS_VOID && yit)
-	yval = reinterpret_cast<argument_type *>(py->pointer());
+      if (ytype != BLAS_VOID && yit)
+        yval = reinterpret_cast<argument_type *>(py->pointer());
 
-	COM_assertion_msg( length==0 || ytype == BLAS_VOID || zval && yval, 
-			   (std::string("Caught NULL pointer in ")+
-			    z->fullname()+" or "+y->fullname()+" on pane "+
-			    to_str( (*zit)->id())).c_str());
+      COM_assertion_msg(
+          length == 0 || ytype == BLAS_VOID || (zval && yval),
+          (std::string("Caught NULL pointer in ") + z->fullname() + " or " +
+           y->fullname() + " on pane " + to_str((*zit)->id()))
+              .c_str());
 
-      if ( zval) 
-	//Loop for each element/node and for each dimension
-	for(int i = 0, s = length*num_dims; i < s; ++i, ++zval)
-	  opp(*zval, getref<argument_type,ytype,0>(yval,i,0,1));
-    }
-    else { // General version
-      //Loop for each dimension.
-      for(int i = 0; i < num_dims; ++i) {
-	DataItem *pz_i = num_dims==1?pz:(*zit)->dataitem(z->id()+i+1);
-	result_type *zval = (result_type *)pz_i->pointer();
-	zstrd=get_stride<BLAS_VEC2D>(pz_i);
+      if (zval)
+        // Loop for each element/node and for each dimension
+        for (int i = 0, s = length * num_dims; i < s; ++i, ++zval)
+          opp(*zval, getref<argument_type, ytype, 0>(yval, i, 0, 1));
+    } else {  // General version
+      // Loop for each dimension.
+      for (int i = 0; i < num_dims; ++i) {
+        DataItem *pz_i = num_dims == 1 ? pz : (*zit)->dataitem(z->id() + i + 1);
+        result_type *zval = (result_type *)pz_i->pointer();
+        zstrd = get_stride<BLAS_VEC2D>(pz_i);
 
-	if ( ytype != BLAS_VOID && yit) {
-	  DataItem *py_i=ynum_dims==1?py:(*yit)->dataitem(y->id()+i+1);
-	  yval = reinterpret_cast<argument_type *>( py_i->pointer());
-	  ystrd = get_stride<ytype>( py_i);
-	}
+        if (ytype != BLAS_VOID && yit) {
+          DataItem *py_i =
+              ynum_dims == 1 ? py : (*yit)->dataitem(y->id() + i + 1);
+          yval = reinterpret_cast<argument_type *>(py_i->pointer());
+          ystrd = get_stride<ytype>(py_i);
+        }
 
-	COM_assertion_msg( length==0 || ytype == BLAS_VOID || zval && yval, 
-			   (std::string("Caught NULL pointer in ")+
-			    z->fullname()+" or "+y->fullname()+" on pane "+
-			    to_str( (*zit)->id())).c_str());
+        COM_assertion_msg(
+            length == 0 || ytype == BLAS_VOID || (zval && yval),
+            (std::string("Caught NULL pointer in ") + z->fullname() + " or " +
+             y->fullname() + " on pane " + to_str((*zit)->id()))
+                .c_str());
 
-	if ( zval) 
-	  for(int j=0; j < length; ++j, zval+=zstrd) 
-	    opp( *zval, getref<argument_type,ytype,1>(yval,j,i,ystrd));
+        if (zval)
+          for (int j = 0; j < length; ++j, zval += zstrd)
+            opp(*zval, getref<argument_type, ytype, 1>(yval, j, i, ystrd));
       }
     }
   }
 }
 
-
-//Wrapper for swap.
+// Wrapper for swap.
 void Rocblas::swap(DataItem *x, DataItem *y) {
-  switch ( x->id()) {
-  case COM::COM_DATA: {
-    COM_assertion_msg( y->id() == COM::COM_DATA,
-		       "Aggregate dataitems for swap must match.");
+  switch (x->id()) {
+    case COM::COM_DATA: {
+      COM_assertion_msg(y->id() == COM::COM_DATA,
+                        "Aggregate dataitems for swap must match.");
 
-    // Obtain all the dataitems of their corresponding windows
-    std::vector< DataItem*>  x_attrs;
-    x->window()->dataitems( x_attrs);
+      // Obtain all the dataitems of their corresponding windows
+      std::vector<DataItem *> x_attrs;
+      x->window()->dataitems(x_attrs);
 
-    std::vector< DataItem*>  y_attrs;
-    y->window()->dataitems( y_attrs);
-    
-    COM_assertion_msg( x_attrs.size() == y_attrs.size(),
-		       (std::string("Numbers of dataitems do not match between ")+
-			x->window()->name()+" and "+y->window()->name()).c_str());
-    // Copy all the individual dataitems
-    for ( int i=x_attrs.size()-1; i>=0; --i)
-      swap( x_attrs[i], y_attrs[i]);
-    return;
-  }
-  case COM::COM_MESH:
-  case COM::COM_PMESH:
-  case COM::COM_CONN:
-  case COM::COM_ALL:
-    COM_assertion_msg(false, "Only the aggregate dataitem atts is supported");
-  default: ;
+      std::vector<DataItem *> y_attrs;
+      y->window()->dataitems(y_attrs);
+
+      COM_assertion_msg(
+          x_attrs.size() == y_attrs.size(),
+          (std::string("Numbers of dataitems do not match between ") +
+           x->window()->name() + " and " + y->window()->name())
+              .c_str());
+      // Copy all the individual dataitems
+      for (int i = x_attrs.size() - 1; i >= 0; --i)
+        swap(x_attrs[i], y_attrs[i]);
+      return;
+    }
+    case COM::COM_MESH:
+    case COM::COM_PMESH:
+    case COM::COM_CONN:
+    case COM::COM_ALL:
+      COM_assertion_msg(false, "Only the aggregate dataitem atts is supported");
+    default:;
   }
 
   COM_Type att_type = x->data_type();
 
-  if(att_type == COM_INT || att_type == COM_INTEGER)
-    gen2arg<swapp<int>,BLAS_VEC2D>(x, y, swapp<int>());
-  else if(att_type == COM_CHAR)
-    gen2arg<swapp<char>,BLAS_VEC2D>(x, y, swapp<char>());
+  if (att_type == COM_INT || att_type == COM_INTEGER)
+    gen2arg<swapp<int>, BLAS_VEC2D>(x, y, swapp<int>());
+  else if (att_type == COM_CHAR)
+    gen2arg<swapp<char>, BLAS_VEC2D>(x, y, swapp<char>());
   else {
-    COM_assertion_msg(att_type == COM_DOUBLE || att_type == COM_DOUBLE_PRECISION,
-		      (std::string("Unsupported data type in ")+
-		       x->fullname()).c_str());
-    gen2arg<swapp<double>,BLAS_VEC2D>(x, y, swapp<double>());
+    COM_assertion_msg(
+        att_type == COM_DOUBLE || att_type == COM_DOUBLE_PRECISION,
+        (std::string("Unsupported data type in ") + x->fullname()).c_str());
+    gen2arg<swapp<double>, BLAS_VEC2D>(x, y, swapp<double>());
   }
 }
 
-template < class Op>
-void Rocblas::copy_helper( const DataItem *x, DataItem *z) {
+template <class Op>
+void Rocblas::copy_helper(const DataItem *x, DataItem *z) {
   int xncomp = x->size_of_components();
 
-  if ( x->is_windowed()) {
-    if ( xncomp == 1)
-      gen2arg<Op,BLAS_SCALAR>(z, const_cast<DataItem*>(x), Op());
+  if (x->is_windowed()) {
+    if (xncomp == 1)
+      gen2arg<Op, BLAS_SCALAR>(z, const_cast<DataItem *>(x), Op());
     else
-      gen2arg<Op,BLAS_VEC>(z, const_cast<DataItem*>(x), Op());
-  }
-  else {
-    if ( xncomp == 1)
-      gen2arg<Op,BLAS_SCNE>(z, const_cast<DataItem*>(x), Op());
+      gen2arg<Op, BLAS_VEC>(z, const_cast<DataItem *>(x), Op());
+  } else {
+    if (xncomp == 1)
+      gen2arg<Op, BLAS_SCNE>(z, const_cast<DataItem *>(x), Op());
     else
-      gen2arg<Op,BLAS_VEC2D>(z, const_cast<DataItem*>(x), Op());
+      gen2arg<Op, BLAS_VEC2D>(z, const_cast<DataItem *>(x), Op());
   }
 }
 
-//Wrapper for copy.
+// Wrapper for copy.
 void Rocblas::copy(const DataItem *x, DataItem *z) {
-  switch ( x->id()) {
-  case COM::COM_DATA: {
-    COM_assertion_msg( z->id() == COM::COM_DATA,
-		       "Aggregate dataitems for copy must match.");
+  switch (x->id()) {
+    case COM::COM_DATA: {
+      COM_assertion_msg(z->id() == COM::COM_DATA,
+                        "Aggregate dataitems for copy must match.");
 
-    // Obtain all the dataitems of their corresponding windows
-    std::vector< const DataItem*>  x_attrs;
-    x->window()->dataitems( x_attrs);
+      // Obtain all the dataitems of their corresponding windows
+      std::vector<const DataItem *> x_attrs;
+      x->window()->dataitems(x_attrs);
 
-    std::vector< DataItem*>  z_attrs;
-    z->window()->dataitems( z_attrs);
-    
-    // Copy all the individual dataitems
-    COM_assertion_msg( x_attrs.size() == z_attrs.size(),
-		       (std::string("Numbers of dataitems do not match between ")+
-			x->window()->name()+" and "+z->window()->name()).c_str());
+      std::vector<DataItem *> z_attrs;
+      z->window()->dataitems(z_attrs);
 
-    for ( int i=x_attrs.size()-1; i>=0; --i)
-      copy( x_attrs[i], z_attrs[i]);
-    return;
-  }
-  case COM::COM_MESH:
-  case COM::COM_PMESH:
-  case COM::COM_CONN:
-  case COM::COM_ALL:
-    COM_assertion_msg(false, "Only the aggregate dataitem atts is supported");
-  default: ;
+      // Copy all the individual dataitems
+      COM_assertion_msg(
+          x_attrs.size() == z_attrs.size(),
+          (std::string("Numbers of dataitems do not match between ") +
+           x->window()->name() + " and " + z->window()->name())
+              .c_str());
+
+      for (int i = x_attrs.size() - 1; i >= 0; --i)
+        copy(x_attrs[i], z_attrs[i]);
+      return;
+    }
+    case COM::COM_MESH:
+    case COM::COM_PMESH:
+    case COM::COM_CONN:
+    case COM::COM_ALL:
+      COM_assertion_msg(false, "Only the aggregate dataitem atts is supported");
+    default:;
   }
 
   COM_Type src_type = x->data_type(), trg_type = z->data_type();
 
-  if ( src_type == COM_INT || src_type == COM_INTEGER) {
-    if ( trg_type == COM_DOUBLE || trg_type == COM_DOUBLE_PRECISION)
-      copy_helper<assn<int,double> >( x, z);
+  if (src_type == COM_INT || src_type == COM_INTEGER) {
+    if (trg_type == COM_DOUBLE || trg_type == COM_DOUBLE_PRECISION)
+      copy_helper<assn<int, double>>(x, z);
     else
-      copy_helper<assn<int,int> >( x, z);
-  }
-  else if ( src_type == COM_CHAR) {
-    if ( trg_type == COM_INT || trg_type == COM_INTEGER)
-      copy_helper<assn<char,int> >( x, z);
-    else if ( trg_type == COM_DOUBLE || trg_type == COM_DOUBLE_PRECISION)
-      copy_helper<assn<char,double> >( x, z);
+      copy_helper<assn<int, int>>(x, z);
+  } else if (src_type == COM_CHAR) {
+    if (trg_type == COM_INT || trg_type == COM_INTEGER)
+      copy_helper<assn<char, int>>(x, z);
+    else if (trg_type == COM_DOUBLE || trg_type == COM_DOUBLE_PRECISION)
+      copy_helper<assn<char, double>>(x, z);
     else
-      copy_helper<assn<char,char> >( x, z);
-  }
-  else {
-    COM_assertion_msg( src_type==COM_DOUBLE || src_type==COM_DOUBLE_PRECISION,
-		       (std::string("Unsupported data type in ")+
-			x->fullname()).c_str());
-    copy_helper<assn<double,double> >( x, z);
+      copy_helper<assn<char, char>>(x, z);
+  } else {
+    COM_assertion_msg(
+        src_type == COM_DOUBLE || src_type == COM_DOUBLE_PRECISION,
+        (std::string("Unsupported data type in ") + x->fullname()).c_str());
+    copy_helper<assn<double, double>>(x, z);
   }
 }
 
-//Wrapper for rand.
+// Wrapper for rand.
 void Rocblas::rand(const DataItem *x, DataItem *z) {
-  switch ( x->id()) {
-  case COM::COM_DATA: {
-    COM_assertion_msg( z->id() == COM::COM_DATA,
-		       "Aggregate dataitems for copy must match.");
+  switch (x->id()) {
+    case COM::COM_DATA: {
+      COM_assertion_msg(z->id() == COM::COM_DATA,
+                        "Aggregate dataitems for copy must match.");
 
-    // Obtain all the dataitems of their corresponding windows
-    std::vector< const DataItem*>  x_attrs;
-    x->window()->dataitems( x_attrs);
+      // Obtain all the dataitems of their corresponding windows
+      std::vector<const DataItem *> x_attrs;
+      x->window()->dataitems(x_attrs);
 
-    std::vector< DataItem*>  z_attrs;
-    z->window()->dataitems( z_attrs);
-    
-    // Copy all the individual dataitems
-    COM_assertion_msg( x_attrs.size() == z_attrs.size(),
-		       (std::string("Numbers of dataitems do not match between ")+
-			x->window()->name()+" and "+z->window()->name()).c_str());
+      std::vector<DataItem *> z_attrs;
+      z->window()->dataitems(z_attrs);
 
-    for ( int i=x_attrs.size()-1; i>=0; --i)
-      rand( x_attrs[i], z_attrs[i]);
-    return;
-  }
-  case COM::COM_MESH:
-  case COM::COM_PMESH:
-  case COM::COM_CONN:
-  case COM::COM_ALL:
-    COM_assertion_msg(false, "Only the aggregate dataitem atts is supported");
-  default: ;
+      // Copy all the individual dataitems
+      COM_assertion_msg(
+          x_attrs.size() == z_attrs.size(),
+          (std::string("Numbers of dataitems do not match between ") +
+           x->window()->name() + " and " + z->window()->name())
+              .c_str());
+
+      for (int i = x_attrs.size() - 1; i >= 0; --i)
+        rand(x_attrs[i], z_attrs[i]);
+      return;
+    }
+    case COM::COM_MESH:
+    case COM::COM_PMESH:
+    case COM::COM_CONN:
+    case COM::COM_ALL:
+      COM_assertion_msg(false, "Only the aggregate dataitem atts is supported");
+    default:;
   }
 
   COM_Type att_type = x->data_type();
   const int xncomp = x->size_of_components();
 
-  if ( att_type == COM_INT || att_type == COM_INTEGER) {
-    if ( x->is_windowed()) {
-      if ( xncomp == 1)
-	gen2arg<random<int>,BLAS_SCALAR>(z, const_cast<DataItem*>(x), random<int>());
+  if (att_type == COM_INT || att_type == COM_INTEGER) {
+    if (x->is_windowed()) {
+      if (xncomp == 1)
+        gen2arg<random<int>, BLAS_SCALAR>(z, const_cast<DataItem *>(x),
+                                          random<int>());
       else
-	gen2arg<random<int>,BLAS_VEC>(z, const_cast<DataItem*>(x), random<int>());
+        gen2arg<random<int>, BLAS_VEC>(z, const_cast<DataItem *>(x),
+                                       random<int>());
+    } else {
+      if (xncomp == 1)
+        gen2arg<random<int>, BLAS_SCNE>(z, const_cast<DataItem *>(x),
+                                        random<int>());
+      else
+        gen2arg<random<int>, BLAS_VEC2D>(z, const_cast<DataItem *>(x),
+                                         random<int>());
     }
-    else {
-      if ( xncomp == 1)
-	gen2arg<random<int>,BLAS_SCNE>(z, const_cast<DataItem*>(x), random<int>());
+  } else {
+    COM_assertion_msg(
+        att_type == COM_DOUBLE || att_type == COM_DOUBLE_PRECISION,
+        (std::string("Unsupported data type in ") + x->fullname()).c_str());
+    if (x->is_windowed()) {
+      if (xncomp == 1)
+        gen2arg<random<double>, BLAS_SCALAR>(z, const_cast<DataItem *>(x),
+                                             random<double>());
       else
-	gen2arg<random<int>,BLAS_VEC2D>(z, const_cast<DataItem*>(x), random<int>());
-    }
-  }
-  else {
-    COM_assertion_msg( att_type==COM_DOUBLE || att_type==COM_DOUBLE_PRECISION,
-		       (std::string("Unsupported data type in ")+
-			x->fullname()).c_str());
-    if ( x->is_windowed()) {
-      if ( xncomp == 1)
-	gen2arg<random<double>,BLAS_SCALAR>(z, const_cast<DataItem*>(x), random<double>());
+        gen2arg<random<double>, BLAS_VEC>(z, const_cast<DataItem *>(x),
+                                          random<double>());
+    } else {
+      if (xncomp == 1)
+        gen2arg<random<double>, BLAS_SCNE>(z, const_cast<DataItem *>(x),
+                                           random<double>());
       else
-	gen2arg<random<double>,BLAS_VEC>(z, const_cast<DataItem*>(x), random<double>());
-    }
-    else {
-      if ( xncomp == 1)
-	gen2arg<random<double>,BLAS_SCNE>(z, const_cast<DataItem*>(x), random<double>());
-      else
-	gen2arg<random<double>,BLAS_VEC2D>(z, const_cast<DataItem*>(x), random<double>());
+        gen2arg<random<double>, BLAS_VEC2D>(z, const_cast<DataItem *>(x),
+                                            random<double>());
     }
   }
 }
 
-//Wrapper for neg.
+// Wrapper for neg.
 void Rocblas::neg(const DataItem *x, DataItem *z) {
   COM_Type att_type = x->data_type();
   const int xncomp = x->size_of_components();
 
-  if ( att_type == COM_INT || att_type == COM_INTEGER) {
-    if ( x->is_windowed()) {
-      if ( xncomp == 1)
-	gen2arg<nega<int>,BLAS_SCALAR>(z, const_cast<DataItem*>(x), nega<int>());
+  if (att_type == COM_INT || att_type == COM_INTEGER) {
+    if (x->is_windowed()) {
+      if (xncomp == 1)
+        gen2arg<nega<int>, BLAS_SCALAR>(z, const_cast<DataItem *>(x),
+                                        nega<int>());
       else
-	gen2arg<nega<int>,BLAS_VEC>(z, const_cast<DataItem*>(x), nega<int>());
+        gen2arg<nega<int>, BLAS_VEC>(z, const_cast<DataItem *>(x), nega<int>());
+    } else {
+      if (xncomp == 1)
+        gen2arg<nega<int>, BLAS_SCNE>(z, const_cast<DataItem *>(x),
+                                      nega<int>());
+      else
+        gen2arg<nega<int>, BLAS_VEC2D>(z, const_cast<DataItem *>(x),
+                                       nega<int>());
     }
-    else {
-      if ( xncomp == 1)
-	gen2arg<nega<int>,BLAS_SCNE>(z, const_cast<DataItem*>(x), nega<int>());
+  } else if (att_type == COM_CHAR) {
+    if (x->is_windowed()) {
+      if (xncomp == 1)
+        gen2arg<nega<char>, BLAS_SCALAR>(z, const_cast<DataItem *>(x),
+                                         nega<char>());
       else
-	gen2arg<nega<int>,BLAS_VEC2D>(z, const_cast<DataItem*>(x), nega<int>());
+        gen2arg<nega<char>, BLAS_VEC>(z, const_cast<DataItem *>(x),
+                                      nega<char>());
+    } else {
+      if (xncomp == 1)
+        gen2arg<nega<char>, BLAS_SCNE>(z, const_cast<DataItem *>(x),
+                                       nega<char>());
+      else
+        gen2arg<nega<char>, BLAS_VEC2D>(z, const_cast<DataItem *>(x),
+                                        nega<char>());
     }
-  }
-  else if ( att_type == COM_CHAR) {
-    if ( x->is_windowed()) {
-      if ( xncomp == 1)
-	gen2arg<nega<char>,BLAS_SCALAR>(z, const_cast<DataItem*>(x), nega<char>());
+  } else {
+    COM_assertion_msg(
+        att_type == COM_DOUBLE || att_type == COM_DOUBLE_PRECISION,
+        (std::string("Unsupported data type in ") + x->fullname()).c_str());
+    if (x->is_windowed()) {
+      if (xncomp == 1)
+        gen2arg<nega<double>, BLAS_SCALAR>(z, const_cast<DataItem *>(x),
+                                           nega<double>());
       else
-	gen2arg<nega<char>,BLAS_VEC>(z, const_cast<DataItem*>(x), nega<char>());
-    }
-    else {
-      if ( xncomp == 1)
-	gen2arg<nega<char>,BLAS_SCNE>(z, const_cast<DataItem*>(x), nega<char>());
+        gen2arg<nega<double>, BLAS_VEC>(z, const_cast<DataItem *>(x),
+                                        nega<double>());
+    } else {
+      if (xncomp == 1)
+        gen2arg<nega<double>, BLAS_SCNE>(z, const_cast<DataItem *>(x),
+                                         nega<double>());
       else
-	gen2arg<nega<char>,BLAS_VEC2D>(z, const_cast<DataItem*>(x), nega<char>());
-    }
-  }
-  else {
-    COM_assertion_msg( att_type==COM_DOUBLE || att_type==COM_DOUBLE_PRECISION,
-		       (std::string("Unsupported data type in ")+
-			x->fullname()).c_str());
-    if ( x->is_windowed()) {
-      if ( xncomp == 1)
-	gen2arg<nega<double>,BLAS_SCALAR>(z, const_cast<DataItem*>(x), nega<double>());
-      else
-	gen2arg<nega<double>,BLAS_VEC>(z, const_cast<DataItem*>(x), nega<double>());
-    }
-    else {
-      if ( xncomp == 1)
-	gen2arg<nega<double>,BLAS_SCNE>(z, const_cast<DataItem*>(x), nega<double>());
-      else
-	gen2arg<nega<double>,BLAS_VEC2D>(z, const_cast<DataItem*>(x), nega<double>());
+        gen2arg<nega<double>, BLAS_VEC2D>(z, const_cast<DataItem *>(x),
+                                          nega<double>());
     }
   }
 }
 
-//Wrapper for sqrt.
+// Wrapper for sqrt.
 void Rocblas::sqrt(const DataItem *x, DataItem *z) {
   COM_Type att_type = x->data_type();
   const int xncomp = x->size_of_components();
 
-  if ( att_type == COM_INT || att_type == COM_INTEGER) {
-    if ( x->is_windowed()) {
-      if ( xncomp == 1)
-	gen2arg<sqrta<int>,BLAS_SCALAR>(z, const_cast<DataItem*>(x), sqrta<int>());
+  if (att_type == COM_INT || att_type == COM_INTEGER) {
+    if (x->is_windowed()) {
+      if (xncomp == 1)
+        gen2arg<sqrta<int>, BLAS_SCALAR>(z, const_cast<DataItem *>(x),
+                                         sqrta<int>());
       else
-	gen2arg<sqrta<int>,BLAS_VEC>(z, const_cast<DataItem*>(x), sqrta<int>());
+        gen2arg<sqrta<int>, BLAS_VEC>(z, const_cast<DataItem *>(x),
+                                      sqrta<int>());
+    } else {
+      if (xncomp == 1)
+        gen2arg<sqrta<int>, BLAS_SCNE>(z, const_cast<DataItem *>(x),
+                                       sqrta<int>());
+      else
+        gen2arg<sqrta<int>, BLAS_VEC2D>(z, const_cast<DataItem *>(x),
+                                        sqrta<int>());
     }
-    else {
-      if ( xncomp == 1)
-	gen2arg<sqrta<int>,BLAS_SCNE>(z, const_cast<DataItem*>(x), sqrta<int>());
+  } else {
+    COM_assertion_msg(
+        att_type == COM_DOUBLE || att_type == COM_DOUBLE_PRECISION,
+        (std::string("Unsupported data type in ") + x->fullname()).c_str());
+    if (x->is_windowed()) {
+      if (xncomp == 1)
+        gen2arg<sqrta<double>, BLAS_SCALAR>(z, const_cast<DataItem *>(x),
+                                            sqrta<double>());
       else
-	gen2arg<sqrta<int>,BLAS_VEC2D>(z, const_cast<DataItem*>(x), sqrta<int>());
-    }
-  }
-  else {
-    COM_assertion_msg( att_type==COM_DOUBLE || att_type==COM_DOUBLE_PRECISION,
-		       (std::string("Unsupported data type in ")+
-			x->fullname()).c_str());
-    if ( x->is_windowed()) {
-      if ( xncomp == 1)
-	gen2arg<sqrta<double>,BLAS_SCALAR>(z, const_cast<DataItem*>(x), sqrta<double>());
+        gen2arg<sqrta<double>, BLAS_VEC>(z, const_cast<DataItem *>(x),
+                                         sqrta<double>());
+    } else {
+      if (xncomp == 1)
+        gen2arg<sqrta<double>, BLAS_SCNE>(z, const_cast<DataItem *>(x),
+                                          sqrta<double>());
       else
-	gen2arg<sqrta<double>,BLAS_VEC>(z, const_cast<DataItem*>(x), sqrta<double>());
-    }
-    else {
-      if ( xncomp == 1)
-	gen2arg<sqrta<double>,BLAS_SCNE>(z, const_cast<DataItem*>(x), sqrta<double>());
-      else
-	gen2arg<sqrta<double>,BLAS_VEC2D>(z, const_cast<DataItem*>(x), sqrta<double>());
+        gen2arg<sqrta<double>, BLAS_VEC2D>(z, const_cast<DataItem *>(x),
+                                           sqrta<double>());
     }
   }
 }
 
-//Wrapper for acos.
+// Wrapper for acos.
 void Rocblas::acos(const DataItem *x, DataItem *z) {
   COM_Type att_type = x->data_type();
   const int xncomp = x->size_of_components();
 
-  if ( att_type == COM_INT || att_type == COM_INTEGER) {
-    if ( x->is_windowed()) {
-      if ( xncomp == 1)
-	gen2arg<acosa<int>,BLAS_SCALAR>(z, const_cast<DataItem*>(x), acosa<int>());
+  if (att_type == COM_INT || att_type == COM_INTEGER) {
+    if (x->is_windowed()) {
+      if (xncomp == 1)
+        gen2arg<acosa<int>, BLAS_SCALAR>(z, const_cast<DataItem *>(x),
+                                         acosa<int>());
       else
-	gen2arg<acosa<int>,BLAS_VEC>(z, const_cast<DataItem*>(x), acosa<int>());
+        gen2arg<acosa<int>, BLAS_VEC>(z, const_cast<DataItem *>(x),
+                                      acosa<int>());
+    } else {
+      if (xncomp == 1)
+        gen2arg<acosa<int>, BLAS_SCNE>(z, const_cast<DataItem *>(x),
+                                       acosa<int>());
+      else
+        gen2arg<acosa<int>, BLAS_VEC2D>(z, const_cast<DataItem *>(x),
+                                        acosa<int>());
     }
-    else {
-      if ( xncomp == 1)
-	gen2arg<acosa<int>,BLAS_SCNE>(z, const_cast<DataItem*>(x), acosa<int>());
+  } else {
+    COM_assertion_msg(
+        att_type == COM_DOUBLE || att_type == COM_DOUBLE_PRECISION,
+        (std::string("Unsupported data type in ") + x->fullname()).c_str());
+    if (x->is_windowed()) {
+      if (xncomp == 1)
+        gen2arg<acosa<double>, BLAS_SCALAR>(z, const_cast<DataItem *>(x),
+                                            acosa<double>());
       else
-	gen2arg<acosa<int>,BLAS_VEC2D>(z, const_cast<DataItem*>(x), acosa<int>());
-    }
-  }
-  else {
-    COM_assertion_msg( att_type==COM_DOUBLE || att_type==COM_DOUBLE_PRECISION,
-		       (std::string("Unsupported data type in ")+
-			x->fullname()).c_str());
-    if ( x->is_windowed()) {
-      if ( xncomp == 1)
-	gen2arg<acosa<double>,BLAS_SCALAR>(z, const_cast<DataItem*>(x), acosa<double>());
+        gen2arg<acosa<double>, BLAS_VEC>(z, const_cast<DataItem *>(x),
+                                         acosa<double>());
+    } else {
+      if (xncomp == 1)
+        gen2arg<acosa<double>, BLAS_SCNE>(z, const_cast<DataItem *>(x),
+                                          acosa<double>());
       else
-	gen2arg<acosa<double>,BLAS_VEC>(z, const_cast<DataItem*>(x), acosa<double>());
-    }
-    else {
-      if ( xncomp == 1)
-	gen2arg<acosa<double>,BLAS_SCNE>(z, const_cast<DataItem*>(x), acosa<double>());
-      else
-	gen2arg<acosa<double>,BLAS_VEC2D>(z, const_cast<DataItem*>(x), acosa<double>());
+        gen2arg<acosa<double>, BLAS_VEC2D>(z, const_cast<DataItem *>(x),
+                                           acosa<double>());
     }
   }
 }
 
-//Operation wrapper for copy (x is a scalar pointer).
+// Operation wrapper for copy (x is a scalar pointer).
 void Rocblas::copy_scalar(const void *x, DataItem *z) {
   COM_Type att_type = z->data_type();
 
-  typedef assn<int,int>          assn_int;
-  typedef assn<char,char>        assn_chr;
-  typedef assn<double,double>    assn_dbl;
-  
-  if ( att_type == COM_INT || att_type == COM_INTEGER)
-    gen2arg<assn_int,BLAS_VOID>(z, const_cast<void*>(x), assn_int());
-  else if ( att_type == COM_DOUBLE || att_type == COM_DOUBLE_PRECISION) {
-    gen2arg<assn_dbl,BLAS_VOID>(z, const_cast<void*>(x), assn_dbl());
-  }
-  else {
-    COM_assertion_msg( att_type==COM_CHAR,
-		       (std::string("Unsupported data type in ")+
-			z->fullname()).c_str());
-    gen2arg<assn_chr,BLAS_VOID>(z, const_cast<void*>(x), assn_chr());  
+  typedef assn<int, int> assn_int;
+  typedef assn<char, char> assn_chr;
+  typedef assn<double, double> assn_dbl;
+
+  if (att_type == COM_INT || att_type == COM_INTEGER)
+    gen2arg<assn_int, BLAS_VOID>(z, const_cast<void *>(x), assn_int());
+  else if (att_type == COM_DOUBLE || att_type == COM_DOUBLE_PRECISION) {
+    gen2arg<assn_dbl, BLAS_VOID>(z, const_cast<void *>(x), assn_dbl());
+  } else {
+    COM_assertion_msg(
+        att_type == COM_CHAR,
+        (std::string("Unsupported data type in ") + z->fullname()).c_str());
+    gen2arg<assn_chr, BLAS_VOID>(z, const_cast<void *>(x), assn_chr());
   }
 }
 
 // Generate a random number between 0 and $a$ for each entry in z
 void Rocblas::rand_scalar(const void *a, DataItem *z) {
   COM_Type att_type = z->data_type();
-  
-  if ( att_type == COM_INT || att_type == COM_INTEGER)
-    gen2arg<random<int>,BLAS_VOID>(z, const_cast<void*>(a), random<int>());
+
+  if (att_type == COM_INT || att_type == COM_INTEGER)
+    gen2arg<random<int>, BLAS_VOID>(z, const_cast<void *>(a), random<int>());
   else {
-    COM_assertion_msg( att_type==COM_DOUBLE || att_type==COM_DOUBLE_PRECISION,
-		       (std::string("Unsupported data type in ")+
-			z->fullname()).c_str());
-    gen2arg<random<double>,BLAS_VOID>(z, const_cast<void*>(a), random<double>());
+    COM_assertion_msg(
+        att_type == COM_DOUBLE || att_type == COM_DOUBLE_PRECISION,
+        (std::string("Unsupported data type in ") + z->fullname()).c_str());
+    gen2arg<random<double>, BLAS_VOID>(z, const_cast<void *>(a),
+                                       random<double>());
   }
 }
 
-enum { BLAS_MIN=1, BLAS_MAX, BLAS_SUM};
+enum { BLAS_MIN = 1, BLAS_MAX, BLAS_SUM };
 
-MPI_Op convert2mpiop( int i) {
+MPI_Op convert2mpiop(int i) {
   switch (i) {
-  case BLAS_MIN: return MPI_MIN;
-  case BLAS_MAX: return MPI_MAX;
-  case BLAS_SUM: return MPI_SUM;
-  default: COM_assertion(false); return MPI_SUM; // Should never reach here.
+    case BLAS_MIN:
+      return MPI_MIN;
+    case BLAS_MAX:
+      return MPI_MAX;
+    case BLAS_SUM:
+      return MPI_SUM;
+    default:
+      COM_assertion(false);
+      return MPI_SUM;  // Should never reach here.
   }
 }
 
-//Wrapper for reduce operations (including max, min, sum).
+// Wrapper for reduce operations (including max, min, sum).
 template <class OPint, class OPdbl, int OPMPI>
-void Rocblas::reduce_MPI(const DataItem *x, DataItem *z, 
-			 const MPI_Comm *comm, int initialI, double initialD) {
+void Rocblas::reduce_MPI(const DataItem *x, DataItem *z, const MPI_Comm *comm,
+                         int initialI, double initialD) {
   COM_Type att_type = z->data_type();
   const int zncomp = z->size_of_components();
 
-  if ( att_type == COM_INT || att_type == COM_INTEGER) {
-    copy_scalar( &initialI, z);
+  if (att_type == COM_INT || att_type == COM_INTEGER) {
+    copy_scalar(&initialI, z);
 
-    if ( z->is_windowed()) {
-      if ( zncomp == 1)
-	gen2arg<OPint,BLAS_SCALAR>(const_cast<DataItem*>(x), z, OPint());
+    if (z->is_windowed()) {
+      if (zncomp == 1)
+        gen2arg<OPint, BLAS_SCALAR>(const_cast<DataItem *>(x), z, OPint());
       else
-	gen2arg<OPint,BLAS_VEC>(const_cast<DataItem*>(x), z, OPint());
+        gen2arg<OPint, BLAS_VEC>(const_cast<DataItem *>(x), z, OPint());
 
-      if ( comm && *comm!=MPI_COMM_NULL && COMMPI_Initialized()) {
-	std::vector<int> t((int*)z->pointer(), ((int*)z->pointer())+zncomp);
-	MPI_Allreduce( &t[0], z->pointer(), zncomp, MPI_INT, 
-		       convert2mpiop(OPMPI), *comm);
+      if (comm && *comm != MPI_COMM_NULL && COMMPI_Initialized()) {
+        std::vector<int> t((int *)z->pointer(), ((int *)z->pointer()) + zncomp);
+        MPI_Allreduce(&t[0], z->pointer(), zncomp, MPI_INT,
+                      convert2mpiop(OPMPI), *comm);
       }
-    }
-    else {
-      if ( zncomp == 1)
-	gen2arg<OPint,BLAS_SCNE>(const_cast<DataItem*>(x), z, OPint());
+    } else {
+      if (zncomp == 1)
+        gen2arg<OPint, BLAS_SCNE>(const_cast<DataItem *>(x), z, OPint());
       else
-	gen2arg<OPint,BLAS_VEC2D>(const_cast<DataItem*>(x), z, OPint());
+        gen2arg<OPint, BLAS_VEC2D>(const_cast<DataItem *>(x), z, OPint());
     }
-  }
-  else if ( att_type == COM_CHAR) {
-    copy_scalar( &initialI, z);
+  } else if (att_type == COM_CHAR) {
+    copy_scalar(&initialI, z);
 
-    if ( z->is_windowed()) {
-      if ( zncomp == 1)
-	gen2arg<OPint,BLAS_SCALAR>(const_cast<DataItem*>(x), z, OPint());
+    if (z->is_windowed()) {
+      if (zncomp == 1)
+        gen2arg<OPint, BLAS_SCALAR>(const_cast<DataItem *>(x), z, OPint());
       else
-	gen2arg<OPint,BLAS_VEC>(const_cast<DataItem*>(x), z, OPint());
+        gen2arg<OPint, BLAS_VEC>(const_cast<DataItem *>(x), z, OPint());
 
-      if ( comm && *comm!=MPI_COMM_NULL && COMMPI_Initialized()) {
-	std::vector<char> t((char*)z->pointer(), ((char*)z->pointer())+zncomp);
-	MPI_Allreduce( &t[0], z->pointer(), zncomp, MPI_CHAR, 
-		       convert2mpiop(OPMPI), *comm);
+      if (comm && *comm != MPI_COMM_NULL && COMMPI_Initialized()) {
+        std::vector<char> t((char *)z->pointer(),
+                            ((char *)z->pointer()) + zncomp);
+        MPI_Allreduce(&t[0], z->pointer(), zncomp, MPI_CHAR,
+                      convert2mpiop(OPMPI), *comm);
       }
-    }
-    else {
-      if ( zncomp == 1)
-	gen2arg<OPint,BLAS_SCNE>(const_cast<DataItem*>(x), z, OPint());
+    } else {
+      if (zncomp == 1)
+        gen2arg<OPint, BLAS_SCNE>(const_cast<DataItem *>(x), z, OPint());
       else
-	gen2arg<OPint,BLAS_VEC2D>(const_cast<DataItem*>(x), z, OPint());
+        gen2arg<OPint, BLAS_VEC2D>(const_cast<DataItem *>(x), z, OPint());
     }
-  }
-  else {
-    COM_assertion_msg( att_type==COM_DOUBLE || att_type==COM_DOUBLE_PRECISION,
-		       (std::string("Unsupported data type in ")+
-			z->fullname()).c_str());
-    copy_scalar( &initialD, z);
+  } else {
+    COM_assertion_msg(
+        att_type == COM_DOUBLE || att_type == COM_DOUBLE_PRECISION,
+        (std::string("Unsupported data type in ") + z->fullname()).c_str());
+    copy_scalar(&initialD, z);
 
-    if ( z->is_windowed()) {
-      if ( zncomp == 1)
-	gen2arg<OPdbl,BLAS_SCALAR>(const_cast<DataItem*>(x), z, OPdbl());
+    if (z->is_windowed()) {
+      if (zncomp == 1)
+        gen2arg<OPdbl, BLAS_SCALAR>(const_cast<DataItem *>(x), z, OPdbl());
       else
-	gen2arg<OPdbl,BLAS_VEC>(const_cast<DataItem*>(x), z, OPdbl());
+        gen2arg<OPdbl, BLAS_VEC>(const_cast<DataItem *>(x), z, OPdbl());
 
-      if ( comm && *comm!=MPI_COMM_NULL && COMMPI_Initialized()) {
-	std::vector<double> t( (double*)z->pointer(), 
-			       ((double*)z->pointer())+zncomp);
-	MPI_Allreduce( &t[0], z->pointer(), zncomp, MPI_DOUBLE, 
-		       convert2mpiop(OPMPI), *comm);
+      if (comm && *comm != MPI_COMM_NULL && COMMPI_Initialized()) {
+        std::vector<double> t((double *)z->pointer(),
+                              ((double *)z->pointer()) + zncomp);
+        MPI_Allreduce(&t[0], z->pointer(), zncomp, MPI_DOUBLE,
+                      convert2mpiop(OPMPI), *comm);
       }
-    }
-    else {
-      if ( zncomp == 1)
-	gen2arg<OPdbl,BLAS_SCNE>(const_cast<DataItem*>(x), z, OPdbl());
+    } else {
+      if (zncomp == 1)
+        gen2arg<OPdbl, BLAS_SCNE>(const_cast<DataItem *>(x), z, OPdbl());
       else
-	gen2arg<OPdbl,BLAS_VEC2D>(const_cast<DataItem*>(x), z, OPdbl());
+        gen2arg<OPdbl, BLAS_VEC2D>(const_cast<DataItem *>(x), z, OPdbl());
     }
   }
 }
 
-//Wrapper for max.
+// Wrapper for max.
 void Rocblas::max_MPI(const DataItem *x, DataItem *z, const MPI_Comm *comm) {
-  reduce_MPI< maxv<int>, maxv<double>, BLAS_MAX>( x, z, comm, 
-						  -0x7FFFFFFF, -HUGE_VAL);
+  reduce_MPI<maxv<int>, maxv<double>, BLAS_MAX>(x, z, comm, -0x7FFFFFFF,
+                                                -HUGE_VAL);
 }
 
-//Wrapper for min.
+// Wrapper for min.
 void Rocblas::min_MPI(const DataItem *x, DataItem *z, const MPI_Comm *comm) {
-  reduce_MPI< minv<int>, minv<double>, BLAS_MIN>( x, z, comm, 
-						 0x7FFFFFFF, HUGE_VAL);
+  reduce_MPI<minv<int>, minv<double>, BLAS_MIN>(x, z, comm, 0x7FFFFFFF,
+                                                HUGE_VAL);
 }
 
-//Wrapper for sum.
+// Wrapper for sum.
 void Rocblas::sum_MPI(const DataItem *x, DataItem *z, const MPI_Comm *comm) {
-  reduce_MPI< sumv<int>, sumv<double>, BLAS_SUM>( x, z, comm, 0, 0);
+  reduce_MPI<sumv<int>, sumv<double>, BLAS_SUM>(x, z, comm, 0, 0);
 }
 
-//Operation wrapper for reduce operations (x is a scalar pointer).
+// Operation wrapper for reduce operations (x is a scalar pointer).
 template <class OPint, class OPdbl, int OPMPI>
-void Rocblas::reduce_scalar_MPI(const DataItem *x, void *y, 
-				const MPI_Comm *comm, int initialI, double initialD) {
+void Rocblas::reduce_scalar_MPI(const DataItem *x, void *y,
+                                const MPI_Comm *comm, int initialI,
+                                double initialD) {
   COM_Type att_type = x->data_type();
 
-  if ( att_type == COM_INT || att_type == COM_INTEGER) {
-    *(int*)y = initialI;
-    gen2arg<OPint,BLAS_VOID>(const_cast<DataItem*>(x), y, OPint());
+  if (att_type == COM_INT || att_type == COM_INTEGER) {
+    *(int *)y = initialI;
+    gen2arg<OPint, BLAS_VOID>(const_cast<DataItem *>(x), y, OPint());
 
-    if ( comm && *comm!=MPI_COMM_NULL && COMMPI_Initialized()) {
-      int t = *(int*)y;
-      MPI_Allreduce( &t, y, 1, MPI_INT, convert2mpiop(OPMPI), *comm);
+    if (comm && *comm != MPI_COMM_NULL && COMMPI_Initialized()) {
+      int t = *(int *)y;
+      MPI_Allreduce(&t, y, 1, MPI_INT, convert2mpiop(OPMPI), *comm);
+    }
+  } else if (att_type == COM_CHAR) {
+    *(char *)y = initialI;
+    gen2arg<OPint, BLAS_VOID>(const_cast<DataItem *>(x), y, OPint());
+
+    if (comm && *comm != MPI_COMM_NULL && COMMPI_Initialized()) {
+      char t = *(char *)y;
+      MPI_Allreduce(&t, y, 1, MPI_CHAR, convert2mpiop(OPMPI), *comm);
+    }
+  } else {
+    COM_assertion_msg(
+        att_type == COM_DOUBLE || att_type == COM_DOUBLE_PRECISION,
+        (std::string("Unsupported data type in ") + x->fullname()).c_str());
+    *(double *)y = initialD;
+    gen2arg<OPdbl, BLAS_VOID>(const_cast<DataItem *>(x), y, OPdbl());
+
+    if (comm && *comm != MPI_COMM_NULL && COMMPI_Initialized()) {
+      double t = *(double *)y;
+      MPI_Allreduce(&t, y, 1, MPI_DOUBLE, convert2mpiop(OPMPI), *comm);
     }
   }
-  else if ( att_type == COM_CHAR) {
-    *(char*)y = initialI;
-    gen2arg<OPint,BLAS_VOID>(const_cast<DataItem*>(x), y, OPint());
-
-    if ( comm && *comm!=MPI_COMM_NULL && COMMPI_Initialized()) {
-      char t = *(char*)y;
-      MPI_Allreduce( &t, y, 1, MPI_CHAR, convert2mpiop(OPMPI), *comm);
-    }
-  }
-  else {
-    COM_assertion_msg( att_type==COM_DOUBLE || att_type==COM_DOUBLE_PRECISION,
-		       (std::string("Unsupported data type in ")+
-			x->fullname()).c_str());
-    *(double*)y = initialD;
-    gen2arg<OPdbl,BLAS_VOID>(const_cast<DataItem*>(x), y, OPdbl());
-
-    if ( comm && *comm!=MPI_COMM_NULL && COMMPI_Initialized()) {
-      double t = *(double*)y;
-      MPI_Allreduce( &t, y, 1, MPI_DOUBLE, convert2mpiop(OPMPI), *comm);
-    }
-  }
 }
 
-//Operation wrapper for max (y is a scalar pointer).
-void Rocblas::max_scalar_MPI(const DataItem *x, void *y, 
-			     const MPI_Comm* comm) {
-  reduce_scalar_MPI< maxv<int>, maxv<double>, BLAS_MAX>(x, y, comm,
-						        -0x7FFFFFFF, -HUGE_VAL);
-
+// Operation wrapper for max (y is a scalar pointer).
+void Rocblas::max_scalar_MPI(const DataItem *x, void *y, const MPI_Comm *comm) {
+  reduce_scalar_MPI<maxv<int>, maxv<double>, BLAS_MAX>(x, y, comm, -0x7FFFFFFF,
+                                                       -HUGE_VAL);
 }
 
-//Operation wrapper for min (y is a scalar pointer).
-void Rocblas::min_scalar_MPI(const DataItem *x, void *y, 
-			     const MPI_Comm *comm) {
-  reduce_scalar_MPI< minv<int>, minv<double>, BLAS_MIN>( x, y, comm,
-							 0x7FFFFFFF, HUGE_VAL);
+// Operation wrapper for min (y is a scalar pointer).
+void Rocblas::min_scalar_MPI(const DataItem *x, void *y, const MPI_Comm *comm) {
+  reduce_scalar_MPI<minv<int>, minv<double>, BLAS_MIN>(x, y, comm, 0x7FFFFFFF,
+                                                       HUGE_VAL);
 }
 
-//Operation wrapper for sum (y is a scalar pointer).
-void Rocblas::sum_scalar_MPI(const DataItem *x, void *y, 
-			     const MPI_Comm *comm) {
-  reduce_scalar_MPI< sumv<int>, sumv<double>, BLAS_SUM>( x, y, comm, 0, 0);
+// Operation wrapper for sum (y is a scalar pointer).
+void Rocblas::sum_scalar_MPI(const DataItem *x, void *y, const MPI_Comm *comm) {
+  reduce_scalar_MPI<sumv<int>, sumv<double>, BLAS_SUM>(x, y, comm, 0, 0);
 }
-
-
-

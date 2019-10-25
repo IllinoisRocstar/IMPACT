@@ -1,91 +1,34 @@
-cmake_minimum_required (VERSION 2.8)
-project(SurfUtil)
-load_cache(../)
-if(NOT ENABLE_MPI)
-  add_definitions( -DDUMMY_MPI )
-else()
-  find_package(MPI REQUIRED)
-  add_definitions( -DMPICH_IGNORE_CXX_SEEK )
-  include_directories(${MPI_INCLUDE_PATH})
-endif()
-find_path(COM_INC roccom.h HINT ../COM/include)
-find_path(MAP_INC mapbasic.h HINT ../SurfMap/include)
-find_path(SIMPAL_INC Rocblas.h HINT ../Simpal/include)
-
-#INCLUDE(CTest)
+cmake_minimum_required(VERSION 3.1)
 
 #find_library(DL_LIB dl)
 
-set (SURFLIB_SRCS src/Rocsurf.C src/Manifold_2.C src/Generic_element_2.C src/interpolate_to_centers.C
-                 src/compute_element_normals.C src/compute_element_areas.C src/compute_bounded_volumes.C src/compute_curvature.C)
-set (TEST_SRCS test/surfmap.C test/surftest1.C test/surftest2.C test/imtest.C test/im2hdf.C test/smf2hdf.C test/neu2hdf.C
-     test/mcntest.C test/obj2hdf.C test/msh2hdf.C test/serialize.C)
-set (ALL_SURF_SRCS "${SURFLIB_SRCS} ${TEST_SRCS}")
-
-#set (TEST_SRCS test/surftest.C)
-set_source_files_properties(${ALL_SURF_SRCS} PROPERTIES COMPILE_FLAGS "-fPIC ${MPI_CXX_COMPILE_FLAGS}" )
-#set(TEST_SRCS src/COMTest.C)
-
 # rpath settings
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+#set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-include_directories(include test ${COM_INC} ${MAP_INC} ${SIMPAL_INC} ${CMAKE_BINARY_DIR}/include)
-file(GLOB H_FILES include/*.H)
-file(GLOB h_FILES include/*.h)
-file(GLOB hpp_FILES include/*.hpp)
-set(UTIL_INC_FILES ${H_FILES} ${h_FILES} ${hpp_FILES})
-message(STATUS "UTIL_INC_FILES=" $UTIL_INC_FILES)
+add_library(SurfUtil
+    src/Rocsurf.C
+    src/Manifold_2.C
+    src/Generic_element_2.C
+    src/interpolate_to_centers.C
+    src/compute_element_normals.C
+    src/compute_element_areas.C
+    src/compute_bounded_volumes.C
+    src/compute_curvature.C
+)
+target_include_directories(SurfUtil
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include/impact>
+)
+target_link_libraries(SurfUtil SurfMap Simpal)
 
-
-if(NOT BUILD_STATIC)
-  add_library(SurfUtil SHARED ${SURFLIB_SRCS})
-else()
-  add_library(SurfUtil STATIC ${LIB_SRCS})
-  add_definitions( -DSTATIC_LINK )
-endif()
-target_link_libraries(SurfUtil SurfMap Simpal SimOUT SimIN ${MPI_CXX_LIBRARIES})
-set_target_properties(SurfUtil PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-
-
-add_executable(surfmap test/surfmap.C)
-target_link_libraries(surfmap SurfUtil ${MPI_CXX_LIBRARIES})
-add_executable(surftest1 test/surftest1.C)
-target_link_libraries(surftest1 SurfUtil ${MPI_CXX_LIBRARIES})
-add_executable(surftest2 test/surftest2.C)
-target_link_libraries(surftest2 SurfUtil ${MPI_CXX_LIBRARIES})
-add_executable(imtest test/imtest.C)
-target_link_libraries(imtest SurfUtil ${MPI_CXX_LIBRARIES})
-add_executable(im2hdf test/im2hdf.C)
-target_link_libraries(im2hdf SurfUtil ${MPI_CXX_LIBRARIES})
-add_executable(smf2hdf test/smf2hdf.C)
-target_link_libraries(smf2hdf SurfUtil ${MPI_CXX_LIBRARIES})
-add_executable(neu2hdf test/neu2hdf.C)
-target_link_libraries(neu2hdf SurfUtil ${MPI_CXX_LIBRARIES})
-add_executable(mcntest test/mcntest.C)
-target_link_libraries(mcntest SurfUtil ${MPI_CXX_LIBRARIES})
-add_executable(obj2hdf test/obj2hdf.C)
-target_link_libraries(obj2hdf SurfUtil ${MPI_CXX_LIBRARIES})
-add_executable(msh2hdf test/msh2hdf.C)
-target_link_libraries(msh2hdf SurfUtil ${MPI_CXX_LIBRARIES})
-add_executable(serialize test/serialize.C)
-target_link_libraries(serialize SurfUtil ${MPI_CXX_LIBRARIES})
-set_target_properties(surfmap PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-set_target_properties(surftest1 PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-set_target_properties(surftest2 PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-set_target_properties(imtest PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-set_target_properties(im2hdf PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-set_target_properties(smf2hdf PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-set_target_properties(neu2hdf PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-set_target_properties(mcntest PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-set_target_properties(obj2hdf PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-set_target_properties(msh2hdf PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-set_target_properties(serialize PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-
-
-#ADD_TEST(RunAllTests ${EXECUTABLE_OUTPUT_PATH}/testx testresults.txt)
-#ADD_TEST(TestObject:ValidHandle ${TEST_RESULTS} TestObject:ValidHandle testresults.txt)
-#ADD_TEST(TestObject:Exists ${TEST_RESULTS} TestObject:Exists testresults.txt)
-
-install(FILES ${UTIL_INC_FILES} DESTINATION include)
-install(TARGETS SurfUtil RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
+install(DIRECTORY include/ 
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/include/impact)
+install(TARGETS SurfUtil
+    EXPORT IMPACT
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    INCLUDES DESTINATION include
+)

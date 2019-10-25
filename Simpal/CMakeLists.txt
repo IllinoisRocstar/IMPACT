@@ -1,60 +1,31 @@
-cmake_minimum_required (VERSION 2.8)
-project(Simpal)
-#ENABLE_LANGUAGE( CXX Fortran )
-#include(FortranCInterface)
-#FortranCInterface_HEADER(${PROJECT_SOURCE_DIR}/include/FC.h MACRO_NAMESPACE "FC_")
-#FortranCInterface_VERIFY(CXX QUIET)
-#set (BUILD_STATIC FALSE CACHE BOOL "Build static COM library")
-#set (ENABLE_MPI TRUE CACHE BOOL "Build with MPI Support")
-#set (EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single directory for all executables.")
-#set (LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib CACHE PATH "Single directory for all libraries and archives.")
-#mark_as_advanced (LIBRARY_OUTPUT_PATH EXECUTABLE_OUTPUT_PATH)
-load_cache(../)
-if(NOT ENABLE_MPI)
-  add_definitions( -DDUMMY_MPI )
-else()
-  find_package(MPI REQUIRED)
-  add_definitions( -DMPICH_IGNORE_CXX_SEEK )
-  include_directories(${MPI_INCLUDE_PATH})
-endif()
+cmake_minimum_required(VERSION 3.1)
 
-#INCLUDE(CTest)
-
-find_library(DL_LIB dl)
-find_path(COM_INC roccom.h HINT ../COM/include)
-
-set (BLASLIB_SRCS src/Rocblas.C src/axpy.C src/dots.C src/op2args.C src/op3args.C)
-set (ALL_BLAS_SRCS "${BLASLIB_SRCS}")
-set (TEST_SRCS test/blastest.C)
-set_source_files_properties(${ALL_BLAS_SRCS} ${TEST_SRCS} PROPERTIES COMPILE_FLAGS "-fPIC ${MPI_CXX_COMPILE_FLAGS}" )
-#set(TEST_SRCS src/COMTest.C)
+add_library(Simpal
+    src/Rocblas.C
+    src/axpy.C
+    src/dots.C
+    src/op2args.C
+    src/op3args.C
+)
 
 # rpath settings
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+#set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-include_directories(include ${CMAKE_BINARY_DIR}/include ${COM_INC})
-file(GLOB H_FILES include/*.H)
-file(GLOB h_FILES include/*.h)
-file(GLOB hpp_FILES include/*.hpp)
-set(SIMPAL_INC_FILES ${H_FILES} ${h_FILES} ${hpp_FILES})
-message(STATUS "SIMPAL_INC_FILES=" $SIMPAL_INC_FILES)
+target_include_directories(Simpal
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include/impact>
+)
+target_link_libraries(Simpal SITCOM)
 
-if(NOT BUILD_STATIC)
-  add_library(Simpal SHARED ${BLASLIB_SRCS})
-else()
-  add_library(Simpal STATIC ${LIB_SRCS})
-  add_definitions( -DSTATIC_LINK )
-endif()
-target_link_libraries(Simpal SITCOM ${MPI_CXX_LIBRARIES})
-set_target_properties(Simpal PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-add_executable(blastest ${TEST_SRCS})
-target_link_libraries(blastest Simpal ${MPI_CXX_LIBRARIES})
-set_target_properties(blastest PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-
-#ADD_TEST(RunAllTests ${EXECUTABLE_OUTPUT_PATH}/testx testresults.txt)
-#ADD_TEST(TestObject:ValidHandle ${TEST_RESULTS} TestObject:ValidHandle testresults.txt)
-#ADD_TEST(TestObject:Exists ${TEST_RESULTS} TestObject:Exists testresults.txt)
-
-install(FILES ${SIMPAL_INC_FILES} DESTINATION include)
-install(TARGETS Simpal RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
+# install the headers and export the targets
+install(DIRECTORY include/ 
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/include/impact)
+install(TARGETS Simpal
+    EXPORT IMPACT
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    INCLUDES DESTINATION include
+)
