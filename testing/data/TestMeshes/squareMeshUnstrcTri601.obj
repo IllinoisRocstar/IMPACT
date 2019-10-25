@@ -1,0 +1,88 @@
+# File produced by Open Asset Import Library (http://www.assimp.sf.net)
+# (assimp v3.0.1262)
+# mtllib squareMeshUnstrTri601.stl.obj.mtl
+
+#OBJ3
+22 30
+# 22 vertex positions
+v  2.95082 0 0
+v  3.00182 0.998179 0
+v  4 0 0
+v  4 1.04918 0
+v  2.95082 4 0
+v  2.48539 2.88228 0
+v  1.63934 4 0
+v  2.21817 1.73642 0
+v  1.15318 1.27116 0
+v  1.48313 2.5921 0
+v  0 0 0
+v  1.63934 0 0
+v  0 1.63934 0
+v  0.60076 2.30466 0
+v  3.32581 3.03447 0
+v  3.19284 1.92942 0
+v  0 2.95082 0
+v  2.19267 0.801153 0
+v  4 2.36066 0
+v  0.736303 3.1676 0
+v  4 4 0
+v  0 4 0
+# 0 UV coordinates
+# 22 vertex normals
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+
+# Mesh 'Created' with 30 faces
+#g Created
+#usemtl DefaultMaterial
+f  1 2 3
+f  3 2 4
+f  5 6 7
+f  8 9 10
+f  11 9 12
+f  13 9 11
+f  7 6 10
+f  9 14 10
+f  10 6 8
+f  15 16 6
+f  17 14 13
+f  12 18 1
+f  4 16 19
+f  10 20 7
+f  5 15 6
+f  20 14 17
+f  21 15 5
+f  22 20 17
+f  13 14 9
+f  1 18 2
+f  2 16 4
+f  19 16 15
+f  6 16 8
+f  10 14 20
+f  8 18 9
+f  9 18 12
+f  8 16 2
+f  2 18 8
+f  7 20 22
+f  19 15 21
+

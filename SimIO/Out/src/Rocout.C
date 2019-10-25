@@ -1,24 +1,24 @@
 //
 //  Copyright@2013, Illinois Rocstar LLC. All rights reserved.
-//        
+//
 //  See LICENSE file included with this source or
-//  (opensource.org/licenses/NCSA) for license information. 
+//  (opensource.org/licenses/NCSA) for license information.
 //
 
+#include <errno.h>
 #include <sys/stat.h>
+#include <algorithm>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <algorithm>
-#include <errno.h>
 
 #include "Rocout.h"
 #include "Rocout_hdf4.h"
 #ifdef USE_CGNS
-# include "Rocout_cgns.h"
-#endif // USE_CGNS
+#include "Rocout_cgns.h"
+#endif  // USE_CGNS
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 USE_COM_NAME_SPACE
@@ -28,94 +28,100 @@ static const int MAX_ASYNC_WRITES = 10;
 
 //! Pass write_dataitem arguments to the background worker thread.
 struct WriteAttrInfo {
-  WriteAttrInfo( Rocout *rout, const char* filename_pre, const DataItem* attr,
-                 const char* material, const char* timelevel,
-                 const char* mfile_pre = NULL, const MPI_Comm* pComm = NULL,
-                 const int* pane_id = NULL, int append = -1,
-                 bool cloned = false)
-  : m_rout(rout), m_prefix(filename_pre), m_attr(attr), m_material(material),
-    m_timelevel(timelevel), m_meshPrefix(mfile_pre != NULL ? mfile_pre : ""),
-    m_pComm(pComm), m_pPaneId(pane_id), m_append(append), m_cloned(cloned) {}
+  WriteAttrInfo(Rocout *rout, const char *filename_pre, const DataItem *attr,
+                const char *material, const char *timelevel,
+                const char *mfile_pre = NULL, const MPI_Comm *pComm = NULL,
+                const int *pane_id = NULL, int append = -1, bool cloned = false)
+      : m_rout(rout),
+        m_prefix(filename_pre),
+        m_attr(attr),
+        m_material(material),
+        m_timelevel(timelevel),
+        m_meshPrefix(mfile_pre != NULL ? mfile_pre : ""),
+        m_pComm(pComm),
+        m_pPaneId(pane_id),
+        m_append(append),
+        m_cloned(cloned) {}
 
   Rocout *m_rout;
   const std::string m_prefix;
-  const DataItem* m_attr;
+  const DataItem *m_attr;
   const std::string m_material;
   const std::string m_timelevel;
   const std::string m_meshPrefix;
-  const MPI_Comm* m_pComm;
-  const int* m_pPaneId;
+  const MPI_Comm *m_pComm;
+  const int *m_pPaneId;
   const int m_append;
   const bool m_cloned;
 };
 
 #define SwitchOnDataType(dType, funcCall) \
-   switch (dType) { \
-      case COM_CHAR: \
-      case COM_BYTE: \
-         { typedef char TT; \
-           funcCall; } \
-         break; \
-      case COM_UNSIGNED_CHAR: \
-         { typedef unsigned char TT; \
-           funcCall; } \
-         break; \
-      case COM_SHORT: \
-         { typedef short TT; \
-           funcCall; } \
-         break; \
-      case COM_UNSIGNED_SHORT: \
-         { typedef unsigned short TT; \
-           funcCall; } \
-         break; \
-      case COM_INT: \
-         { typedef int TT; \
-           funcCall; } \
-         break; \
-      case COM_UNSIGNED: \
-         { typedef unsigned int TT; \
-           funcCall; } \
-         break; \
-      case COM_LONG: \
-         { typedef long TT; \
-           funcCall; } \
-         break; \
-      case COM_UNSIGNED_LONG: \
-         { typedef unsigned long TT; \
-           funcCall; } \
-         break; \
-      case COM_FLOAT: \
-         { typedef float TT; \
-           funcCall; } \
-         break; \
-      case COM_DOUBLE: \
-         { typedef double TT; \
-           funcCall; } \
-         break; \
-      case COM_LONG_DOUBLE: \
-         { typedef long double TT; \
-           funcCall; } \
-         break; \
-   }
+  switch (dType) {                        \
+    case COM_CHAR:                        \
+    case COM_BYTE: {                      \
+      typedef char TT;                    \
+      funcCall;                           \
+    } break;                              \
+    case COM_UNSIGNED_CHAR: {             \
+      typedef unsigned char TT;           \
+      funcCall;                           \
+    } break;                              \
+    case COM_SHORT: {                     \
+      typedef short TT;                   \
+      funcCall;                           \
+    } break;                              \
+    case COM_UNSIGNED_SHORT: {            \
+      typedef unsigned short TT;          \
+      funcCall;                           \
+    } break;                              \
+    case COM_INT: {                       \
+      typedef int TT;                     \
+      funcCall;                           \
+    } break;                              \
+    case COM_UNSIGNED: {                  \
+      typedef unsigned int TT;            \
+      funcCall;                           \
+    } break;                              \
+    case COM_LONG: {                      \
+      typedef long TT;                    \
+      funcCall;                           \
+    } break;                              \
+    case COM_UNSIGNED_LONG: {             \
+      typedef unsigned long TT;           \
+      funcCall;                           \
+    } break;                              \
+    case COM_FLOAT: {                     \
+      typedef float TT;                   \
+      funcCall;                           \
+    } break;                              \
+    case COM_DOUBLE: {                    \
+      typedef double TT;                  \
+      funcCall;                           \
+    } break;                              \
+    case COM_LONG_DOUBLE: {               \
+      typedef long double TT;             \
+      funcCall;                           \
+    } break;                              \
+  }
 
-#define ERROR_MSG(msg) \
-{ if (_options["errorhandle"] != "ignore") { \
-    std::cerr << msg << std::endl; \
-    if (_options["errorhandle"] == "abort") { \
-      if (COMMPI_Initialized()) \
-        MPI_Abort(MPI_COMM_WORLD, 0); \
-      else \
-        abort(); \
-    } \
-  } \
-}
+#define ERROR_MSG(msg)                          \
+  {                                             \
+    if (_options["errorhandle"] != "ignore") {  \
+      std::cerr << msg << std::endl;            \
+      if (_options["errorhandle"] == "abort") { \
+        if (COMMPI_Initialized())               \
+          MPI_Abort(MPI_COMM_WORLD, 0);         \
+        else                                    \
+          abort();                              \
+      }                                         \
+    }                                           \
+  }
 
 #ifdef USE_PTHREADS
 Semaphore Rocout::_writesem(MAX_ASYNC_WRITES, MAX_ASYNC_WRITES);
-#endif // USE_PTHREADS
+#endif  // USE_PTHREADS
 
 void Rocout::init(const std::string &mname) {
-
   HDF4::init();
 
   Rocout *rout = new Rocout();
@@ -135,77 +141,76 @@ void Rocout::init(const std::string &mname) {
   rout->_options["rankdir"] = "off";
   rout->_options["ghosthandle"] = "write";
 
-  COM_new_window( mname.c_str(), MPI_COMM_SELF);
+  COM_new_window(mname.c_str(), MPI_COMM_SELF);
 
-  std::string glb=mname+".global";
+  std::string glb = mname + ".global";
 
-  COM_new_dataitem( glb.c_str(), 'w', COM_VOID, 1, "");
-  COM_set_object( glb.c_str(), 0, rout);
-
+  COM_new_dataitem(glb.c_str(), 'w', COM_VOID, 1, "");
+  COM_set_object(glb.c_str(), 0, rout);
 
   // Register the function write_dataitem
-  COM_Type types[8] = { COM_RAWDATA, COM_STRING, COM_METADATA, COM_STRING, 
-			COM_STRING, COM_STRING, COM_MPI_COMM, COM_VOID};
-  COM_set_member_function( (mname+".write_dataitem").c_str(),
-			   (Member_func_ptr)&Rocout::write_dataitem, 
-			   glb.c_str(), "biiiiIII", types);
-  COM_set_member_function( (mname+".put_dataitem").c_str(),
-			   (Member_func_ptr)&Rocout::put_dataitem, 
-			   glb.c_str(), "biiiiIII", types);
-  COM_set_member_function( (mname+".add_dataitem").c_str(),
-			   (Member_func_ptr)&Rocout::add_dataitem, 
-			   glb.c_str(), "biiiiIII", types);
-  COM_set_member_function( (mname+".write_window").c_str(),
-			   (Member_func_ptr)&Rocout::write_dataitem,
-			   glb.c_str(), "biiiiIII", types);
+  COM_Type types[8] = {COM_RAWDATA, COM_STRING, COM_METADATA, COM_STRING,
+                       COM_STRING,  COM_STRING, COM_MPI_COMM, COM_VOID};
+  COM_set_member_function((mname + ".write_dataitem").c_str(),
+                          (Member_func_ptr)&Rocout::write_dataitem, glb.c_str(),
+                          "biiiiIII", types);
+  COM_set_member_function((mname + ".put_dataitem").c_str(),
+                          (Member_func_ptr)&Rocout::put_dataitem, glb.c_str(),
+                          "biiiiIII", types);
+  COM_set_member_function((mname + ".add_dataitem").c_str(),
+                          (Member_func_ptr)&Rocout::add_dataitem, glb.c_str(),
+                          "biiiiIII", types);
+  COM_set_member_function((mname + ".write_window").c_str(),
+                          (Member_func_ptr)&Rocout::write_dataitem, glb.c_str(),
+                          "biiiiIII", types);
 
   // Register the function write_rocin_control_file
   types[2] = types[3] = COM_STRING;
-  COM_set_member_function( (mname+".write_rocin_control_file").c_str(),
-			   (Member_func_ptr)&Rocout::write_rocin_control_file,
-			   glb.c_str(), "biii", types);
+  COM_set_member_function((mname + ".write_rocin_control_file").c_str(),
+                          (Member_func_ptr)&Rocout::write_rocin_control_file,
+                          glb.c_str(), "biii", types);
 
   // Register the function sync
-  COM_set_member_function( (mname+".sync").c_str(),
-			   (Member_func_ptr)&Rocout::sync, 
-			   glb.c_str(), "b", types);
+  COM_set_member_function((mname + ".sync").c_str(),
+                          (Member_func_ptr)&Rocout::sync, glb.c_str(), "b",
+                          types);
 
   // Register the function set_option
-  COM_set_member_function( (mname+".set_option").c_str(), 
-			   (Member_func_ptr)&Rocout::set_option, 
-			   glb.c_str(), "bii", types);
+  COM_set_member_function((mname + ".set_option").c_str(),
+                          (Member_func_ptr)&Rocout::set_option, glb.c_str(),
+                          "bii", types);
 
   // Register the function write_parameter_file
   types[3] = COM_MPI_COMM;
-  COM_set_member_function( (mname+".write_parameter_file").c_str(),
-			   (Member_func_ptr)&Rocout::write_parameter_file,
-			   glb.c_str(), "biiI", types);
+  COM_set_member_function((mname + ".write_parameter_file").c_str(),
+                          (Member_func_ptr)&Rocout::write_parameter_file,
+                          glb.c_str(), "biiI", types);
 
   // Register the function read_control_file
-  COM_set_member_function( (mname+".read_control_file").c_str(), 
-			   (Member_func_ptr)&Rocout::read_control_file, 
-			   glb.c_str(), "bi", types);
+  COM_set_member_function((mname + ".read_control_file").c_str(),
+                          (Member_func_ptr)&Rocout::read_control_file,
+                          glb.c_str(), "bi", types);
 
-  COM_window_init_done( mname.c_str());
+  COM_window_init_done(mname.c_str());
 }
 
 void Rocout::finalize(const std::string &mname) {
   Rocout *rout;
-  std::string glb=mname+".global";
+  std::string glb = mname + ".global";
 
-  COM_get_object( glb.c_str(), 0, &rout);
-  
-  COM_delete_window( mname.c_str());
+  COM_get_object(glb.c_str(), 0, &rout);
+
+  COM_delete_window(mname.c_str());
 
 #ifdef USE_PTHREADS
   // Wait for any writer threads to finish.
-  void* ret;
+  void *ret;
   std::vector<pthread_t>::iterator p = rout->_writers.begin();
   while (p != rout->_writers.end()) {
     pthread_join(*p, &ret);
     ++p;
   }
-# endif // USE_PTHREADS
+#endif  // USE_PTHREADS
 
   delete rout;
   HDF4::finalize();
@@ -218,27 +223,26 @@ void Rocout::finalize(const std::string &mname) {
  * \param material the name of the material (usually the window name).
  * \param time_level the time stamp of the dataset.
  * \param mfile_pre the prefix of the file that contains the mesh data.
- * \param pComm The MPI communicator to use. If is NULL, the default 
+ * \param pComm The MPI communicator to use. If is NULL, the default
  *        communicator of the Roccom window will be used.
  * \param pane_id the pane to be written.
  */
-void Rocout::write_dataitem( const char* filename_pre,
-                              const DataItem* attr, const char* material,
-                              const char* timelevel, const char* mfile_pre,
-                              const MPI_Comm* pComm, const int* pane_id)
-{
-  WriteAttrInfo* pWAI;
+void Rocout::write_dataitem(const char *filename_pre, const DataItem *attr,
+                            const char *material, const char *timelevel,
+                            const char *mfile_pre, const MPI_Comm *pComm,
+                            const int *pane_id) {
+  WriteAttrInfo *pWAI;
 
 #ifdef USE_PTHREADS
   if (_options["async"] == "off") {
-#endif // USE_PTHREADS
-    pWAI = new WriteAttrInfo(this, filename_pre, attr, material, timelevel, 
-			     mfile_pre, pComm, pane_id);
+#endif  // USE_PTHREADS
+    pWAI = new WriteAttrInfo(this, filename_pre, attr, material, timelevel,
+                             mfile_pre, pComm, pane_id);
     write_dataitem_internal(pWAI);
 #ifdef USE_PTHREADS
   } else {
-    pWAI = new WriteAttrInfo(this, filename_pre, attr, material, timelevel, 
-			     mfile_pre, pComm, pane_id, -1, true);
+    pWAI = new WriteAttrInfo(this, filename_pre, attr, material, timelevel,
+                             mfile_pre, pComm, pane_id, -1, true);
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
@@ -248,7 +252,7 @@ void Rocout::write_dataitem( const char* filename_pre,
     pthread_attr_destroy(&attr);
     _writers.push_back(id);
   }
-#endif // USE_PTHREADS
+#endif  // USE_PTHREADS
 }
 
 //! Write an dataitem to a new file.
@@ -258,27 +262,26 @@ void Rocout::write_dataitem( const char* filename_pre,
  * \param material the name of the material (usually the window name).
  * \param time_level the time stamp of the dataset.
  * \param mfile_pre the prefix of the file that contains the mesh data.
- * \param pComm The MPI communicator to use. If is NULL, the default 
+ * \param pComm The MPI communicator to use. If is NULL, the default
  *        communicator of the Roccom window will be used.
  * \param pane_id the pane to be written.
  */
-void Rocout::put_dataitem( const char* filename_pre,
-                            const DataItem* attr, const char* material,
-                            const char* timelevel, const char* mfile_pre,
-                            const MPI_Comm* pComm, const int* pane_id)
-{
-  WriteAttrInfo* pWAI;
+void Rocout::put_dataitem(const char *filename_pre, const DataItem *attr,
+                          const char *material, const char *timelevel,
+                          const char *mfile_pre, const MPI_Comm *pComm,
+                          const int *pane_id) {
+  WriteAttrInfo *pWAI;
 
 #ifdef USE_PTHREADS
   if (_options["async"] == "off") {
-#endif // USE_PTHREADS
-    pWAI = new WriteAttrInfo(this, filename_pre, attr, material, timelevel, 
-			     mfile_pre, pComm, pane_id, 0);
+#endif  // USE_PTHREADS
+    pWAI = new WriteAttrInfo(this, filename_pre, attr, material, timelevel,
+                             mfile_pre, pComm, pane_id, 0);
     write_dataitem_internal(pWAI);
 #ifdef USE_PTHREADS
   } else {
-    pWAI = new WriteAttrInfo(this, filename_pre, attr, material, timelevel, 
-			     mfile_pre, pComm, pane_id, 0, true);
+    pWAI = new WriteAttrInfo(this, filename_pre, attr, material, timelevel,
+                             mfile_pre, pComm, pane_id, 0, true);
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
@@ -288,7 +291,7 @@ void Rocout::put_dataitem( const char* filename_pre,
     pthread_attr_destroy(&attr);
     _writers.push_back(id);
   }
-#endif // USE_PTHREADS
+#endif  // USE_PTHREADS
 }
 
 //! Append an dataitem to a file.
@@ -298,27 +301,26 @@ void Rocout::put_dataitem( const char* filename_pre,
  * \param material the name of the material (usually the window name).
  * \param time_level the time stamp of the dataset.
  * \param mfile_pre the prefix of the file that contains the mesh data.
- * \param pComm The MPI communicator to use. If is NULL, the default 
+ * \param pComm The MPI communicator to use. If is NULL, the default
  *        communicator of the Roccom window will be used.
  * \param pane_id the pane to be written.
  */
-void Rocout::add_dataitem( const char* filename_pre,
-                            const DataItem* attr, const char* material,
-                            const char* timelevel, const char* mfile_pre,
-                            const MPI_Comm* pComm, const int* pane_id)
-{
-  WriteAttrInfo* pWAI;
+void Rocout::add_dataitem(const char *filename_pre, const DataItem *attr,
+                          const char *material, const char *timelevel,
+                          const char *mfile_pre, const MPI_Comm *pComm,
+                          const int *pane_id) {
+  WriteAttrInfo *pWAI;
 
 #ifdef USE_PTHREADS
   if (_options["async"] == "off") {
-#endif // USE_PTHREADS
-    pWAI = new WriteAttrInfo(this, filename_pre, attr, material, timelevel, 
-			     mfile_pre, pComm, pane_id, 1);
+#endif  // USE_PTHREADS
+    pWAI = new WriteAttrInfo(this, filename_pre, attr, material, timelevel,
+                             mfile_pre, pComm, pane_id, 1);
     write_dataitem_internal(pWAI);
 #ifdef USE_PTHREADS
   } else {
-    pWAI = new WriteAttrInfo(this, filename_pre, attr, material, timelevel, 
-			     mfile_pre, pComm, pane_id, 1, true);
+    pWAI = new WriteAttrInfo(this, filename_pre, attr, material, timelevel,
+                             mfile_pre, pComm, pane_id, 1, true);
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
@@ -328,17 +330,15 @@ void Rocout::add_dataitem( const char* filename_pre,
     pthread_attr_destroy(&attr);
     _writers.push_back(id);
   }
-#endif // USE_PTHREADS
+#endif  // USE_PTHREADS
 }
 
-void Rocout::write_rocin_control_file(const char* window_name,
-                                      const char* file_prefixes,
-                                      const char* control_file_name)
-{
+void Rocout::write_rocin_control_file(const char *window_name,
+                                      const char *file_prefixes,
+                                      const char *control_file_name) {
   const MPI_Comm default_comm = COM_get_default_communicator();
   const MPI_Comm comm_null = MPI_COMM_NULL;
-  const MPI_Comm* myComm = COMMPI_Initialized() ? &default_comm : &comm_null;
-
+  const MPI_Comm *myComm = COMMPI_Initialized() ? &default_comm : &comm_null;
 
   // Obtain process rank
   int flag = 0, rank = 0, size = 1;
@@ -348,15 +348,14 @@ void Rocout::write_rocin_control_file(const char* window_name,
     MPI_Comm_rank(*myComm, &rank);
     MPI_Comm_size(*myComm, &size);
   }
- 
+
   if (rank == 0) {
-    std::vector<std::vector<int> > paneIds(size);
+    std::vector<std::vector<int>> paneIds(size);
 
     /* Get list of panes local each process */
     int i;
-    for (i=0; i<size; ++i)
-      COM_get_panes(window_name, paneIds[i], i);
- 
+    for (i = 0; i < size; ++i) COM_get_panes(window_name, paneIds[i], i);
+
     int rw, pw;
     {
       std::istringstream sin(_options["rankwidth"]);
@@ -367,7 +366,7 @@ void Rocout::write_rocin_control_file(const char* window_name,
       sin >> pw;
     }
 
-/*
+    /*
     std::ostringstream sout;
     sout << "@Files:";
 
@@ -384,7 +383,7 @@ void Rocout::write_rocin_control_file(const char* window_name,
         sout << "%0" << rw << 'p';
       if (pw > 0) {
         if (rw > 0)
-	  sout << _options["separator"];
+          sout << _options["separator"];
         sout << "%0" << pw << 'i';
       }
 
@@ -400,13 +399,15 @@ void Rocout::write_rocin_control_file(const char* window_name,
 
     /* Now write data into control file */
     std::ofstream fout(control_file_name);
-    COM_assertion_msg( fout.is_open(),
-		       (std::string("Rocout cannot open control file:")+control_file_name+" for writing.\n").c_str());
-    
+    COM_assertion_msg(fout.is_open(),
+                      (std::string("Rocout cannot open control file:") +
+                       control_file_name + " for writing.\n")
+                          .c_str());
+
     const std::string fmt = _options["format"];
-    for (i=0; i<size; i++) {
+    for (i = 0; i < size; i++) {
       fout << "@Proc: " << i << std::endl;
-      if ( !paneIds[i].empty()) {
+      if (!paneIds[i].empty()) {
         std::ostringstream sout;
         sout << "@Files:";
 
@@ -415,43 +416,39 @@ void Rocout::write_rocin_control_file(const char* window_name,
         while (!sin.eof()) {
           std::string prefix;
           sin >> prefix;
-          if (prefix.empty())
-            continue;
+          if (prefix.empty()) continue;
 
           sout << ' ';
-            // write output file in <rank> dir
+          // write output file in <rank> dir
           if (_options["rankdir"] == "on") {
-            std::ostringstream rank_prefix; 
+            std::ostringstream rank_prefix;
             rank_prefix << i << "/";
             sout << rank_prefix.str();
           }
           sout << prefix;
-          if (rw > 0)
-            sout << "%0" << rw << 'p';
+          if (rw > 0) sout << "%0" << rw << 'p';
           if (pw > 0) {
-            if (rw > 0)
-	      sout << _options["separator"];
+            if (rw > 0) sout << _options["separator"];
             sout << "%0" << pw << 'i';
           }
-         
-          if ( fmt.compare("HDF4") == 0 || fmt.compare("HDF") == 0)
+
+          if (fmt.compare("HDF4") == 0 || fmt.compare("HDF") == 0)
             sout << ".hdf";
           else if (fmt.compare("HDF5") == 0)
             sout << ".hdf5";
           else if (fmt.compare("CGNS") == 0)
             sout << ".cgns";
         }
-	fout << sout.str() << std::endl;
-      }
-      else // Write out an empty block
-	fout << "@Files: " << std::endl;
+        fout << sout.str() << std::endl;
+      } else  // Write out an empty block
+        fout << "@Files: " << std::endl;
 
       fout << "@Panes:";
-      
+
       /* Write all the panes of this process to control file */
       std::vector<int>::iterator p;
-      for (p=paneIds[i].begin(); p!=paneIds[i].end(); ++p)
-	fout << ' ' << *p;
+      for (p = paneIds[i].begin(); p != paneIds[i].end(); ++p)
+        fout << ' ' << *p;
       fout << '\n' << std::endl;
     }
 
@@ -461,34 +458,30 @@ void Rocout::write_rocin_control_file(const char* window_name,
 
 /** Wait for the completion of an asychronous write operation.
  */
-void Rocout::sync()
-{
+void Rocout::sync() {
 #ifdef USE_PTHREADS
-  void* ret;
+  void *ret;
   std::vector<pthread_t>::iterator p = _writers.begin();
   while (p != _writers.end()) {
     pthread_join(*p, &ret);
     ++p;
   }
   _writers.clear();
-#endif // USE_PTHREADS
+#endif  // USE_PTHREADS
 }
 
 /** Return true if the given string is the name of a Rocout option.
  */
-static bool is_option_name(const std::string& name)
-{
-  return (name == "format" || name == "async" || name == "mode"
-          || name == "localdir" || name == "rankwidth" || name == "pnidwidth"
-          || name == "separator" || name == "errorhandle" || name == "rankdir"
-          || name == "ghosthandle");
+static bool is_option_name(const std::string &name) {
+  return (name == "format" || name == "async" || name == "mode" ||
+          name == "localdir" || name == "rankwidth" || name == "pnidwidth" ||
+          name == "separator" || name == "errorhandle" || name == "rankdir" ||
+          name == "ghosthandle");
 }
 
 // Return true if the given string is a whole number.
-static bool is_whole(const std::string& s)
-{
-  if (s.empty())
-    return false;
+static bool is_whole(const std::string &s) {
+  if (s.empty()) return false;
 
   std::istringstream sin(s);
   int i = 0;
@@ -498,22 +491,17 @@ static bool is_whole(const std::string& s)
 
 /** Return true if the given Rocout option name/value pair is valid.
  */
-static bool is_option_value(const std::string& name, const std::string& val)
-{
-  return ((name == "format"
-           && (val == "HDF" || val == "HDF4" || val == "HDF5" || val == "CGNS"))
-          || (name == "async"
-              && (val == "on" || val == "off"))
-          || (name == "mode"
-              && (val == "w" || val == "a"))
-          || (name == "localdir" /* && is_valid_path(val) */ )
-          || ((name == "rankwidth" || name == "pnidwidth") && is_whole(val))
-          || (name == "rankdir" 
-              && (val == "on" || val == "off"))
-          || (name == "errorhandle"
-              && (val == "abort" || val == "ignore" || val == "warn"))
-          || (name == "ghosthandle"
-              && (val == "write" || val == "ignore")));
+static bool is_option_value(const std::string &name, const std::string &val) {
+  return ((name == "format" &&
+           (val == "HDF" || val == "HDF4" || val == "HDF5" || val == "CGNS")) ||
+          (name == "async" && (val == "on" || val == "off")) ||
+          (name == "mode" && (val == "w" || val == "a")) ||
+          (name == "localdir" /* && is_valid_path(val) */) ||
+          ((name == "rankwidth" || name == "pnidwidth") && is_whole(val)) ||
+          (name == "rankdir" && (val == "on" || val == "off")) ||
+          (name == "errorhandle" &&
+           (val == "abort" || val == "ignore" || val == "warn")) ||
+          (name == "ghosthandle" && (val == "write" || val == "ignore")));
 }
 
 /** Set an option for Rocout, such as controlling the output format.
@@ -522,8 +510,7 @@ static bool is_option_value(const std::string& name, const std::string& val)
  *        "rankdir", "rankwidth", "pnidwidth", "errorhandle" or "ghosthandle".
  * \param option_val the option value.
  */
-void Rocout::set_option( const char* option_name, const char* option_val)
-{
+void Rocout::set_option(const char *option_name, const char *option_val) {
   const std::string name(option_name);
   const std::string val(option_val);
 
@@ -533,15 +520,15 @@ void Rocout::set_option( const char* option_name, const char* option_val)
   }
 
   if (!is_option_value(name, val)) {
-    ERROR_MSG("Rocout::set_option(): invalid value \"" << val
-              << "\" for option \"" << name << "\".");
+    ERROR_MSG("Rocout::set_option(): invalid value \""
+              << val << "\" for option \"" << name << "\".");
     return;
   }
 
 #ifdef USE_CGNS
   COM_assertion_msg(!(name.compare("format") == 0 && val.compare("CGNS") != 0),
                     "Impact is not built with option CGNS=1.\n");
-#endif // USE_CGNS
+#endif  // USE_CGNS
 
   _options[name] = val;
 }
@@ -550,13 +537,12 @@ void Rocout::set_option( const char* option_name, const char* option_val)
  *
  * \param filename the path to the control file.
  */
-void Rocout::read_control_file( const char* filename)
-{
+void Rocout::read_control_file(const char *filename) {
   // Attempt to open the control file.
   std::ifstream fin(filename);
   if (!fin.is_open()) {
-    ERROR_MSG("Rocout::read_control_file(): could not open file \""
-              << filename << "\".");
+    ERROR_MSG("Rocout::read_control_file(): could not open file \"" << filename
+                                                                    << "\".");
     return;
   }
 
@@ -575,8 +561,8 @@ void Rocout::read_control_file( const char* filename)
     line = buffer;
 
     // Skip empty lines and comments.
-    if (line.empty() || line.find_first_not_of(" \t\n") == std::string::npos
-        || line[line.find_first_not_of(" \t\n")] == '#')
+    if (line.empty() || line.find_first_not_of(" \t\n") == std::string::npos ||
+        line[line.find_first_not_of(" \t\n")] == '#')
       continue;
 
     // Find the '='.  It's mandatory.
@@ -608,8 +594,9 @@ void Rocout::read_control_file( const char* filename)
 
     // Make sure it is a valid option name.
     if (!is_option_name(name)) {
-      ERROR_MSG("Rocout::read_control_file(): unknown option name \"" << name
-                << "\" at line " << lineNum << " of " << filename << '.');
+      ERROR_MSG("Rocout::read_control_file(): unknown option name \""
+                << name << "\" at line " << lineNum << " of " << filename
+                << '.');
       continue;
     }
 
@@ -619,7 +606,7 @@ void Rocout::read_control_file( const char* filename)
 
     // Check for an empty option value.
     if (val.empty()) {
-      ERROR_MSG("Rocout::read_control_file(): option without value at line " 
+      ERROR_MSG("Rocout::read_control_file(): option without value at line "
                 << lineNum << " of " << filename << '.');
       continue;
     }
@@ -630,8 +617,8 @@ void Rocout::read_control_file( const char* filename)
 
     // Make sure it is a valid value for the named option.
     if (!is_option_value(name, val)) {
-      ERROR_MSG("Rocout::read_control_file(): invalid value \"" << val
-                << "\" for option \"" << name << "\" at line " << lineNum
+      ERROR_MSG("Rocout::read_control_file(): invalid value \""
+                << val << "\" for option \"" << name << "\" at line " << lineNum
                 << " of " << filename << '.');
       continue;
     }
@@ -640,43 +627,42 @@ void Rocout::read_control_file( const char* filename)
   }
 }
 
-void* Rocout::write_dataitem_internal(void* attrInfo)
-{
-  WriteAttrInfo* ai = static_cast<WriteAttrInfo*>(attrInfo);
-  const DataItem* attr = ai->m_attr;
-  Window* tempWin = NULL;
+void *Rocout::write_dataitem_internal(void *attrInfo) {
+  WriteAttrInfo *ai = static_cast<WriteAttrInfo *>(attrInfo);
+  const DataItem *attr = ai->m_attr;
+  Window *tempWin = NULL;
 
   if (ai->m_cloned) {
 #ifdef USE_PTHREADS
     _writesem.Wait();
-#endif // USE_PTHREADS
-    tempWin = new Window(attr->window()->name(),
-                         attr->window()->get_communicator());
-    attr = tempWin->inherit(const_cast<DataItem*>(attr), attr->name(),
+#endif  // USE_PTHREADS
+    tempWin =
+        new Window(attr->window()->name(), attr->window()->get_communicator());
+    attr = tempWin->inherit(const_cast<DataItem *>(attr), attr->name(),
                             Pane::INHERIT_CLONE, true, NULL, 0);
   }
 
-  int flag = 0; MPI_Initialized(&flag);
+  int flag = 0;
+  MPI_Initialized(&flag);
 
   // Obtain process rank
   int rank;
-  if ( flag) {
+  if (flag) {
     MPI_Comm wcomm;
-    const MPI_Comm* pComm;
+    const MPI_Comm *pComm;
 
-    if ( ai->m_pComm) 
+    if (ai->m_pComm)
       pComm = ai->m_pComm;
-    else { 
+    else {
       wcomm = attr->window()->get_communicator();
       pComm = &wcomm;
     }
 
     if (*pComm != MPI_COMM_NULL)
-      MPI_Comm_rank(*pComm, &rank); 
+      MPI_Comm_rank(*pComm, &rank);
     else
       rank = 0;
-  }
-  else 
+  } else
     rank = 0;
 
   int append = ai->m_append;
@@ -693,12 +679,11 @@ void* Rocout::write_dataitem_internal(void* attrInfo)
   std::vector<int>::iterator begin = paneIds.begin(), end = paneIds.end(), p;
   if (ai->m_pPaneId != NULL && *(ai->m_pPaneId) > 0) {
     begin = std::find(begin, end, *(ai->m_pPaneId));
-    if (begin != end)
-      end = begin + 1;
+    if (begin != end) end = begin + 1;
   }
 
   std::set<std::string> written;
-  for (p=begin; p!=end; ++p) {
+  for (p = begin; p != end; ++p) {
     std::string fname, mfile;
     fname = ai->m_rout->get_fname(ai->m_prefix, rank, *p, true);
     if (!ai->m_meshPrefix.empty())
@@ -708,27 +693,24 @@ void* Rocout::write_dataitem_internal(void* attrInfo)
     written.insert(fname);
 
     const std::string fmt = ai->m_rout->_options["format"];
-    if ( fmt == "HDF4" || fmt == "HDF") {
-
+    if (fmt == "HDF4" || fmt == "HDF") {
       write_dataitem_HDF4(fname, mfile, attr, ai->m_material.c_str(),
-                      ai->m_timelevel.c_str(), *p,
-                      ai->m_rout->_options["errorhandle"], ap);
-
-    } else if ( fmt == "CGNS") {
+                          ai->m_timelevel.c_str(), *p,
+                          ai->m_rout->_options["errorhandle"], ap);
+    } else if (fmt == "CGNS") {
 #ifdef USE_CGNS
-     write_dataitem_CGNS(fname, mfile, attr, ai->m_material.c_str(),
-                     ai->m_timelevel.c_str(), *p,
-                     ai->m_rout->_options["ghosthandle"],
-                     ai->m_rout->_options["errorhandle"], ap);
-#endif // USE_CGNS
-
+      write_dataitem_CGNS(fname, mfile, attr, ai->m_material.c_str(),
+                          ai->m_timelevel.c_str(), *p,
+                          ai->m_rout->_options["ghosthandle"],
+                          ai->m_rout->_options["errorhandle"], ap);
+#endif  // USE_CGNS
     }
   }
 
   if (ai->m_cloned) {
 #ifdef USE_PTHREADS
     _writesem.Post();
-#endif // USE_PTHREADS
+#endif  // USE_PTHREADS
     delete tempWin;
   }
 
@@ -743,31 +725,25 @@ void* Rocout::write_dataitem_internal(void* attrInfo)
  * and an extension to the "localdir" and given prefix.
  * If the pre contains .hdf or .cgns, then use it as the file name.
  */
-std::string Rocout::get_fname(const std::string& prefix,
-                              int rank /* = -1 */,
-                              int paneId /* = 0 */,
-                              bool check /* = false */)
-{
+std::string Rocout::get_fname(const std::string &prefix, int rank /* = -1 */,
+                              int paneId /* = 0 */, bool check /* = false */) {
   // Modify the prefix using the "localdir" option.
   std::string pre(_options["localdir"]);
   if (!pre.empty()) {
     // Make sure there's exactly one '/' between the localdir and given prefix.
     if (prefix[0] == '/') {
-      if (pre[pre.length()-1] == '/')
-        pre.erase(pre.length() - 1);
+      if (pre[pre.length() - 1] == '/') pre.erase(pre.length() - 1);
     } else {
-      if (pre[pre.length()-1] != '/')
-        pre += '/';
+      if (pre[pre.length() - 1] != '/') pre += '/';
     }
   }
   pre += prefix;
 
-  if (_options["rankdir"] == "on") {   // write output file in <rank> dir
-    std::ostringstream rank_prefix; 
+  if (_options["rankdir"] == "on") {  // write output file in <rank> dir
+    std::ostringstream rank_prefix;
     rank_prefix << "/" << rank;
     std::string::size_type s = pre.find_last_of('/');
-    if (s != std::string::npos)
-      pre.insert(s, rank_prefix.str());
+    if (s != std::string::npos) pre.insert(s, rank_prefix.str());
   }
 
   // Make sure the directory exists.  Ignore any errors except for the last.
@@ -778,30 +754,29 @@ std::string Rocout::get_fname(const std::string& prefix,
     s = pre.find('/', s + 1);
   }
   if (result < 0 && errno != EEXIST) {
-    ERROR_MSG("Rocout::write_dataitem(): could not create directory '" 
+    ERROR_MSG("Rocout::write_dataitem(): could not create directory '"
               << pre.substr(0, pre.rfind('/') + 1) << "'.");
   }
 
-  if ( pre.find(".hdf") == pre.size()-4) {
+  if (pre.find(".hdf") == pre.size() - 4) {
     _options["format"] = "HDF4";
     return pre;
-  }
-  else if (pre.find(".cgns") == pre.size()-5) {
+  } else if (pre.find(".cgns") == pre.size() - 5) {
     _options["format"] = "CGNS";
     return pre;
   }
-  
+
   if (rank < 0) {
     int flag = 0;
     MPI_Initialized(&flag);
     if (flag)
       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     else
-      rank = 0; 
-  }             
-                
+      rank = 0;
+  }
+
   std::string name;
-    
+
   if (!pre.empty()) {
     int rw, pw;
     {
@@ -812,30 +787,28 @@ std::string Rocout::get_fname(const std::string& prefix,
       std::istringstream sin(_options["pnidwidth"]);
       sin >> pw;
     }
-    
+
     std::ostringstream sout;
     sout << pre;
-    if (rw > 0)
-      sout << std::setw(rw) << std::setfill('0') << rank;
+    if (rw > 0) sout << std::setw(rw) << std::setfill('0') << rank;
     if (pw > 0 && paneId > 0) {
-      if (rw > 0)
-        sout << _options["separator"];
+      if (rw > 0) sout << _options["separator"];
       sout << std::setw(pw) << std::setfill('0') << paneId;
     }
-  
+
     const std::string fmt = _options["format"];
-    if ( fmt == "HDF" || fmt == "HDF4")
+    if (fmt == "HDF" || fmt == "HDF4")
       sout << ".hdf";
     else if (fmt == "HDF5")
       sout << ".hdf5";
     else if (fmt == "CGNS")
       sout << ".cgns";
-    
+
     name = sout.str();
-    
+
     if (check) {
-      std::FILE* f;
-      if ((f = std::fopen(name.c_str(), "r")) != NULL) 
+      std::FILE *f;
+      if ((f = std::fopen(name.c_str(), "r")) != NULL)
         std::fclose(f);
       else if ((f = std::fopen(name.c_str(), "w")) != NULL) {
         std::fclose(f);
@@ -843,8 +816,7 @@ std::string Rocout::get_fname(const std::string& prefix,
       } else {
         // Change the directory to current directory
         std::string::size_type n = name.rfind('/');
-        if (n != std::string::npos)
-          name.erase(0, n + 1);
+        if (n != std::string::npos) name.erase(0, n + 1);
       }
     }
   }
@@ -852,22 +824,26 @@ std::string Rocout::get_fname(const std::string& prefix,
   return name;
 }
 
-extern "C" void SimOUT_load_module( const char *name)
-{ Rocout::init( std::string(name)); }
+extern "C" void SimOUT_load_module(const char *name) {
+  Rocout::init(std::string(name));
+}
 
-extern "C" void SimOUT_unload_module( const char *name) 
-{ Rocout::finalize( std::string(name)); }
+extern "C" void SimOUT_unload_module(const char *name) {
+  Rocout::finalize(std::string(name));
+}
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 // All possible Fortran bindings
 
-extern "C" void COM_F_FUNC2(simout_load_module, SIMOUT_LOAD_MODULE)( const char *name, long int length)
-{ SimOUT_load_module( std::string(name, length).c_str()); }
-extern "C" void COM_F_FUNC2(simout_unload_module, SIMOUT_UNLOAD_MODULE)( const char *name, long int length) 
-{ SimOUT_unload_module( std::string(name, length).c_str()); }
+extern "C" void COM_F_FUNC2(simout_load_module,
+                            SIMOUT_LOAD_MODULE)(const char *name,
+                                                long int length) {
+  SimOUT_load_module(std::string(name, length).c_str());
+}
+extern "C" void COM_F_FUNC2(simout_unload_module,
+                            SIMOUT_UNLOAD_MODULE)(const char *name,
+                                                  long int length) {
+  SimOUT_unload_module(std::string(name, length).c_str());
+}
 
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
-
-
-
+#endif  // DOXYGEN_SHOULD_SKIP_THIS

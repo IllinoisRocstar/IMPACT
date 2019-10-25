@@ -1,105 +1,81 @@
-cmake_minimum_required (VERSION 2.8)
-project(SimOUT)
-#ENABLE_LANGUAGE( CXX Fortran )
-#include(FortranCInterface)
-#FortranCInterface_HEADER(${PROJECT_SOURCE_DIR}/include/FC.h MACRO_NAMESPACE "FC_")
-#FortranCInterface_VERIFY(CXX QUIET)
-#set (BUILD_STATIC FALSE CACHE BOOL "Build static COM library")
-#set (EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single directory for all executables.")
-#set (LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib CACHE PATH "Single directory for all libraries and archives.")
-#mark_as_advanced (LIBRARY_OUTPUT_PATH EXECUTABLE_OUTPUT_PATH)
-load_cache(../)
-IF(NOT ENABLE_MPI)
-  add_definitions( -DDUMMY_MPI )
-ELSE()
-  FIND_PACKAGE(MPI REQUIRED)
-  add_definitions( -DMPICH_IGNORE_CXX_SEEK )
-  INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
-ENDIF()
-IF(ENABLE_CGNS)
-  add_definitions ( -DUSE_CGNS )
-ENDIF()
-IF(NOGLOB)
-  add_definitions( -D_NO_GLOB_ )
-ENDIF()
-IF(USE_PTHREADS)
-  add_definitions( -DUSE_PTHREADS )
-ENDIF()
+cmake_minimum_required(VERSION 3.1)
 
-#INCLUDE(CTest)
+# Options
+option(ENABLE_CGNS "Build with CGNS support." OFF)
+option(USE_PTHREADS "Build threaded library." OFF)
 
-#find_library(DL_LIB dl)
-#find_library(CGNS_LIB cgns)
-find_path(CGNS_INC cgnslib.h)
-#find_library(HDF4_LIB df)
-#find_library(MFHDF_LIB mfhdf)
-#find_library(ZLIB z)
-find_path(HDF4_INC hdf.h HINT /usr/include/hdf)
-#find_library(JPEG_LIB jpeg)
-#find_library(PTHREAD_LIB pthread)
-find_path(COM_INC roccom.h HINT ../../COM/include)
+# Find CGNS package
+#if(ENABLE_CGNS)
+#  find_package(HDF5 REQUIRED)
+#  find_library(CGNS_LIB cgns)
+#  if(NOT CGNS_LIB)
+#    message(FATAL_ERROR "CGNS library not found.")
+#  endif()
+#  find_path(CGNS_INC cgnslib.h)
+#  add_definitions(-DUSE_CGNS)
+#endif()
 
-set (SimOUT_SRCS src/Rocout.C src/Rocout_hdf4.C src/write_parameter_file.C)
-if (ENABLE_CGNS)
-    set (SimOUT_SRCS ${SimOUT_SRCS} src/Rocout_cgns.C)
+if(USE_PTHREADS)
+  find_library(PTHREAD_LIB pthread)
+  if(NOT PTHREAD_LIB)
+    message(FATAL_ERROR "pthread library not found.")
+  endif()
+  add_definitions(-DUSE_PTHREADS)
 endif()
-set (TEST_SRCS test/outtest.C test/param_outtest.C)
-set (UTIL_SRCS util/ghostbuster.C)
-#set (RHDF4_SRCS src/HDF4.C)
-#IF(USE_PTHREADS)
-#set (RHDF4_SRCS ${RHDF4_SRCS} src/Sync.C)
-#ENDIF()
-set (ALL_SRCS "${SimOUT_SRCS} ${TEST_SRCS} ${UTIL_SRCS}")
-set(LIB_SRCS ${SimOUT_SRCS})
-#set (TEST_SRCS test/maptest.C)
-set_source_files_properties(${ALL_SRCS} PROPERTIES COMPILE_FLAGS "-fPIC ${MPI_CXX_COMPILE_FLAGS}" )
-#set(TEST_SRCS src/COMTest.C)
+
+#find_path(HDF4_INC hdf.h HINT /usr/include/hdf)
 
 # rpath settings
-SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+#set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-include_directories(include ${CMAKE_BINARY_DIR}/include ${HDF4_INC} ${COM_INC})
-IF(USE_CGNS)
-  include_directories(${CGNS_INC})
-ENDIF()
+add_library(SimOUT
+    src/Rocout.C
+    src/Rocout_hdf4.C
+    src/write_parameter_file.C
+)
 
-IF(NOT BUILD_STATIC)
-  add_library(SimOUT SHARED ${SimOUT_SRCS})
-ELSE()
-  add_library(SimOUT STATIC ${SimOUT_SRCS})
-ENDIF()
-#IF(USE_CGNS)
-#  target_link_libraries(Rocout ${CGNS_LIB})
-#ENDIF()
-#target_link_libraries(Rocout Roccom)
-#IF(USE_PTHREADS)
-#  target_link_libraries(Rocout PTHREAD_LIB)
-#ENDIF()
-target_link_libraries(SimOUT SimIN ${MPI_CXX_LIBRARIES})
-SET_TARGET_PROPERTIES(SimOUT PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+if(ENABLE_CGNS)
+  target_sources(SimOUT PRIVATE
+      src/Rocout_cgns.C
+  )
+  target_link_libraries(SimOUT ${CGNS_LIBRARY} ${HDF5_LIBRARIES})
+  target_include_directories(SimOUT
+      PUBLIC
+          ${CGNS_INCLUDE_PATH}
+          ${HDF5_INCLUDE_DIRS})
+endif()
 
-# Test executables
-add_executable(outtest test/outtest.C)
-target_link_libraries(outtest SimOUT ${MPI_CXX_LIBRARIES})
-SET_TARGET_PROPERTIES(outtest PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-#add_executable(inouttest test/inouttest.C)
-#target_link_libraries(inouttest Rocout)
-#add_executable(param_outtest test/param_outtest.C)
-#target_link_libraries(param_outtest Rocout)
+target_include_directories(SimOUT
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${HDF4_INC}>
+        $<INSTALL_INTERFACE:include/impact>
+)
+
+target_link_libraries(SimOUT SITCOM RHDF4)
 
 # Utilities
-IF(USE_CGNS)
+if(USE_CGNS)
   add_executable(ghostbuster util/ghostbuster.C)
-  target_link_libraries(ghostbuster SimOUT ${MPI_CXX_LIBRARIES})
-  SET_TARGET_PROPERTIES(ghostbuster PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-ENDIF()
+  target_link_libraries(ghostbuster SimOUT)
+endif()
 
-#ADD_TEST(RunAllTests ${EXECUTABLE_OUTPUT_PATH}/testx testresults.txt)
-#ADD_TEST(TestObject:ValidHandle ${TEST_RESULTS} TestObject:ValidHandle testresults.txt)
-#ADD_TEST(TestObject:Exists ${TEST_RESULTS} TestObject:Exists testresults.txt)
-
-INSTALL(TARGETS SimOUT RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
-IF(USE_CGNS)
-  INSTALL(TARGETS ghostbuster RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
-ENDIF()
+# install the headers and export the targets
+install(DIRECTORY include/ 
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/include/impact)
+install(TARGETS SimOUT
+    EXPORT IMPACT
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    INCLUDES DESTINATION include
+)
+if(USE_CGNS)
+  install(TARGETS ghostbuster
+      RUNTIME DESTINATION bin
+      LIBRARY DESTINATION lib
+      ARCHIVE DESTINATION lib
+      INCLUDES DESTINATION include
+  )
+endif()
