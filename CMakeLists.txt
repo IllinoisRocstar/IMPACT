@@ -1,99 +1,153 @@
-cmake_minimum_required(VERSION 2.8)
-project(IMPACT)
+cmake_minimum_required(VERSION 3.1)
 
-# TODO:
-# All tests are ruled out for the moment as they
-# are all dependent on IRAD which is removed from
-# the project
+# set project metadata ########################################################
 
-# Setup switches
-set (BUILD_STATIC FALSE CACHE BOOL "Build static libraries")
-set (ENABLE_MPI TRUE CACHE BOOL "Build with MPI Support")
-set (ENABLE_CGNS FALSE CACHE BOOL "Build with CGNS Support")
+set(IMPACT_MAJOR_VERSION 1)
+set(IMPACT_MINOR_VERSION 0)
+set(IMPACT_PATCH_VERSION 0)
+set(IMPACT_EXTRA_VERSION "" CACHE STRING "IMPACT extra version string")
+set(IMPACT_VERSION "${IMPACT_MAJOR_VERSION}.${IMPACT_MINOR_VERSION}")
+set(IMPACT_VERSION
+    "${IMPACT_VERSION}.${IMPACT_PATCH_VERSION}${IMPACT_EXTRA_VERSION}")
+set(IMPACT_SHORT_LICENSE "University of Illinois/NCSA Open Source License")
+set(IMPACT_HOMEPAGE_URL "http://git.illinois.rocstar/IR/IMPACT-NO-IRAD")
+set(IMPACT_AUTHOR
+    "Masoud Safdari (lead)"
+    "Alessandro Gondolo"
+    "Taiyo Wilson"
+    "Michael Pope")
+set(IMPACT_AUTHOR_EMAIL "msafdari@illinoisrocstar.com")
+# TODO: Update the Python Classifier information
+set(IMPACT_PYTHON_CLASSIFIERS
+    "Development Status :: 2 - Pre-Alpha"
+    "License :: OSI Approved :: "
+    "Natural Language :: English"
+    "Operating System :: Microsoft :: Windows :: Windows 10"
+    "Operating System :: POSIX"
+    "Programming Language :: C"
+    "Programming Language :: C++"
+    "Programming Language :: Fortran"
+    "Topic :: Scientific/Engineering")
+set(IMPACT_DESCRIPTION "Multiphysics application coupling toolkit")
+set(PROJECT_NAME "IMPACT version ${IMPACT_VERSION}")
+project(${PROJECT_NAME} CXX C Fortran)
+
+#should this be turned off? Modern CMake messiah says to allow CMake to figure
+#it out on its own
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Set project defaults ########################################################
+set(default_build_type "Release")
+# creating code compilation database
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Options
+option(BUILD_SHARED_LIBS "Build shared libraries." ON)
+option(ENABLE_MPI "Build with MPI support." ON)
+option(ENABLE_CGNS "Build with CGNS support." ON)
+option(ENABLE_TESTS "Build with tests." OFF)
+
+# Setting compile and link options #############################################
+
+# Adding flags to Debug
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
 
 # Compiled objects output paths
-set (EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single directory for all executables.")
-set (LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib CACHE PATH "Single directory for all libraries and archives.")
-mark_as_advanced (LIBRARY_OUTPUT_PATH EXECUTABLE_OUTPUT_PATH)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# Set up RPATH
-SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+# Turn on default warnings as errors for GNU compilers.
+if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+  # Update if necessary
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wpedantic")
+  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wold-style-cast \
+  #-Wnon-virtual-dtor -Wno-unused-parameter -Wno-invalid-offsetof")
+endif()
 
-# Dependencies
-IF(NOT ENABLE_MPI)
+#mark_as_advanced(LIBRARY_OUTPUT_PATH EXECUTABLE_OUTPUT_PATH)
+
+# set up RPATH
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+# Finding libraries ###########################################################
+if(NOT ENABLE_MPI)
   add_definitions( -DDUMMY_MPI )
-ELSE()
-  FIND_PACKAGE(MPI REQUIRED)
+else()
+  find_package(MPI REQUIRED)
+  include_directories(${MPI_INCLUDE_PATH})
+  if(MPI_LIBRARY)
+    set(MPI_LIBRARIES ${MPI_LIBRARY})
+  endif(MPI_LIBRARY)
+  if(MPI_EXTRA_LIBRARY)
+    set(MPI_LIBRARIES ${MPI_LIBRARIES} "${MPI_EXTRA_LIBRARY}")
+  endif(MPI_EXTRA_LIBRARY)
+  # Needed for mpich 2
   add_definitions( -DMPICH_IGNORE_CXX_SEEK )
-  INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
-ENDIF()
+endif()
 
-IF(ENABLE_CGNS)
-  find_package(HDF5)
-  find_library(CGNS_LIB cgns)
-  find_path(CGNS_INC cgnslib.h)
-  include_directories(${CGNS_INC})
-  add_definitions ( -DUSE_CGNS )
-ENDIF()
-
-# HDF4 libs
+# Find HDF4 libs
 find_library(HDF4_LIB NAMES hdf4 libdf df PATHS /usr/lib /usr/lib64 HINTS df libdf hdf)
 find_library(MFHDF_LIB NAMES mfhdf4 mfhdf PATHS /usr/lib /usr/lib64 HINTS mfhdf mfhdf4)
 
-# Building modules
-IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/COM/")
-  add_subdirectory(COM)
-  SET(COM_INCPATH ${CMAKE_SOURCE_DIR}/COM/include)
-ENDIF()
-include_directories(${COM_INCPATH})
-IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/SimIO/")
-  add_subdirectory(SimIO)
-ENDIF()
-IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Simpal/")
-  add_subdirectory(Simpal)
-ENDIF()
-IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/SurfUtil/")
-  add_subdirectory(SurfUtil)
-ENDIF()
-IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/SurfMap/")
-  add_subdirectory(SurfMap)
-ENDIF()
-IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/SurfX/")
-  add_subdirectory(SurfX)
-ENDIF()
-IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/SIM/")
-  add_subdirectory(SIM)
-ENDIF()
-IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Rocface/")
-  ADD_SUBDIRECTORY(Rocface)
-ENDIF()
-IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Rocsurf/")
-  ADD_SUBDIRECTORY(Rocsurf)
-ENDIF()
-IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Rocmap/")
-  ADD_SUBDIRECTORY(Rocmap)
-ENDIF()
+# Find CGNS lib
+if(ENABLE_CGNS)
+  # Find HDF5 libs
+  find_package(HDF5 REQUIRED COMPONENTS CXX)
+  list(GET ${HDF5_LIBRARIES} 0 HDF5_LIBRARY)
+  if(NOT HDF5_FOUND)
+    message(FATAL_ERROR "HDF5 library not found.")
+  endif()
+  get_filename_component(HDF5_LIB_PATH ${HDF5_LIBRARY} PATH)
 
-# Project-specific constructs
-include_directories(include ./COM/include ./SIM/include)
+  find_library(CGNS_LIBRARY cgns)
+  if(NOT CGNS_LIBRARY)
+    message(FATAL_ERROR "CGNS library not found.")
+  endif()
+  find_file(CGNS_HDR cgnslib.h)
+  get_filename_component(CGNS_INCLUDE_PATH ${CGNS_HDR} PATH)
+  add_definitions(-DUSE_CGNS)
+endif()
+
+# Building modules
+add_subdirectory(COM)
+add_subdirectory(SimIO)
+add_subdirectory(Simpal)
+add_subdirectory(SurfUtil)
+add_subdirectory(SurfMap)
+add_subdirectory(SurfX)
+add_subdirectory(SIM)
+add_subdirectory(SolverUtils)
+if(ENABLE_TESTS)
+  enable_testing()
+  add_subdirectory(testing)
+endif(ENABLE_TESTS)
+
+# Export IMPACT as a CMake package
+install(FILES IMPACTConfig.cmake
+        DESTINATION lib/cmake/IMPACT)
+install(EXPORT IMPACT
+        NAMESPACE IMPACT::
+        DESTINATION lib/cmake/IMPACT)
 
 # Documentation
 option(BUILD_DOCUMENTATION "Create and install the HTML based API documentation (requires Doxygen)" OFF)
-IF(BUILD_DOCUMENTATION)
-  FIND_PACKAGE(Doxygen)
-  IF(NOT DOXYGEN_FOUND)
-    MESSAGE(FATAL_ERROR "Doxygen is needed to build the documentation.")
-  ENDIF()
-  SET( doxyfile_in          ${CMAKE_CURRENT_SOURCE_DIR}/doc/IMPACT.cfg.in )
-  SET( doxyfile             ${CMAKE_CURRENT_BINARY_DIR}/IMPACT.cfg        )
-  SET( documentation        ${CMAKE_CURRENT_BINARY_DIR}/docs                 )
-  CONFIGURE_FILE( ${doxyfile_in} ${doxyfile} @ONLY )
-  ADD_CUSTOM_COMMAND( OUTPUT ${documentation}
-                      COMMAND ${DOXYGEN_EXECUTABLE} ${doxyfile}
-                      MAIN_DEPENDENCY ${doxyfile} ${doxyfile_in}
-                      DEPENDS ${doxyfile} ${doxy_extra_files}
-                      COMMENT "Generating documentation")
-  ADD_CUSTOM_TARGET( docs ALL DEPENDS ${documentation} )
-  INSTALL( DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs DESTINATION share/IMPACT )
-ENDIF()
+if(BUILD_DOCUMENTATION)
+  find_package(Doxygen)
+  if(NOT DOXYGEN_FOUND)
+    message(FATAL_ERROR "Doxygen is needed to build the documentation.")
+  endif()
+  set(doxyfile_in ${CMAKE_CURRENT_SOURCE_DIR}/doc/IMPACT.cfg.in)
+  set(doxyfile ${CMAKE_CURRENT_BINARY_DIR}/IMPACT.cfg)
+  set(documentation ${CMAKE_CURRENT_BINARY_DIR}/docs)
+  configure_file(${doxyfile_in} ${doxyfile} @ONLY)
+  add_custom_command(OUTPUT ${documentation}
+      COMMAND ${DOXYGEN_EXECUTABLE} ${doxyfile}
+      MAIN_DEPENDENCY ${doxyfile} ${doxyfile_in}
+      DEPENDS ${doxyfile} ${doxy_extra_files}
+      COMMENT "Generating documentation")
+  add_custom_target(docs ALL DEPENDS ${documentation})
+  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs DESTINATION share/IMPACT)
+endif()

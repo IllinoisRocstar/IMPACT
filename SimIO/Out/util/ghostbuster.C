@@ -1,53 +1,51 @@
 //
 //  Copyright@2013, Illinois Rocstar LLC. All rights reserved.
-//        
+//
 //  See LICENSE file included with this source or
-//  (opensource.org/licenses/NCSA) for license information. 
+//  (opensource.org/licenses/NCSA) for license information.
 //
 
 #include "COM_base.hpp"
 #include "com.h"
 #include "com_devel.hpp"
 
-
-#include <iostream>
-#include <cstring>
-#include <string>
-#include <cstdlib>
+#include <cgnslib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <cassert>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
 #include <map>
 #include <sstream>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <cgnslib.h>
+#include <string>
 
 using namespace std;
 
-#define CG_CHECK(routine, args) \
-{ \
-  int ier = routine args; \
-  if (ier != 0) { \
-    cerr << "ghostbuster: " #routine " (line " << __LINE__ << " in " \
-         << __FILE__ << ") failed: " << cg_get_error() << std::endl; \
-    return -1; \
-  } \
-}
+#define CG_CHECK(routine, args)                                        \
+  {                                                                    \
+    int ier = routine args;                                            \
+    if (ier != 0) {                                                    \
+      cerr << "ghostbuster: " #routine " (line " << __LINE__ << " in " \
+           << __FILE__ << ") failed: " << cg_get_error() << std::endl; \
+      return -1;                                                       \
+    }                                                                  \
+  }
 
-class AutoCloser
-{
-  public:
-    inline AutoCloser(int fn)
-    : m_fn(fn) {}
-    inline ~AutoCloser() { cg_close(m_fn); }
-  private:
-    int m_fn;
+class AutoCloser {
+ public:
+  inline AutoCloser(int fn) : m_fn(fn) {}
+  inline ~AutoCloser() { cg_close(m_fn); }
+
+ private:
+  int m_fn;
 };
 
-COM_EXTERN_MODULE( Rocin);
-COM_EXTERN_MODULE( Rocout);
+COM_EXTERN_MODULE(Rocin);
+COM_EXTERN_MODULE(Rocout);
 
 int main(int argc, char *argv[]) {
-  if ( argc < 2) {
+  if (argc < 2) {
     cout << "Usage: " << argv[0] << " <inputfile>" << endl;
     return -1;
   }
@@ -67,7 +65,7 @@ int main(int argc, char *argv[]) {
 
     int B, cellDim, physDim;
     char baseName[33];
-    for (B=1; B<=nBases; ++B) {
+    for (B = 1; B <= nBases; ++B) {
       CG_CHECK(cg_base_read, (fn, B, baseName, &cellDim, &physDim));
       std::string name(baseName);
       c = name.length();
@@ -76,8 +74,7 @@ int main(int argc, char *argv[]) {
         materials += name + ' ';
       }
     }
-    if (!materials.empty())
-      materials.erase(materials.size() - 1);
+    if (!materials.empty()) materials.erase(materials.size() - 1);
   } else {
     cout << "Error: " << argv[0] << " only handles CGNS files at this time."
          << endl;
@@ -93,40 +90,37 @@ int main(int argc, char *argv[]) {
   else
     file_out.insert(0, "gb_");
 
-  COM_init( &argc, &argv);
+  COM_init(&argc, &argv);
 
   COM_LOAD_MODULE_STATIC_DYNAMIC(SimIN, "IN");
   COM_LOAD_MODULE_STATIC_DYNAMIC(SimOUT, "OUT");
 
-  int IN_read = COM_get_function_handle( "IN.read_windows");
-  int OUT_set = COM_get_function_handle( "OUT.set_option");
-  int OUT_write = COM_get_function_handle( "OUT.write_dataitem");
+  int IN_read = COM_get_function_handle("IN.read_windows");
+  int OUT_set = COM_get_function_handle("OUT.set_option");
+  int OUT_write = COM_get_function_handle("OUT.write_dataitem");
 
-  COM_call_function( OUT_set, "format", "CGNS");
-  COM_call_function( OUT_set, "ghosthandle", "ignore");
+  COM_call_function(OUT_set, "format", "CGNS");
+  COM_call_function(OUT_set, "ghosthandle", "ignore");
 
   char time_level[33] = "";
   int length = 32;
   vector<string>::iterator w;
-  for (w=wins.begin(); w!=wins.end(); ++w) {
-    COM_call_function( IN_read, file_in.c_str(), wins[0].c_str(), NULL, NULL,
-                       NULL, time_level, &length);
+  for (w = wins.begin(); w != wins.end(); ++w) {
+    COM_call_function(IN_read, file_in.c_str(), wins[0].c_str(), NULL, NULL,
+                      NULL, time_level, &length);
 
-    int IN_all = COM_get_dataitem_handle((*w+".all").c_str());
+    int IN_all = COM_get_dataitem_handle((*w + ".all").c_str());
 
-    COM_call_function( OUT_write, file_out.c_str(), &IN_all, (*w).c_str(),
-                       time_level);
+    COM_call_function(OUT_write, file_out.c_str(), &IN_all, (*w).c_str(),
+                      time_level);
 
-    COM_call_function( OUT_set, "mode", "a");
+    COM_call_function(OUT_set, "mode", "a");
   }
 
-  COM_UNLOAD_MODULE_STATIC_DYNAMIC( SimIN, "IN");
-  COM_UNLOAD_MODULE_STATIC_DYNAMIC( SimOUT, "OUT");
+  COM_UNLOAD_MODULE_STATIC_DYNAMIC(SimIN, "IN");
+  COM_UNLOAD_MODULE_STATIC_DYNAMIC(SimOUT, "OUT");
 
   COM_finalize();
 
   return 0;
 }
-
-
-

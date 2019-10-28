@@ -1,250 +1,261 @@
 //
 //  Copyright@2013, Illinois Rocstar LLC. All rights reserved.
-//        
+//
 //  See LICENSE file included with this source or
-//  (opensource.org/licenses/NCSA) for license information. 
+//  (opensource.org/licenses/NCSA) for license information.
 //
 
+#include "Manifold_2.h"
 #include "Rocsurf.h"
 #include "com.h"
-#include "Manifold_2.h"
 
 SURF_BEGIN_NAMESPACE
 
 const int Rocsurf::scheme_vals[] = {E2N_USER, E2N_ONE, E2N_AREA, E2N_ANGLE};
 
-Rocsurf::~Rocsurf() { if (_wm) delete _wm; }
+Rocsurf::~Rocsurf() {
+  if (_wm) delete _wm;
+}
 
-void Rocsurf::initialize( const COM::DataItem *mesh) {
-  COM_assertion_msg( validate_object()==0, "Invalid object");
-  COM_assertion_msg( !mesh || mesh->id()==COM::COM_MESH || 
-		     mesh->id()==COM::COM_PMESH,
-		     "Input argument must be a mesh or pmesh");
+void Rocsurf::initialize(const COM::DataItem *mesh) {
+  COM_assertion_msg(validate_object() == 0, "Invalid object");
+  COM_assertion_msg(
+      !mesh || mesh->id() == COM::COM_MESH || mesh->id() == COM::COM_PMESH,
+      "Input argument must be a mesh or pmesh");
 
-  if ( _wm) delete _wm;
+  if (_wm) delete _wm;
 
-  _wm = new Window_manifold_2( const_cast<COM::DataItem*>(mesh));
+  _wm = new Window_manifold_2(const_cast<COM::DataItem *>(mesh));
 
   _wm->init_communicator();
 }
 
 // Evaluate nodal normals
-void Rocsurf::compute_normals( const COM::DataItem *mesh,
-			       COM::DataItem *nrm,
-			       const int *scheme) {
-  COM_assertion_msg( validate_object()==0, "Invalid object");
+void Rocsurf::compute_normals(const COM::DataItem *mesh, COM::DataItem *nrm,
+                              const int *scheme) {
+  COM_assertion_msg(validate_object() == 0, "Invalid object");
 
-  if ( _wm == NULL) initialize( mesh);
+  if (_wm == NULL) initialize(mesh);
 
-  if ( scheme) 
-    _wm->compute_normals( nrm, *scheme);
+  if (scheme)
+    _wm->compute_normals(nrm, *scheme);
   else
-    _wm->compute_normals( nrm);
+    _wm->compute_normals(nrm);
 }
 
 // Evaluate nodal normals
-void Rocsurf::compute_mcn( COM::DataItem *mcn, 
-			   COM::DataItem *lbmcn) {
-  COM_assertion_msg( validate_object()==0, "Invalid object");
+void Rocsurf::compute_mcn(COM::DataItem *mcn, COM::DataItem *lbmcn) {
+  COM_assertion_msg(validate_object() == 0, "Invalid object");
 
-  COM_assertion_msg( _wm, "initialization must be called first before calling compute_mcn");
-  
-  _wm->compute_mcn( mcn, lbmcn);
+  COM_assertion_msg(
+      _wm, "initialization must be called first before calling compute_mcn");
+
+  _wm->compute_mcn(mcn, lbmcn);
 }
 
-void Rocsurf::elements_to_nodes( const COM::DataItem *elem_vals,
-				COM::DataItem *nodal_vals,
-				const COM::DataItem *mesh,
-				const int *scheme,
-				const COM::DataItem *elem_weights,
-				COM::DataItem *nodal_weights) 
-{
-  COM_assertion_msg( validate_object()==0, "Invalid object");
+void Rocsurf::elements_to_nodes(const COM::DataItem *elem_vals,
+                                COM::DataItem *nodal_vals,
+                                const COM::DataItem *mesh, const int *scheme,
+                                const COM::DataItem *elem_weights,
+                                COM::DataItem *nodal_weights) {
+  COM_assertion_msg(validate_object() == 0, "Invalid object");
 
-  if ( _wm == NULL) initialize( mesh);
+  if (_wm == NULL) initialize(mesh);
 
-  _wm->elements_to_nodes( elem_vals, nodal_vals, scheme?*scheme:E2N_AREA,
-			  elem_weights, nodal_weights);
+  _wm->elements_to_nodes(elem_vals, nodal_vals, scheme ? *scheme : E2N_AREA,
+                         elem_weights, nodal_weights);
 }
 
-void Rocsurf::compute_edge_lengths( double *lave, double *lmin, double *lmax) {
+void Rocsurf::compute_edge_lengths(double *lave, double *lmin, double *lmax) {
+  Window_manifold_2::PM_iterator it = _wm->pm_begin(), iend = _wm->pm_end();
 
-  Window_manifold_2::PM_iterator it=_wm->pm_begin(), iend=_wm->pm_end();
-
-  double local_lmin=HUGE_VAL, local_lmax=0, local_lsum=0, local_weights=0;
+  double local_lmin = HUGE_VAL, local_lmax = 0, local_lsum = 0,
+         local_weights = 0;
 
   // Loop through the panes to identify strong edges
-  for ( ; it!=iend; ++it) {
+  for (; it != iend; ++it) {
     //    for (int i=0, nf=it->size_of_real_faces(); i<nf; ++i) {
     //      Halfedge h=Halfedge( &*it, Edge_ID( i+1, 0), ACROSS_PANE), h0=h;
-    for (int i=0, nf=(*it)->size_of_real_faces(); i<nf; ++i) {
-      Halfedge h=Halfedge( *it, Edge_ID( i+1, 0), ACROSS_PANE), h0=h;
+    for (int i = 0, nf = (*it)->size_of_real_faces(); i < nf; ++i) {
+      Halfedge h = Halfedge(*it, Edge_ID(i + 1, 0), ACROSS_PANE), h0 = h;
       do {
-	Halfedge hopp=h.opposite();
+        Halfedge hopp = h.opposite();
 
-	if ( hopp.is_border() || h < hopp) {
-	  double  l = h.tangent().norm();
+        if (hopp.is_border() || h < hopp) {
+          double l = h.tangent().norm();
 
-	  local_lmin = std::min( local_lmin, l);
-	  local_lmax = std::max( local_lmax, l);
-	  local_lsum += l;
-	  local_weights += 1;
-	}
-      } while ( (h=h.next())!=h0);
+          local_lmin = std::min(local_lmin, l);
+          local_lmax = std::max(local_lmax, l);
+          local_lsum += l;
+          local_weights += 1;
+        }
+      } while ((h = h.next()) != h0);
     }
   }
 
-  double global_lmin=local_lmin, global_lmax=local_lmax, 
-    global_lsum=local_lsum, global_weighs=local_weights;
-  
-  if ( COMMPI_Initialized()) {
+  double global_lmin = local_lmin, global_lmax = local_lmax,
+         global_lsum = local_lsum, global_weighs = local_weights;
+
+  if (COMMPI_Initialized()) {
     MPI_Comm comm = _wm->window()->get_communicator();
-    MPI_Allreduce( &local_lmin, &global_lmin, 1, MPI_DOUBLE, MPI_MIN, comm);
-    MPI_Allreduce( &local_lmax, &global_lmax, 1, MPI_DOUBLE, MPI_MAX, comm);
-    MPI_Allreduce( &local_lsum, &global_lsum, 1, MPI_DOUBLE, MPI_SUM, comm);
-    MPI_Allreduce( &local_weights, &global_weighs, 1, MPI_DOUBLE, MPI_SUM, comm);
+    MPI_Allreduce(&local_lmin, &global_lmin, 1, MPI_DOUBLE, MPI_MIN, comm);
+    MPI_Allreduce(&local_lmax, &global_lmax, 1, MPI_DOUBLE, MPI_MAX, comm);
+    MPI_Allreduce(&local_lsum, &global_lsum, 1, MPI_DOUBLE, MPI_SUM, comm);
+    MPI_Allreduce(&local_weights, &global_weighs, 1, MPI_DOUBLE, MPI_SUM, comm);
   }
 
-  if ( lave) *lave = (global_weighs>0)? (global_lsum / global_weighs) : 0.;
-  if ( lmin) *lmin = global_lmin;
-  if ( lmax) *lmax = global_lmax;
+  if (lave) *lave = (global_weighs > 0) ? (global_lsum / global_weighs) : 0.;
+  if (lmin) *lmin = global_lmin;
+  if (lmax) *lmax = global_lmax;
 }
 
-void Rocsurf::serialize_mesh( const COM::DataItem *inmesh, COM::DataItem *outmesh) {
-  COM_assertion_msg( validate_object()==0, "Invalid object");
+void Rocsurf::serialize_mesh(const COM::DataItem *inmesh,
+                             COM::DataItem *outmesh) {
+  COM_assertion_msg(validate_object() == 0, "Invalid object");
 
-  if ( _wm == NULL) initialize( inmesh);
+  if (_wm == NULL) initialize(inmesh);
 
   COM::Window *outwin = outmesh->window();
 
   // Serialize input mesh and put into output mesh
-  _wm->serialize_window( outwin);
+  _wm->serialize_window(outwin);
 }
 
-void Rocsurf::load( const std::string &mname) {
+void Rocsurf::load(const std::string &mname) {
   Rocsurf *surf = new Rocsurf();
 
-  COM_new_window( mname.c_str());
+  COM_new_window(mname.c_str());
 
-  std::string glb=mname+".global";
+  std::string glb = mname + ".global";
 
-  COM_new_dataitem( glb.c_str(), 'w', COM_VOID, 1, "");
-  COM_set_object( glb.c_str(), 0, surf);
+  COM_new_dataitem(glb.c_str(), 'w', COM_VOID, 1, "");
+  COM_set_object(glb.c_str(), 0, surf);
 
   COM_Type types[7];
 
-  types[0] = COM_METADATA; types[1] = COM_METADATA; 
-  types[2] = COM_METADATA; types[3] = COM_VOID;
-  COM_set_function( (mname+".interpolate_to_centers").c_str(),
-		    (Func_ptr)interpolate_to_centers, "io", types);
+  types[0] = COM_METADATA;
+  types[1] = COM_METADATA;
+  types[2] = COM_METADATA;
+  types[3] = COM_VOID;
+  COM_set_function((mname + ".interpolate_to_centers").c_str(),
+                   (Func_ptr)interpolate_to_centers, "io", types);
 
-  COM_set_function( (mname+".compute_element_areas").c_str(), 
-		    (Func_ptr)compute_element_areas, "oI", types);
-  
-  COM_set_function( (mname+".compute_bounded_volumes").c_str(), 
-		    (Func_ptr)compute_bounded_volumes, "iioI", types);
-  
-  COM_set_function( (mname+".compute_swept_volumes").c_str(), 
-		    (Func_ptr)compute_swept_volumes, "iioI", types);
-  
-  types[0] = COM_METADATA; types[1] = COM_DOUBLE; 
-  COM_set_function( (mname+".integrate").c_str(), 
-		    (Func_ptr)integrate, "io", types);
-  
-  COM_set_function( (mname+".compute_signed_volumes").c_str(), 
-		    (Func_ptr)compute_signed_volumes, "io", types);
+  COM_set_function((mname + ".compute_element_areas").c_str(),
+                   (Func_ptr)compute_element_areas, "oI", types);
 
-  types[1] = COM_INTEGER; 
-  COM_set_function( (mname+".compute_element_normals").c_str(), 
-		    (Func_ptr)compute_element_normals, "oII", types);
+  COM_set_function((mname + ".compute_bounded_volumes").c_str(),
+                   (Func_ptr)compute_bounded_volumes, "iioI", types);
 
+  COM_set_function((mname + ".compute_swept_volumes").c_str(),
+                   (Func_ptr)compute_swept_volumes, "iioI", types);
 
-  types[0] = COM_RAWDATA; types[1] = types[2] = COM_METADATA;
-  COM_set_member_function( (mname+".initialize").c_str(), 
-			   (Member_func_ptr)(&Rocsurf::initialize), 
-			   glb.c_str(), "bi", types);
+  types[0] = COM_METADATA;
+  types[1] = COM_DOUBLE;
+  COM_set_function((mname + ".integrate").c_str(), (Func_ptr)integrate, "io",
+                   types);
 
-  types[3] = COM_INT; 
-  COM_set_member_function( (mname+".compute_normals").c_str(), 
-			   (Member_func_ptr)(&Rocsurf::compute_normals), 
-			   glb.c_str(), "bioI", types);
-  
+  COM_set_function((mname + ".compute_signed_volumes").c_str(),
+                   (Func_ptr)compute_signed_volumes, "io", types);
 
-  COM_set_member_function( (mname+".compute_mcn").c_str(), 
-			   (Member_func_ptr)(&Rocsurf::compute_mcn), 
-			   glb.c_str(), "boo", types);
+  types[1] = COM_INTEGER;
+  COM_set_function((mname + ".compute_element_normals").c_str(),
+                   (Func_ptr)compute_element_normals, "oII", types);
 
-  types[3] = types[5] = types[6] = COM_METADATA; types[4] = COM_INT; 
-  COM_set_member_function( (mname+".elements_to_nodes").c_str(),
-			   (Member_func_ptr)(&Rocsurf::elements_to_nodes),
-			   glb.c_str(), "bioiIIO", types);
+  types[0] = COM_RAWDATA;
+  types[1] = types[2] = COM_METADATA;
+  COM_set_member_function((mname + ".initialize").c_str(),
+                          (Member_func_ptr)(&Rocsurf::initialize), glb.c_str(),
+                          "bi", types);
 
-  COM_new_dataitem((mname+".E2N_USER").c_str(), 'w', COM_INT, 1, "");
-  COM_set_array_const((mname+".E2N_USER").c_str(), 0, &scheme_vals[E2N_USER]);
-  COM_new_dataitem((mname+".E2N_ONE").c_str(), 'w', COM_INT, 1, "");
-  COM_set_array_const((mname+".E2N_ONE").c_str(), 0, &scheme_vals[E2N_ONE]);
-  COM_new_dataitem((mname+".E2N_AREA").c_str(), 'w', COM_INT, 1, "");
-  COM_set_array_const((mname+".E2N_AREA").c_str(), 0, &scheme_vals[E2N_AREA]);
-  COM_new_dataitem((mname+".E2N_ANGLE").c_str(), 'w', COM_INT, 1, "");
-  COM_set_array_const((mname+".E2N_ANGLE").c_str(), 0, &scheme_vals[E2N_ANGLE]);
+  types[3] = COM_INT;
+  COM_set_member_function((mname + ".compute_normals").c_str(),
+                          (Member_func_ptr)(&Rocsurf::compute_normals),
+                          glb.c_str(), "bioI", types);
+
+  COM_set_member_function((mname + ".compute_mcn").c_str(),
+                          (Member_func_ptr)(&Rocsurf::compute_mcn), glb.c_str(),
+                          "boo", types);
+
+  types[3] = types[5] = types[6] = COM_METADATA;
+  types[4] = COM_INT;
+  COM_set_member_function((mname + ".elements_to_nodes").c_str(),
+                          (Member_func_ptr)(&Rocsurf::elements_to_nodes),
+                          glb.c_str(), "bioiIIO", types);
+
+  COM_new_dataitem((mname + ".E2N_USER").c_str(), 'w', COM_INT, 1, "");
+  COM_set_array_const((mname + ".E2N_USER").c_str(), 0, &scheme_vals[E2N_USER]);
+  COM_new_dataitem((mname + ".E2N_ONE").c_str(), 'w', COM_INT, 1, "");
+  COM_set_array_const((mname + ".E2N_ONE").c_str(), 0, &scheme_vals[E2N_ONE]);
+  COM_new_dataitem((mname + ".E2N_AREA").c_str(), 'w', COM_INT, 1, "");
+  COM_set_array_const((mname + ".E2N_AREA").c_str(), 0, &scheme_vals[E2N_AREA]);
+  COM_new_dataitem((mname + ".E2N_ANGLE").c_str(), 'w', COM_INT, 1, "");
+  COM_set_array_const((mname + ".E2N_ANGLE").c_str(), 0,
+                      &scheme_vals[E2N_ANGLE]);
 
   types[1] = types[2] = types[3] = COM_DOUBLE;
-  COM_set_member_function( (mname+".compute_edge_lengths").c_str(),
-			   (Member_func_ptr)(&Rocsurf::compute_edge_lengths),
-			   glb.c_str(), "boOO", types);
+  COM_set_member_function((mname + ".compute_edge_lengths").c_str(),
+                          (Member_func_ptr)(&Rocsurf::compute_edge_lengths),
+                          glb.c_str(), "boOO", types);
 
   types[1] = types[2] = COM_METADATA;
-  COM_set_member_function( (mname+".serialize_mesh").c_str(),
-			   (Member_func_ptr)(&Rocsurf::serialize_mesh),
-			   glb.c_str(), "bio", types);
+  COM_set_member_function((mname + ".serialize_mesh").c_str(),
+                          (Member_func_ptr)(&Rocsurf::serialize_mesh),
+                          glb.c_str(), "bio", types);
 
-  COM_window_init_done( mname.c_str());
+  COM_window_init_done(mname.c_str());
 }
 
-void Rocsurf::unload( const std::string &mname) {
+void Rocsurf::unload(const std::string &mname) {
   Rocsurf *surf;
-  std::string glb=mname+".global";
+  std::string glb = mname + ".global";
 
-  COM_get_object( glb.c_str(), 0, &surf);
+  COM_get_object(glb.c_str(), 0, &surf);
   delete surf;
 
-  COM_delete_window( mname.c_str());
+  COM_delete_window(mname.c_str());
 }
 
-extern "C" void SurfUtil_load_module( const char *mname) 
-{ Rocsurf::load( mname); }
+extern "C" void SurfUtil_load_module(const char *mname) {
+  Rocsurf::load(mname);
+}
 
-extern "C" void SurfUtil_unload_module( const char *mname) 
-{ Rocsurf::unload( mname); }
+extern "C" void SurfUtil_unload_module(const char *mname) {
+  Rocsurf::unload(mname);
+}
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 // Fortran bindings
-extern "C" void surfutil_load_module( const char *mname, long int length) 
-{ Rocsurf::load( std::string(mname, length)); }
+extern "C" void surfutil_load_module(const char *mname, long int length) {
+  Rocsurf::load(std::string(mname, length));
+}
 
-extern "C" void surfutil_unload_module( const char *mname, long int length) 
-{ Rocsurf::unload( std::string(mname, length)); }
+extern "C" void surfutil_unload_module(const char *mname, long int length) {
+  Rocsurf::unload(std::string(mname, length));
+}
 
-extern "C" void SURFUTIL_LOAD_MODULE( const char *mname, long int length) 
-{ Rocsurf::load( std::string(mname, length)); }
+extern "C" void SURFUTIL_LOAD_MODULE(const char *mname, long int length) {
+  Rocsurf::load(std::string(mname, length));
+}
 
-extern "C" void SURFUTIL_UNLOAD_MODULE( const char *mname, long int length) 
-{ Rocsurf::unload( std::string(mname, length)); }
+extern "C" void SURFUTIL_UNLOAD_MODULE(const char *mname, long int length) {
+  Rocsurf::unload(std::string(mname, length));
+}
 
-extern "C" void surfutil_load_module_( const char *mname, long int length) 
-{ Rocsurf::load( std::string(mname, length)); }
+extern "C" void surfutil_load_module_(const char *mname, long int length) {
+  Rocsurf::load(std::string(mname, length));
+}
 
-extern "C" void surfutil_unload_module_( const char *mname, long int length) 
-{ Rocsurf::unload( std::string(mname, length)); }
+extern "C" void surfutil_unload_module_(const char *mname, long int length) {
+  Rocsurf::unload(std::string(mname, length));
+}
 
-extern "C" void SURFUTIL_LOAD_MODULE_( const char *mname, long int length) 
-{ Rocsurf::load( std::string(mname, length)); }
+extern "C" void SURFUTIL_LOAD_MODULE_(const char *mname, long int length) {
+  Rocsurf::load(std::string(mname, length));
+}
 
-extern "C" void SURFUTIL_UNLOAD_MODULE_( const char *mname, long int length) 
-{ Rocsurf::unload( std::string(mname, length)); }
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+extern "C" void SURFUTIL_UNLOAD_MODULE_(const char *mname, long int length) {
+  Rocsurf::unload(std::string(mname, length));
+}
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
 
 SURF_END_NAMESPACE
-
-
-

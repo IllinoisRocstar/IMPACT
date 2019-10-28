@@ -1,82 +1,34 @@
-cmake_minimum_required (VERSION 2.8)
-project(SurfMap)
-#ENABLE_LANGUAGE( CXX Fortran )
-#include(FortranCInterface)
-#FortranCInterface_HEADER(${PROJECT_SOURCE_DIR}/include/FC.h MACRO_NAMESPACE "FC_")
-#FortranCInterface_VERIFY(CXX QUIET)
-#set (BUILD_STATIC FALSE CACHE BOOL "Build static COM library")
-#set (ENABLE_MPI TRUE CACHE BOOL "Build with MPI Support")
-#set (EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single directory for all executables.")
-#set (LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib CACHE PATH "Single directory for all libraries and archives.")
-#mark_as_advanced (LIBRARY_OUTPUT_PATH EXECUTABLE_OUTPUT_PATH)
-load_cache(../)
-IF(NOT ENABLE_MPI)
-  add_definitions( -DDUMMY_MPI )
-ELSE()
-  FIND_PACKAGE(MPI REQUIRED)
-  add_definitions( -DMPICH_IGNORE_CXX_SEEK )
-  INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
-ENDIF()
-
-#INCLUDE(CTest)
-
-#find_library(DL_LIB dl)
-find_path(COM_INC roccom.h HINT ../COM/include)
-set (MAPLIB_SRCS src/Rocmap.C src/Pane_boundary.C src/Pane_connectivity.C src/Pane_communicator.C
-                 src/Dual_connectivity.C src/Simple_manifold_2.C src/Pane_ghost_connectivity.C src/KD_tree_3.C)
-set (UTIL_SRCS util/addpconn.C)
-set (ALL_MAP_SRCS "${MAPLIB_SRCS} ${UTIL_SRCS}")
-
-#set (TEST_SRCS test/maptest.C)
-set_source_files_properties(${ALL_MAP_SRCS} PROPERTIES COMPILE_FLAGS "-fPIC ${MPI_CXX_COMPILE_FLAGS}" )
-#set(TEST_SRCS src/COMTest.C)
+cmake_minimum_required(VERSION 3.1)
 
 # rpath settings
-SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+#set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-include_directories(include ${CMAKE_BINARY_DIR}/include ${COM_INC})
+add_library(SurfMap
+    src/Rocmap.C
+    src/Pane_boundary.C
+    src/Pane_connectivity.C
+    src/Pane_communicator.C
+    src/Dual_connectivity.C
+    src/Simple_manifold_2.C
+    src/Pane_ghost_connectivity.C
+    src/KD_tree_3.C
+)
 
-file(GLOB H_FILES include/*.H)
-file(GLOB h_FILES include/*.h)
-file(GLOB hpp_FILES include/*.hpp)
-set(MAP_INC_FILES ${H_FILES} ${h_FILES} ${hpp_FILES})
-message(STATUS "MAP_INC_FILES=" $MAP_INC_FILES)
+target_include_directories(SurfMap
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include/impact>
+)
+target_link_libraries(SurfMap SITCOM)
 
-IF(NOT BUILD_STATIC)
-  add_library(SurfMap SHARED ${MAPLIB_SRCS})
-ELSE()
-  add_library(SurfMap STATIC ${LIB_SRCS})
-  add_definitions( -DSTATIC_LINK )
-ENDIF()
-target_link_libraries(SurfMap SimIN SimOUT SITCOM ${MPI_CXX_LIBRARIES})
-SET_TARGET_PROPERTIES(SurfMap PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-
-add_executable(pconntest test/pconntest.C)
-target_link_libraries(pconntest SurfMap ${MPI_CXX_LIBRARIES})
-add_executable(pcommtest test/pcommtest.C)
-target_link_libraries(pcommtest SurfMap ${MPI_CXX_LIBRARIES})
-add_executable(pcommpartest test/pcommpartest.C)
-target_link_libraries(pcommpartest SurfMap ${MPI_CXX_LIBRARIES})
-add_executable(bordertest_hex test/bordertest_hex.C)
-target_link_libraries(bordertest_hex SurfMap ${MPI_CXX_LIBRARIES})
-add_executable(bordertestg_hex test/bordertestg_hex.C)
-target_link_libraries(bordertestg_hex SurfMap ${MPI_CXX_LIBRARIES})
-add_executable(bordertest_struc test/bordertest_struc.C)
-target_link_libraries(bordertest_struc SurfMap ${MPI_CXX_LIBRARIES})
-add_executable(addpconn util/addpconn.C)
-target_link_libraries(addpconn SurfMap ${MPI_CXX_LIBRARIES})
-SET_TARGET_PROPERTIES(pconntest PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-SET_TARGET_PROPERTIES(pcommtest PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-SET_TARGET_PROPERTIES(pcommpartest PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-SET_TARGET_PROPERTIES(bordertest_hex PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-SET_TARGET_PROPERTIES(bordertestg_hex PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-SET_TARGET_PROPERTIES(bordertest_struc PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-SET_TARGET_PROPERTIES(addpconn PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-
-#ADD_TEST(RunAllTests ${EXECUTABLE_OUTPUT_PATH}/testx testresults.txt)
-#ADD_TEST(TestObject:ValidHandle ${TEST_RESULTS} TestObject:ValidHandle testresults.txt)
-#ADD_TEST(TestObject:Exists ${TEST_RESULTS} TestObject:Exists testresults.txt)
-
-INSTALL(FILES ${MAP_INC_FILES} DESTINATION include)
-INSTALL(TARGETS SurfMap RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
+# install the headers and export the targets
+install(DIRECTORY include/ 
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/include/impact)
+install(TARGETS SurfMap
+    EXPORT IMPACT
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    INCLUDES DESTINATION include
+)

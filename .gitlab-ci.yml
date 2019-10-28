@@ -1,0 +1,53 @@
+test:ubuntu16:
+  image: ilrocstar/impact-test-img-ubuntu16:v1
+  tags:
+    - linux
+  script:
+    - apt update --fix-missing
+    - mkdir build && cd build
+    - CC=mpicc.mpich
+    - CXX=mpicxx.mpich
+    - MPICH_CC=/usr/bin/gcc-5
+    - MPICH_CXX=/usr/bin/g++-5
+    - MPICH_FC=/usr/bin/gfortran-5
+    - >
+      cmake 
+      -DCMAKE_INSTALL_PREFIX=../install 
+      -DENABLE_MPI=ON 
+      -DENABLE_TESTS=ON 
+      -DMPI_C_COMPILER=/usr/bin/mpicc.mpich 
+      -DMPI_CXX_COMPILER=/usr/bin/mpicxx.mpich 
+      -DMPIEXEC_EXECUTABLE=/usr/bin/mpiexec.mpich 
+      -DMPI_Fortran_COMPILER=/usr/bin/mpif90.mpich 
+      -DCMAKE_C_COMPILER=mpicc.mpich 
+      -DCMAKE_CXX_COMPILER=mpicxx.mpich 
+      -DCMAKE_Fortran_COMPILER=mpif90.mpich ..
+    - make -j$(nproc)
+    - make test
+
+test:ubuntu18:
+  image: ilrocstar/impact:v1
+  tags:
+    - linux
+  script:
+    - apt update --fix-missing
+    - mkdir build && cd build
+    - CC=mpicc.mpich
+    - CXX=mpicxx.mpich
+    - MPICH_CC=/usr/bin/gcc-7
+    - MPICH_CXX=/usr/bin/g++-7
+    - MPICH_FC=/usr/bin/gfortran-7
+    - >
+      cmake 
+      -DCMAKE_INSTALL_PREFIX=../install 
+      -DENABLE_MPI=ON 
+      -DENABLE_TESTS=ON 
+      -DMPI_C_COMPILER=/usr/bin/mpicc.mpich 
+      -DMPI_CXX_COMPILER=/usr/bin/mpicxx.mpich 
+      -DMPIEXEC_EXECUTABLE=/usr/bin/mpiexec.mpich 
+      -DMPI_Fortran_COMPILER=/usr/bin/mpif90.mpich 
+      -DCMAKE_C_COMPILER=mpicc.mpich 
+      -DCMAKE_CXX_COMPILER=mpicxx.mpich 
+      -DCMAKE_Fortran_COMPILER=mpif90.mpich ..
+    - make -j$(nproc)
+    - make test

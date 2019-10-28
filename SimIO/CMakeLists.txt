@@ -1,23 +1,57 @@
-cmake_minimum_required (VERSION 2.8)
-project(SimIO)
-set (BUILD_STATIC FALSE CACHE BOOL "Build static libraries")
-set (ENABLE_MPI TRUE CACHE BOOL "Build with MPI Support")
+cmake_minimum_required(VERSION 3.1)
 
-set (EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single directory for all executables.")
-set (LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib CACHE PATH "Single directory for all libraries and archives.")
-mark_as_advanced (LIBRARY_OUTPUT_PATH EXECUTABLE_OUTPUT_PATH)
-IF(NOT ENABLE_MPI)
-  add_definitions( -DDUMMY_MPI )
-ELSE()
-  FIND_PACKAGE(MPI REQUIRED)
-  add_definitions( -DMPICH_IGNORE_CXX_SEEK )
-  INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
-ENDIF()
+# Options
+option(USE_PTHREADS "Build threaded library." OFF)
 
+if(USE_PTHREADS)
+  find_library(PTHREAD_LIB pthread)
+  if(NOT PTHREAD_LIB)
+    message(FATAL_ERROR "pthread library not found.")
+  endif()
+  add_definitions(-DUSE_PTHREADS)
+endif()
+
+# Find HDF4 and MFHDF libs
+find_library(HDF4_LIB NAMES hdf4 libdf df dfalt)# PATHS /usr/lib /usr/lib64 HINTS df libdf hdf)
+if(NOT HDF4_LIB)
+  message(FATAL_ERROR "HDF4 library not found.")
+endif()
+find_path(HDF4_INC hdf.h HINT /usr/include/hdf)
+find_library(MFHDF_LIB NAMES mfhdf4 mfhdf mfhdfalt)# PATHS /usr/lib /usr/lib64 HINTS mfhdf mfhdf4)
+if(NOT MFHDF_LIB)
+  message(FATAL_ERROR "MFHDF library not found.")
+endif()
+
+add_library(RHDF4
+    src/HDF4.C
+)
+
+if(USE_PTHREADS)
+  target_sources(RHDF4 PRIVATE
+      src/Sync.C
+  )
+  target_link_libraries(RHDF4 SITCOM)
+endif()
+
+target_link_libraries(RHDF4 ${MFHDF_LIB} ${HDF4_LIB})
+
+target_include_directories(RHDF4
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${HDF4_INC}>
+        $<INSTALL_INTERFACE:include/impact>
+)
+
+# install the headers and export the targets
+install(DIRECTORY include/ 
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/include/impact)
+install(TARGETS RHDF4
+    EXPORT IMPACT
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    INCLUDES DESTINATION include
+)
 
 add_subdirectory(In)
 add_subdirectory(Out)
-
-include_directories(../COM/include ./In/include ./Out/include ${CMAKE_BINARY_DIR}/include)
-
-#INSTALL(TARGETS rocstar RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
