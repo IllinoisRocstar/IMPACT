@@ -231,12 +231,12 @@ void Scheduler::discoverSets(ActionList &pool) {
       }
     }
   }
-  std::cout << "I am within Scheduler: " << this->scheduler_name << std::endl;
+  /* std::cout << "I am within Scheduler: " << this->scheduler_name << std::endl;
   for (std::map<std::string, int>::iterator q = Sets.begin(); q != Sets.end();
        ++q) {
     std::cout << "Action: " << q->first << " is in set number: " << q->second
               << std::endl;
-  }
+  } */
 }
 
 // Data Dependency Graph
@@ -373,7 +373,7 @@ void Scheduler::buildDDG() {
       }
     }
   }
-  std::cout << "Made it to the end of the scheduler" << this->scheduler_name << std::endl;
+  // std::cout << "Made it to the end of the scheduler" << this->scheduler_name << std::endl;
 #else
   // make links
   ActionList pool = actions;

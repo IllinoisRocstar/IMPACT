@@ -41,6 +41,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(default_build_type "Release")
 # creating code compilation database
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# do not install gtest when installing this project
+set(INSTALL_GTEST OFF)
 
 # Options
 option(BUILD_SHARED_LIBS "Build shared libraries." ON)

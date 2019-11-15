@@ -81,7 +81,8 @@ if(ENABLE_MPI)
   foreach(include_dir IN LISTS ${MPI_INCLUDE_PATH})
   target_include_directories(SITCOM 
       PUBLIC
-          $<BUILD_INTERFACE:${include_dir}>)
+          $<BUILD_INTERFACE:${include_dir}>
+          $<INSTALL_INTERFACE:${include_dir}>)
   endforeach()
   target_compile_definitions(SITCOM 
       PUBLIC
@@ -91,7 +92,8 @@ if(ENABLE_MPI)
   foreach(include_dir IN LISTS ${MPI_INCLUDE_PATH})
     target_include_directories(SITCOMF
         PUBLIC
-            $<BUILD_INTERFACE:${include_dir}>)
+            $<BUILD_INTERFACE:${include_dir}>
+            $<INSTALL_INTERFACE:${include_dir}>)
   endforeach()
   target_compile_definitions(SITCOMF 
       PUBLIC
@@ -107,12 +109,11 @@ target_include_directories(SITCOM
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include/impact>
 )
-#target_include_directories(SITCOMF
-#    PUBLIC
-#         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-#         $<BUILD_INTERFACE:${MPI_INCLUDE_PATH}
-#    
-#)
+target_include_directories(SITCOMF
+    PUBLIC
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+         $<INSTALL_INTERFACE:include/impact>
+)
 
 #target_link_libraries(SITCOMF SITCOM)
 #[[if(NOT BUILD_SHARED_LIB)
