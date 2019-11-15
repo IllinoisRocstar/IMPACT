@@ -51,7 +51,8 @@ add_library(SolverUtils SHARED
 target_include_directories(SolverUtils 
     PUBLIC
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-      $<INSTALL_INTERFACE:include/impact> )
+      #$<INSTALL_INTERFACE:include/impact> 
+      )
 if(ENABLE_MPI)
   target_link_libraries(SolverUtils ${MPI_CXX_LIBRARIES} SITCOM SITCOMF)
   set_target_properties(SolverUtils PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
@@ -100,22 +101,24 @@ if(METIS_LIBRARY OR PMETIS_LIBRARY)
   target_include_directories(SolverUtils 
     PRIVATE
       $<BUILD_INTERFACE:${METIS_INCLUDE_PATH}>
-      $<INSTALL_INTERFACE:${PMETIS_INCLUDE_PATH}>)
+      #$<INSTALL_INTERFACE:${PMETIS_INCLUDE_PATH}>
+      )
   add_definitions( -DUSE_METIS )
   if(PMETIS_LIBRARY)
     target_include_directories(SolverUtils 
       PRIVATE 
         $<BUILD_INTERFACE:${PMETIS_INCLUDE_PATH}>
-        $<INSTALL_INTERFACE:${PMETIS_INCLUDE_PATH}>)
+        #$<INSTALL_INTERFACE:${PMETIS_INCLUDE_PATH}>
+        )
     add_definitions( -DPMETIS )
   endif()
 endif()
 
 # install the headers and export the targets
-install(DIRECTORY include/ 
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/include/impact)
-install(TARGETS meshgen2d SolverUtils wrl2mesh gg2mesh t3d2mesh 
-        RUNTIME DESTINATION bin 
-        LIBRARY DESTINATION lib 
-        ARCHIVE DESTINATION lib
-        INCLUDES DESTINATION include)
+#install(DIRECTORY include/ 
+#        DESTINATION ${CMAKE_INSTALL_PREFIX}/include/impact)
+#install(TARGETS meshgen2d SolverUtils wrl2mesh gg2mesh t3d2mesh 
+#        RUNTIME DESTINATION bin 
+#        LIBRARY DESTINATION lib 
+#        ARCHIVE DESTINATION lib
+#        INCLUDES DESTINATION include)
