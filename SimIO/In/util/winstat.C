@@ -19,7 +19,7 @@
 //#include "COMM.H" // contains IRAD utilities for MPI
 //#include "Pane_communicator.h" // IMPACT's inter-process tools
 
-COM_EXTERN_MODULE(SimOut);
+COM_EXTERN_MODULE(SimOut)
 
 void usage(char *exec) {
   std::cout << std::endl << " Usage: " << std::endl;

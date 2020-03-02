@@ -521,8 +521,7 @@ class MeshUtilityObject {
         ECon().Inverse(_connectivities[type], NC().Size());
         break;
       default:
-        bool connectivity_known_type = false;
-        assert(connectivity_known_type);
+        assert(false);
         break;
     }
     return (0);

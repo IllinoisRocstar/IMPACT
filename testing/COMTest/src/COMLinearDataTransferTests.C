@@ -90,8 +90,8 @@ void CompareSolutionsWithDetail(std::vector<double> &solution1,
   double diffmax = 0;
   double diffmin = 10000.0;
   while (soln1It != solution1.end()) {
-    double value1 = *soln1It++;
-    double value2 = *soln2It++;
+    /*double value1 = **/soln1It++;
+    /*double value2 = **/soln2It++;
     double diff = std::abs(*soln1It - *soln2It);
     sum += diff;
     if (diff > diffmax) diffmax = diff;
@@ -164,8 +164,8 @@ class TransferSolver : public SolverUtils::FEM::SolverAgent {
     SolverUtils::Mesh::WriteVTKToStream(meshName, Mesh(), vtkOut);
     vtkOut.close();
 
-    int nNodes = Mesh().nc.NNodes();
-    int nElem = Mesh().con.Nelem();
+    nNodes = Mesh().nc.NNodes();
+    nElem = Mesh().con.Nelem();
 
     nodeCoordinates1.resize(3 * nNodes);
     nodeCoordinates2.resize(3 * nNodes);

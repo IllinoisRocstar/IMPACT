@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-# set project metadata ########################################################
+# set project metadata #########################################################
 
 set(IMPACT_MAJOR_VERSION 1)
 set(IMPACT_MINOR_VERSION 0)
@@ -37,7 +37,7 @@ project(${PROJECT_NAME} CXX C Fortran)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Set project defaults ########################################################
+# Set project defaults #########################################################
 set(default_build_type "Release")
 # creating code compilation database
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -52,20 +52,21 @@ option(ENABLE_TESTS "Build with tests." OFF)
 
 # Setting compile and link options #############################################
 
-# Adding flags to Debug
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
-
 # Compiled objects output paths
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# Turn on default warnings as errors for GNU compilers.
+# Turn on default warnings for GNU compilers.
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
   # Update if necessary
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wpedantic")
-  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wold-style-cast \
-  #-Wnon-virtual-dtor -Wno-unused-parameter -Wno-invalid-offsetof")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-sign-compare")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra -Wno-unused-parameter")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Woverloaded-virtual -Wnon-virtual-dtor")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wstrict-null-sentinel -Wredundant-decls")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wshadow")
+  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wfloat-conversion")
 endif()
 
 #mark_as_advanced(LIBRARY_OUTPUT_PATH EXECUTABLE_OUTPUT_PATH)
@@ -74,7 +75,7 @@ endif()
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-# Finding libraries ###########################################################
+# Finding libraries ############################################################
 if(NOT ENABLE_MPI)
   add_definitions( -DDUMMY_MPI )
 else()

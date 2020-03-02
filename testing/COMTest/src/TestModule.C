@@ -446,9 +446,9 @@ class TestModule : public TestSolver, public COM_Object {
     typedef IRAD::Comm::CommunicatorObject CommType;
     CommType _communicator;
     bool getcommunicator = true;
-    MPI_Comm comm, default_comm;
+    MPI_Comm comm/*, default_comm*/;
     COM_get_communicator(comm_name, &comm);
-    default_comm = COM_get_default_communicator();
+    //default_comm = COM_get_default_communicator();
 
     if (comm != MPI_COMM_SELF) {
       _communicator.SetErr(1);

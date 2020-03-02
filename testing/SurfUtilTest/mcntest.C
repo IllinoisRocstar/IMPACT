@@ -27,7 +27,7 @@ void meanCurvatureNormals(int argc, char** argv) {
   std::cout << "Reading surface mesh file \"" << argv[1] << '"' << endl;
 
   std::string fname(argv[1]), wname;
-  string::size_type n0 = fname.find_last_of("/");
+  string::size_type n0 = fname.find_last_of('/');
 
   if (n0 != std::string::npos) fname = fname.substr(n0 + 1, fname.size());
 
@@ -45,7 +45,10 @@ void meanCurvatureNormals(int argc, char** argv) {
   std::cout << "Creating window \"" << wname << '"' << endl;
 
   // Read in IM/HDF format
-  int err = IM_Reader().read_winmesh(argv[1], wname);
+#ifndef NDEBUG
+  int err =
+#endif
+      IM_Reader().read_winmesh(argv[1], wname);
   // std::cout << "err is equal to: " << err << std::endl;
   COM_assertion(err >= 0);
 

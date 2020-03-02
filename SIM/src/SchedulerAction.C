@@ -1,25 +1,17 @@
-//
-// Created by agondolo on 9/5/18.
-//
-
 #include "SchedulerAction.h"
 
-// SchedulerAction
+SchedulerAction::~SchedulerAction() { delete sub_schedule; }
 
-SchedulerAction::~SchedulerAction() { delete sched; }
-
-void SchedulerAction::init(double t) { sched->init_actions(t); }
+void SchedulerAction::init(double t) { sub_schedule->init_actions(t); }
 
 void SchedulerAction::run(double t, double dt, double alpha) {
-  // sched->set_alpha(alpha);
-  sched->run_actions(t, dt);
+  sub_schedule->run_actions(t, dt, alpha);
 }
 
-void SchedulerAction::finalize() { sched->finalize_actions(); }
+void SchedulerAction::finalize() { sub_schedule->finalize_actions(); }
 
-void SchedulerAction::print(FILE *f, char *container_name) {
-  fprintf(f,
-          "graph: { title: \"%s\" label: \"%s\" \n\
+void SchedulerAction::print(FILE *f) const {
+  fprintf(f, "graph: { title: \"%s\" label: \"%s\" \n\
         status: folded \n\
         display_edge_labels: yes \n\
         layoutalgorithm: tree   \n\
@@ -34,15 +26,15 @@ void SchedulerAction::print(FILE *f, char *container_name) {
         edge.thickness : 2   \n\
         edge.fontname:\"helvO08\"  \n\
         node.label: \"no type\" \n",
-          name(), name());
-  sched->print(f, container_name);
+          name().c_str(), name().c_str());
+  sub_schedule->print(f, this->name().c_str());
   fprintf(f, "}\n");
 }
 
-void SchedulerAction::print_toposort(FILE *f) {
+void SchedulerAction::print_toposort(FILE *f) const {
   fprintf(f, "( ");
-  sched->print_toposort(f);
+  sub_schedule->print_toposort(f);
   fprintf(f, ") ");
 }
 
-void SchedulerAction::schedule() { sched->schedule(); }
+void SchedulerAction::schedule() { sub_schedule->schedule(); }

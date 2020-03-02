@@ -114,7 +114,7 @@ class DataBuffer {
   };
   int resize(int newsize) {
     int save_item_size = _item_size;
-    int save_nitems = _number_of_items;
+    //int save_nitems = _number_of_items;
     Destroy();
     if (newsize > 0) {
       if ((newsize % save_item_size) == 0) {
@@ -130,7 +130,7 @@ class DataBuffer {
 
   template <class T>
   std::ostream &OutputToStream(std::ostream &Ostr) const {
-    char delimiter;
+    char delimiter = 0;
     std::ostringstream OutStr;
     if (sizeof(T) != 1) delimiter = ' ';
     T *dataptr = (T *)_data_ptr;
@@ -278,8 +278,7 @@ class SolutionData {
       if (mdi->name == name) return (*mdi);
       mdi++;
     }
-    bool invalid_field_name = false;
-    assert(invalid_field_name);
+    assert(false);
     return (*mdi);  // never get here
   };
 
@@ -313,8 +312,7 @@ class SolutionData {
       if (mdi->name == name) return (*mdi);
       mdi++;
     }
-    bool invalid_field_name = false;
-    assert(invalid_field_name);
+    assert(false);
     return (*mdi);  // never get here
   };
 

@@ -72,11 +72,11 @@ void RFC_Window_transfer::replicate_metadata(
       // in their host facets.
       Three_tuple<int> &f = pn._subfaces[subface_list[i] - 1];
       for (int j = 0; j < 3; ++j) {
-        int parent = pn._subnode_parents[f[j] - 1].face_id;
-        Element_node_enumerator ene(pn.base(), parent);
+        parent = pn._subnode_parents[f[j] - 1].face_id;
+        Element_node_enumerator ene2(pn.base(), parent);
 
-        for (int k = 0, kn = ene.size_of_nodes(); k < kn; ++k)
-          node_list.insert(ene[k]);
+        for (int k = 0, kn = ene2.size_of_nodes(); k < kn; ++k)
+          node_list.insert(ene2[k]);
       }
     }
 
@@ -122,11 +122,11 @@ void RFC_Window_transfer::replicate_metadata(
         // in their host facets.
         Three_tuple<int> &f = pane._subfaces[i];
         for (int j = 0; j < 3; ++j) {
-          int parent = pane._subnode_parents[f[j] - 1].face_id;
-          Element_node_enumerator ene(pane.base(), parent);
+          parent = pane._subnode_parents[f[j] - 1].face_id;
+          Element_node_enumerator ene2(pane.base(), parent);
 
-          for (int k = 0, kn = ene.size_of_nodes(); k < kn; ++k)
-            ns.insert(ene[k]);
+          for (int k = 0, kn = ene2.size_of_nodes(); k < kn; ++k)
+            ns.insert(ene2[k]);
         }
       }
     }
@@ -218,7 +218,7 @@ void RFC_Window_transfer::replicate_data(const Facial_data_const &data,
   recv_panes.reserve(_replic_panes.size());
 
   int totalNumPanes = _pane_map.size();
-  int d = data.dimension(), ierr;
+  int d = data.dimension();
 
   // Loop through the replicated panes
   // Initiate receive of data buffers from remote processes
@@ -233,17 +233,23 @@ void RFC_Window_transfer::replicate_data(const Facial_data_const &data,
 
     std::pair<int, int> s = _pane_map.find(p->id())->second;
     MPI_Request req;
-    ierr = MPI_Irecv(&p->_data_buf[0], p->_data_buf.size() * sizeof(Real),
-                     MPI_BYTE, s.first, 100 + s.second, _comm, &req);
+#ifndef NDEBUG
+    int ierr =
+#endif
+        MPI_Irecv(&p->_data_buf[0], p->_data_buf.size() * sizeof(Real),
+                  MPI_BYTE, s.first, 100 + s.second, _comm, &req);
     RFC_assertion(ierr == 0);
     recv_requests.push_back(req);
     recv_panes.push_back(it->second);
 
     if (replicate_coor) {
       p->_coor_buf.resize(p->size_of_faces() * 3);
-      ierr = MPI_Irecv(&p->_coor_buf[0],
-                       p->_recv_faces.size() * 3 * sizeof(Real), MPI_BYTE,
-                       s.first, 100 + totalNumPanes + s.second, _comm, &req);
+#ifndef NDEBUG
+      ierr =
+#endif
+          MPI_Irecv(&p->_coor_buf[0], p->_recv_faces.size() * 3 * sizeof(Real),
+                    MPI_BYTE, s.first, 100 + totalNumPanes + s.second, _comm,
+                    &req);
       RFC_assertion(ierr == 0);
       other_requests.push_back(req);
     }
@@ -276,18 +282,24 @@ void RFC_Window_transfer::replicate_data(const Facial_data_const &data,
     }
 
     MPI_Request req;
-    ierr = MPI_Isend(const_cast<Real *>(addr),
-                     send_faces.size() * d * sizeof(Real), MPI_BYTE, it->first,
-                     100 + s.second, _comm, &req);
+#ifndef NDEBUG
+    int ierr =
+#endif
+        MPI_Isend(const_cast<Real *>(addr),
+                  send_faces.size() * d * sizeof(Real), MPI_BYTE, it->first,
+                  100 + s.second, _comm, &req);
 
     RFC_assertion(ierr == 0);
     other_requests.push_back(req);
 
     if (replicate_coor) {
-      ierr = MPI_Isend(const_cast<Real *>(p->coordinates()),
-                       p->_send_faces[it->first].size() * 3 * sizeof(Real),
-                       MPI_BYTE, it->first, 100 + totalNumPanes + s.second,
-                       _comm, &req);
+#ifndef NDEBUG
+      ierr =
+#endif
+          MPI_Isend(const_cast<Real *>(p->coordinates()),
+                    p->_send_faces[it->first].size() * 3 * sizeof(Real),
+                    MPI_BYTE, it->first, 100 + totalNumPanes + s.second, _comm,
+                    &req);
       RFC_assertion(ierr == 0);
       other_requests.push_back(req);
     }
@@ -298,7 +310,10 @@ void RFC_Window_transfer::replicate_data(const Facial_data_const &data,
     int index;
     MPI_Status stat;
 
-    ierr = MPI_Waitany(recv_requests.size(), &recv_requests[0], &index, &stat);
+#ifndef NDEBUG
+    int ierr =
+#endif
+        MPI_Waitany(recv_requests.size(), &recv_requests[0], &index, &stat);
     RFC_assertion(ierr == 0);
     RFC_Pane_transfer *p = recv_panes[index];
 
@@ -338,7 +353,7 @@ void RFC_Window_transfer::replicate_data(const Nodal_data_const &data,
   recv_panes.reserve(_replic_panes.size());
 
   int totalNumPanes = _pane_map.size();
-  int d = data.dimension(), ierr;
+  int d = data.dimension();
 
   // Loop through the replicated panes
   // Initiate receive of data buffers from remote processes
@@ -353,17 +368,23 @@ void RFC_Window_transfer::replicate_data(const Nodal_data_const &data,
 
     std::pair<int, int> s = _pane_map.find(p->id())->second;
     MPI_Request req;
-    ierr = MPI_Irecv(&p->_data_buf[0], p->_data_buf.size() * sizeof(Real),
-                     MPI_BYTE, s.first, 100 + s.second, _comm, &req);
+#ifndef NDEBUG
+    int ierr =
+#endif
+        MPI_Irecv(&p->_data_buf[0], p->_data_buf.size() * sizeof(Real),
+                  MPI_BYTE, s.first, 100 + s.second, _comm, &req);
     RFC_assertion(ierr == 0);
     recv_requests.push_back(req);
     recv_panes.push_back(it->second);
 
     if (replicate_coor) {
       p->_coor_buf.resize(p->size_of_nodes() * 3);
-      ierr = MPI_Irecv(&p->_coor_buf[0],
-                       p->_recv_nodes.size() * 3 * sizeof(Real), MPI_BYTE,
-                       s.first, 100 + totalNumPanes + s.second, _comm, &req);
+#ifndef NDEBUG
+      ierr =
+#endif
+          MPI_Irecv(&p->_coor_buf[0], p->_recv_nodes.size() * 3 * sizeof(Real),
+                    MPI_BYTE, s.first, 100 + totalNumPanes + s.second, _comm,
+                    &req);
       RFC_assertion(ierr == 0);
       other_requests.push_back(req);
     }
@@ -396,17 +417,23 @@ void RFC_Window_transfer::replicate_data(const Nodal_data_const &data,
     }
 
     MPI_Request req;
-    ierr = MPI_Isend(const_cast<Real *>(addr),
-                     send_nodes.size() * d * sizeof(Real), MPI_BYTE, it->first,
-                     100 + s.second, _comm, &req);
+#ifndef NDEBUG
+    int ierr =
+#endif
+        MPI_Isend(const_cast<Real *>(addr),
+                  send_nodes.size() * d * sizeof(Real), MPI_BYTE, it->first,
+                  100 + s.second, _comm, &req);
     RFC_assertion(ierr == 0);
     other_requests.push_back(req);
 
     if (replicate_coor) {
-      ierr = MPI_Isend(const_cast<Real *>(p->coordinates()),
-                       p->_send_nodes[it->first].size() * 3 * sizeof(Real),
-                       MPI_BYTE, it->first, 100 + totalNumPanes + s.second,
-                       _comm, &req);
+#ifndef NDEBUG
+      ierr =
+#endif
+          MPI_Isend(const_cast<Real *>(p->coordinates()),
+                    p->_send_nodes[it->first].size() * 3 * sizeof(Real),
+                    MPI_BYTE, it->first, 100 + totalNumPanes + s.second, _comm,
+                    &req);
       RFC_assertion(ierr == 0);
       other_requests.push_back(req);
     }
@@ -417,7 +444,10 @@ void RFC_Window_transfer::replicate_data(const Nodal_data_const &data,
     int index;
     MPI_Status stat;
 
-    ierr = MPI_Waitany(recv_requests.size(), &recv_requests[0], &index, &stat);
+#ifndef NDEBUG
+    int ierr =
+#endif
+        MPI_Waitany(recv_requests.size(), &recv_requests[0], &index, &stat);
     RFC_assertion(ierr == 0);
 
     RFC_Pane_transfer *p = recv_panes[index];
@@ -482,7 +512,10 @@ void RFC_Window_transfer::reduce_maxabs_to_all(Nodal_data &data) {
 
 //=================== Lower level communication routines
 void RFC_Window_transfer::barrier() const {
-  int ierr = MPI_Barrier(_comm);
+#ifndef NDEBUG
+  int ierr =
+#endif
+      MPI_Barrier(_comm);
   RFC_assertion(ierr == 0);
 }
 
@@ -495,7 +528,10 @@ bool RFC_Window_transfer::is_root() const {
 void RFC_Window_transfer::wait_all(int n, MPI_Request *requests) {
   if (n > 0) {
     std::vector<MPI_Status> statuses(n);
-    int ierr = MPI_Waitall(n, requests, &statuses[0]);
+#ifndef NDEBUG
+    int ierr =
+#endif
+        MPI_Waitall(n, requests, &statuses[0]);
     RFC_assertion(ierr == 0);
   }
 }
@@ -505,7 +541,10 @@ void RFC_Window_transfer::wait_any(int n, MPI_Request *requests, int *index,
   if (n > 0) {
     MPI_Status s;
     if (stat == NULL) stat = &s;
-    int ierr = MPI_Waitany(n, requests, index, stat);
+#ifndef NDEBUG
+    int ierr =
+#endif
+        MPI_Waitany(n, requests, index, stat);
     RFC_assertion(ierr == 0);
   }
 }

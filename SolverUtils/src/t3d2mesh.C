@@ -16,7 +16,7 @@ using namespace SolverUtils;
 class T3DGeomEnt : public std::pair<unsigned int, unsigned int> {
  public:
   T3DGeomEnt() : std::pair<unsigned int, unsigned int>(){};
-  T3DGeomEnt(const T3DGeomEnt &ing) {
+  T3DGeomEnt(const T3DGeomEnt &ing) : pair(ing) {
     this->first = ing.first;
     this->second = ing.second;
   };
@@ -315,7 +315,7 @@ int main(int argc, char *argv[]) {
   Mesh::IndexType ncurve = 0;
   Mesh::IndexType nsurf = 0;
   Mesh::IndexType nregion = 0;
-  Mesh::IndexType npatch = 0;
+  //Mesh::IndexType npatch = 0;
   //  Mesh::IndexType nshell  = 0;
   //  Mesh::IndexType ninter  = 0;
   std::vector<Mesh::GeometricEntity> geometries(ngeoms);

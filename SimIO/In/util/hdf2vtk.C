@@ -486,7 +486,7 @@ void COM_print_window(const std::string &wName, const std::string &timeStr,
   COM_free_buffer(&attrStr);
 }
 
-COM_EXTERN_MODULE(SimIN);
+COM_EXTERN_MODULE(SimIN)
 
 int main(int argc, char *argv[]) {
   COM_init(&argc, &argv);

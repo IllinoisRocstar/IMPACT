@@ -41,7 +41,7 @@ TEST(SurfUtilTests, SerializeMesh) {
   std::cout << ARGV[2] << std::endl;
 
   std::string fname(ARGV[1]), wname;
-  std::string::size_type n0 = fname.find_last_of("/");
+  std::string::size_type n0 = fname.find_last_of('/');
 
   if (n0 != std::string::npos) fname = fname.substr(n0 + 1, fname.size());
 
@@ -59,7 +59,10 @@ TEST(SurfUtilTests, SerializeMesh) {
   std::cout << "Creating window \"" << wname << '"' << std::endl;
 
   // Read in IM/HDF format
-  int err = IM_Reader().read_winmesh(ARGV[1], wname);
+#ifndef NDEBUG
+  int err =
+#endif
+      IM_Reader().read_winmesh(ARGV[1], wname);
   COM_assertion(err >= 0);
 
   COM_window_init_done(wname.c_str());

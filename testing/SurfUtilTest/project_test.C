@@ -17,7 +17,7 @@
 #include "SurfaceProjection.h"
 
 using namespace std;
-COM_EXTERN_MODULE(SimIN);
+COM_EXTERN_MODULE(SimIN)
 
 void project_window(const std::string& wName, const std::string& timeStr,
                     const std::string& file_in) {

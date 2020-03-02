@@ -46,8 +46,7 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 #include_directories(include ${IMPACT_INC} ${CMAKE_BINARY_DIR}/include)
 
-add_library(SolverUtils SHARED 
-    ${LIB_SRCS})
+add_library(SolverUtils ${LIB_SRCS})
 target_include_directories(SolverUtils 
     PUBLIC
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

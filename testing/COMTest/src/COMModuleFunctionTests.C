@@ -27,8 +27,8 @@ std::string& rtrim(std::string& str) {
       str.erase(i + 1, str.length() - 1);
       break;
     }
-    return str;
   }
+  return str;
 }
 // helper function which trims the leading whitespace at the beginning of a
 // string
@@ -42,8 +42,8 @@ std::string& ltrim(std::string& str) {
       str.erase(0, i - 1);
       break;
     }
-    return str;
   }
+  return str;
 }
 
 std::string& trim(std::string& str) { return ltrim(rtrim(str)); }

@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
       int npanes;
       COM_get_panes(trgwin.c_str(), &npanes, &srcpane_ids);
       pane_id.resize(npanes);
-      for (int i = 0; i < npanes; i++) pane_id[i] = srcpane_ids[i];
+      for (int i2 = 0; i2 < npanes; i2++) pane_id[i2] = srcpane_ids[i2];
       // These are no longer necessary as we've duped the info into
       // a locally allocated array
       COM_free_buffer(&srcpane_ids);

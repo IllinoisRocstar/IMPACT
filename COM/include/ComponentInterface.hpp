@@ -162,10 +162,10 @@ class ComponentInterface {
    *  Returns the corresponding value.
    *  \param from  dataitem being copied from
    *  \param aname new name of the dataitem
-   *  \param cond  an integer pane-dataitem
-   *  \param val   value to be compared against cond
    *  \param inherit_mode mode of inheritance
-   *  \param withghost wheather ghost nodes/elements should be ignored */
+   *  \param withghost wheather ghost nodes/elements should be ignored
+   *  \param cond  an integer pane-dataitem
+   *  \param val   value to be compared against cond */
   DataItem *inherit(DataItem *from, const std::string &aname, int inherit_mode,
                     bool withghost, const DataItem *cond, int val);
 

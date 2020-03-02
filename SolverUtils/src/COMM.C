@@ -465,7 +465,10 @@ int CommunicatorObject::_BroadCastMOV(std::vector<MobileObject *> &mos,
   std::vector<MobileObject *>::iterator moi = mos.begin();
   while (si != sizeofobject.end()) {
     if (_rank != root_rank) {
-      int bsize = (*moi++)->PrepareBuffer(*si);
+#ifndef NDEBUG
+      int bsize =
+#endif
+          (*moi++)->PrepareBuffer(*si);
       assert(bsize == *si);
     }
     total_size += *si++;

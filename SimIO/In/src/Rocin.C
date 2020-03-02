@@ -198,7 +198,10 @@ class AutoCDer {
  public:
   inline AutoCDer() : m_cwd(getcwd(NULL, 0)) {}
   inline ~AutoCDer() {
-    chdir(m_cwd);
+    if (chdir(m_cwd) != 0)
+      perror(("Rocin::~AutoCDer chdir() to " + std::string(m_cwd) + " failed")
+                 .c_str());
+
     free(m_cwd);
   }
 
@@ -377,6 +380,7 @@ bool elementType_to_string(ElementType_t etype, std::string &roccom_elem) {
 }
 #endif  // ifdef CGNS
 
+#ifndef USE_CGNS
 /**
  ** Find the first geometry dataset for the given block.
  **
@@ -1003,6 +1007,7 @@ static void scan_files_HDF4(int pathc, char *pathv[], BlockMM_HDF4 &blocks,
     }
   }
 }
+#endif
 
 static void load_data_HDF4(BlockMM_HDF4::iterator p,
                            const BlockMM_HDF4::iterator &end,
@@ -1234,7 +1239,10 @@ static void scan_files_CGNS(
     std::string fname(pathv[i]);
     std::string::size_type cloc = fname.rfind('/');
     if (cloc != std::string::npos) {
-      chdir(fname.substr(0, cloc).c_str());
+      if (chdir(fname.substr(0, cloc).c_str()) != 0)
+        perror(("Rocin::scan_files_CGNS chdir() to " + fname.substr(0, cloc) +
+                " failed")
+                   .c_str());
       fname.erase(0, cloc + 1);
     }
 
@@ -1354,10 +1362,10 @@ static void scan_files_CGNS(
 
       int Z;
       for (Z = 1; Z <= nZones; ++Z) {
-        int nPoints, nGhostPoints;
+        int nPoints = 0, nGhostPoints = 0;
         std::string units;
         char zoneName[33];
-        int gridSize[3], coreSize[9];
+        int gridSize[6], coreSize[9];
         CG_CHECK_RET(
             cg_zone_read,
             (fn, B, Z, zoneName, reinterpret_cast<cgsize_t *>(coreSize)),
@@ -1483,8 +1491,8 @@ static void scan_files_CGNS(
                            delete block;
                            continue);
 
-              int rind[2];
-              if (cg_rind_read(rind) == 0) nGhostElems = rind[1];
+              int rind2[2];
+              if (cg_rind_read(rind2) == 0) nGhostElems = rind2[1];
             }
             // Fix for the Boeing fix
             // If the conn table name doesn't begin with a ':', it's not
@@ -1547,7 +1555,7 @@ static void scan_files_CGNS(
                 CG_CHECK_RET(cg_ndescriptors, (&nDescriptors), continue);
 
                 char *text = NULL;
-                std::string units;
+                std::string units2;
                 bool isNull = false;
                 int nGhostItems = 0, D;
                 for (D = 1; D <= nDescriptors; ++D) {
@@ -1566,30 +1574,30 @@ static void scan_files_CGNS(
                       in >> nGhostItems;
                     }
                   } else if (strcmp(buffer, "Units") == 0) {
-                    units = text;
+                    units2 = text;
                   }
                   free(text);
                 }
 
                 int nComps = 1, comp = 0;
-                std::string::size_type i = label.rfind('#');
-                if (i != std::string::npos) {
-                  std::istringstream in(&label[i + 1]);
+                std::string::size_type i2 = label.rfind('#');
+                if (i2 != std::string::npos) {
+                  std::istringstream in(&label[i2 + 1]);
                   in >> comp;
                   --comp;
                   in.get();
                   in.get();
                   in >> nComps;
-                  label.erase(i);
+                  label.erase(i2);
                 } else {
-                  i = label.length() - 1;
-                  if (label[i] >= 'X' && label[i] <= 'Z') {
-                    comp = label[i] - 'X';
-                    label.erase(i);
-                    --i;
-                    if (label[i] >= 'X' && label[i] <= 'Z') {
-                      comp += 3 * (label[i] - 'X');
-                      label.erase(i);
+                  i2 = label.length() - 1;
+                  if (label[i2] >= 'X' && label[i2] <= 'Z') {
+                    comp = label[i2] - 'X';
+                    label.erase(i2);
+                    --i2;
+                    if (label[i2] >= 'X' && label[i2] <= 'Z') {
+                      comp += 3 * (label[i2] - 'X');
+                      label.erase(i2);
                       nComps = 9;
                     } else {
                       nComps = 3;
@@ -1603,7 +1611,7 @@ static void scan_files_CGNS(
                   vi.m_is_null[comp] = isNull;
                 } else {
                   block->m_variables.push_back(
-                      VarInfo_CGNS(label, 'w', CGNS2COM[dataType], units,
+                      VarInfo_CGNS(label, 'w', CGNS2COM[dataType], units2,
                                    nComps, A, size[0], nGhostItems, isNull));
                 }
               }
@@ -1669,7 +1677,7 @@ static void scan_files_CGNS(
                 CG_CHECK_RET(cg_ndescriptors, (&nDescriptors), continue);
 
                 char *text = NULL;
-                std::string units;
+                std::string units2;
                 bool isNull = false;
                 int nGhostItems = 0, D;
                 for (D = 1; D <= nDescriptors; ++D) {
@@ -1688,30 +1696,30 @@ static void scan_files_CGNS(
                       in >> nGhostItems;
                     }
                   } else if (strcmp(buffer, "Units") == 0) {
-                    units = text;
+                    units2 = text;
                   }
                   free(text);
                 }
 
                 int nComps = 1, comp = 0;
-                std::string::size_type i = label.rfind('#');
-                if (i != std::string::npos) {
-                  std::istringstream in(&label[i + 1]);
+                std::string::size_type i2 = label.rfind('#');
+                if (i2 != std::string::npos) {
+                  std::istringstream in(&label[i2 + 1]);
                   in >> comp;
                   --comp;
                   in.get();
                   in.get();
                   in >> nComps;
-                  label.erase(i);
+                  label.erase(i2);
                 } else {
-                  i = label.length() - 1;
-                  if (label[i] >= 'X' && label[i] <= 'Z') {
-                    comp = label[i] - 'X';
-                    label.erase(i);
-                    --i;
-                    if (label[i] >= 'X' && label[i] <= 'Z') {
-                      comp += 3 * (label[i] - 'X');
-                      label.erase(i);
+                  i2 = label.length() - 1;
+                  if (label[i2] >= 'X' && label[i2] <= 'Z') {
+                    comp = label[i2] - 'X';
+                    label.erase(i2);
+                    --i2;
+                    if (label[i2] >= 'X' && label[i2] <= 'Z') {
+                      comp += 3 * (label[i2] - 'X');
+                      label.erase(i2);
                       nComps = 9;
                     } else {
                       nComps = 3;
@@ -1726,7 +1734,7 @@ static void scan_files_CGNS(
                 } else {
                   // std::cout << "Units now == " << units << std::endl;
                   block->m_variables.push_back(
-                      VarInfo_CGNS(label, attrType, CGNS2COM[dataType], units,
+                      VarInfo_CGNS(label, attrType, CGNS2COM[dataType], units2,
                                    nComps, A, size[0], nGhostItems, isNull));
                 }
               }
@@ -1761,23 +1769,23 @@ static void scan_files_CGNS(
                          (fn, B, "Zone_t", Z, "FlowSolution_t", S, "end"),
                          break);
 
-            int rind[6];
-            if (cg_rind_read(rind) != 0) std::fill_n(rind, 6, 0);
+            int rind2[6];
+            if (cg_rind_read(rind2) != 0) std::fill_n(rind2, 6, 0);
 
             int nItems;
             int start = isNodal ? 0 : 1;
             if (zoneType == CGNS_ENUMV(Structured)) {
               start *= cellDim;
               // Note: the rind values should always be the same.
-              nItems = coreSize[start] + rind[0] + rind[1];
+              nItems = coreSize[start] + rind2[0] + rind2[1];
               if (cellDim > 1) {
-                nItems *= coreSize[start + 1] + rind[2] + rind[3];
+                nItems *= coreSize[start + 1] + rind2[2] + rind2[3];
                 if (cellDim > 2)
-                  nItems *= coreSize[start + 2] + rind[4] + rind[5];
+                  nItems *= coreSize[start + 2] + rind2[4] + rind2[5];
               }
             } else {
               // Note: rind[0] should always be 0.
-              nItems = coreSize[start] + rind[0] + rind[1];
+              nItems = coreSize[start] + rind2[0] + rind2[1];
             }
 
             int nFields;
@@ -1800,7 +1808,7 @@ static void scan_files_CGNS(
               CG_CHECK_RET(cg_ndescriptors, (&nDescriptors), continue);
 
               char *text = NULL;
-              std::string units;
+              std::string units2;
               bool isNull = false;
               int D;
               for (D = 1; D <= nDescriptors; ++D) {
@@ -1808,35 +1816,35 @@ static void scan_files_CGNS(
 
                 if (strcmp(buffer, "Range") == 0) {
                   if (strcmp(text, "EMPTY") == 0) {
-                    rind[1] = nItems = 0;
+                    rind2[1] = nItems = 0;
                     isNull = true;
                   } else if (strcmp(text, "NULL") == 0)
                     isNull = true;
                 } else if (strcmp(buffer, "Units") == 0)
-                  units = text;
+                  units2 = text;
                 free(text);
               }
 
               unsigned int nComps = 1;
               int comp = 0;
-              std::string::size_type i = label.rfind('#');
-              if (i != std::string::npos) {
-                std::istringstream in(&label[i + 1]);
+              std::string::size_type i2 = label.rfind('#');
+              if (i2 != std::string::npos) {
+                std::istringstream in(&label[i2 + 1]);
                 in >> comp;
                 --comp;
                 in.get();
                 in.get();
                 in >> nComps;
-                label.erase(i);
+                label.erase(i2);
               } else {
-                i = label.length() - 1;
-                if (label[i] >= 'X' && label[i] <= 'Z') {
-                  comp = label[i] - 'X';
-                  label.erase(i);
-                  --i;
-                  if (label[i] >= 'X' && label[i] <= 'Z') {
-                    comp += 3 * (label[i] - 'X');
-                    label.erase(i);
+                i2 = label.length() - 1;
+                if (label[i2] >= 'X' && label[i2] <= 'Z') {
+                  comp = label[i2] - 'X';
+                  label.erase(i2);
+                  --i2;
+                  if (label[i2] >= 'X' && label[i2] <= 'Z') {
+                    comp += 3 * (label[i2] - 'X');
+                    label.erase(i2);
                     nComps = 9;
                   } else {
                     nComps = 3;
@@ -1859,7 +1867,7 @@ static void scan_files_CGNS(
               } else {
                 block->m_variables.push_back(
                     VarInfo_CGNS(label, isNodal ? 'n' : 'e', CGNS2COM[dataType],
-                                 units, nComps, F, nItems, rind[1], isNull));
+                                 units2, nComps, F, nItems, rind2[1], isNull));
               }
             }
           }
@@ -1883,20 +1891,20 @@ static void scan_files_CGNS(
                          (fn, B, "Zone_t", Z, "DiscreteData_t", S, "end"),
                          break);
 
-            int rind[6];
-            if (cg_rind_read(rind) != 0) std::fill_n(rind, 6, 0);
+            int rind2[6];
+            if (cg_rind_read(rind2) != 0) std::fill_n(rind2, 6, 0);
 
             int nItems;
             if (zoneType == CGNS_ENUMV(Structured)) {
               // Note: the rind values should always be the same.
-              nItems = coreSize[0] + rind[0] + rind[1];
+              nItems = coreSize[0] + rind2[0] + rind2[1];
               if (cellDim > 1) {
-                nItems *= coreSize[1] + rind[2] + rind[3];
-                if (cellDim > 2) nItems *= coreSize[2] + rind[4] + rind[5];
+                nItems *= coreSize[1] + rind2[2] + rind2[3];
+                if (cellDim > 2) nItems *= coreSize[2] + rind2[4] + rind2[5];
               }
             } else {
               // Note: rind[0] should always be 0.
-              nItems = coreSize[0] + rind[0] + rind[1];
+              nItems = coreSize[0] + rind2[0] + rind2[1];
             }
 
             int nArrays;
@@ -1934,7 +1942,7 @@ static void scan_files_CGNS(
               CG_CHECK_RET(cg_ndescriptors, (&nDescriptors), continue);
 
               char *text = NULL;
-              std::string units;
+              std::string units2;
               bool isNull = false;
               int D;
               for (D = 1; D <= nDescriptors; ++D) {
@@ -1942,34 +1950,34 @@ static void scan_files_CGNS(
 
                 if (strcmp(buffer, "Range") == 0) {
                   if (strcmp(text, "EMPTY") == 0) {
-                    rind[1] = nItems = 0;
+                    rind2[1] = nItems = 0;
                     isNull = true;
                   } else if (strcmp(text, "NULL") == 0)
                     isNull = true;
                 } else if (strcmp(buffer, "Units") == 0)
-                  units = text;
+                  units2 = text;
                 free(text);
               }
 
               int nComps = 1, comp = 0;
-              std::string::size_type i = label.rfind('#');
-              if (i != std::string::npos) {
-                std::istringstream in(&label[i + 1]);
+              std::string::size_type i2 = label.rfind('#');
+              if (i2 != std::string::npos) {
+                std::istringstream in(&label[i2 + 1]);
                 in >> comp;
                 --comp;
                 in.get();
                 in.get();
                 in >> nComps;
-                label.erase(i);
+                label.erase(i2);
               } else {
-                i = label.length() - 1;
-                if (label[i] >= 'X' && label[i] <= 'Z') {
-                  comp = label[i] - 'X';
-                  label.erase(i);
-                  --i;
-                  if (label[i] >= 'X' && label[i] <= 'Z') {
-                    comp += 3 * (label[i] - 'X');
-                    label.erase(i);
+                i2 = label.length() - 1;
+                if (label[i2] >= 'X' && label[i2] <= 'Z') {
+                  comp = label[i2] - 'X';
+                  label.erase(i2);
+                  --i2;
+                  if (label[i2] >= 'X' && label[i2] <= 'Z') {
+                    comp += 3 * (label[i2] - 'X');
+                    label.erase(i2);
                     nComps = 9;
                   } else {
                     nComps = 3;
@@ -1984,8 +1992,8 @@ static void scan_files_CGNS(
                 vi.m_is_null[comp] = isNull;
               } else {
                 block->m_variables.push_back(
-                    VarInfo_CGNS(label, 'n', CGNS2COM[dataType], units, nComps,
-                                 A, nItems, rind[1], isNull));
+                    VarInfo_CGNS(label, 'n', CGNS2COM[dataType], units2, nComps,
+                                 A, nItems, rind2[1], isNull));
               }
             }
 
@@ -2021,7 +2029,10 @@ static void load_data_CGNS(BlockMM_CGNS::iterator p,
     std::string fname(block->m_file);
     std::string::size_type cloc = fname.rfind('/');
     if (cloc != std::string::npos) {
-      chdir(fname.substr(0, cloc).c_str());
+      if (chdir(fname.substr(0, cloc).c_str()) != 0)
+        perror(("Rocin::load_data_CGNS chdir() to " + fname.substr(0, cloc) +
+                " failed")
+                   .c_str());
       fname.erase(0, cloc + 1);
     }
 
@@ -2754,20 +2765,20 @@ void Rocin::read_by_control_file(const char *control_file_name,
       // The @Panes section may not be present
       if (fin.eof()) break;
 
-      std::string::size_type pos = buffer.find("%t");
-      if (pos != std::string::npos) buffer.replace(pos, 2, time_level);
+      std::string::size_type pos2 = buffer.find("%t");
+      if (pos2 != std::string::npos) buffer.replace(pos2, 2, time_level);
 
-      pos = buffer.find('%');
-      if (pos != std::string::npos) {
+      pos2 = buffer.find('%');
+      if (pos2 != std::string::npos) {
         std::string::size_type pos_key =
-            buffer.find_first_not_of("0123456789", pos + 1);
+            buffer.find_first_not_of("0123456789", pos2 + 1);
 
         COM_assertion_msg(
             pos_key != std::string::npos,
             (std::string("Incomplete placeholder in file name ") + buffer)
                 .c_str());
 
-        std::string width = buffer.substr(pos + 1, pos_key - pos - 1);
+        std::string width = buffer.substr(pos2 + 1, pos_key - pos2 - 1);
 
         int w = 4;  // The default rankwidth is 4, if width is empty
         if (!width.empty()) {
@@ -2801,7 +2812,7 @@ void Rocin::read_by_control_file(const char *control_file_name,
                            .c_str());
         }
 
-        buffer.replace(pos, pos_key - pos + 1, sout.str());
+        buffer.replace(pos2, pos_key - pos2 + 1, sout.str());
       }
 
       // Determine whether buffer has directory part. If not, prepend that
@@ -2935,7 +2946,7 @@ void Rocin::read_by_control_file(const char *control_file_name,
  *  \param window_name Specifies a name of the window to be created.
  *  \param comm The MPI communicator to use. If is NULL, the default
  *         communicator of Roccom will be used.
- *  \param is_local A function pointer, which determines wheter a pane
+ *  \param is_local A function pointer, which determines whether a pane
  *         should be read by a process.
  *  \param time_level the time stamp of the dataset to be read.  If time
  *         level is NULL (default) or "", then the first time_level in the
@@ -2965,7 +2976,7 @@ std::string CWD() {
  *         to be read from the files.
  *  \param comm The MPI communicator to use. If is NULL, the default
  *         communicator of Roccom will be used.
- *  \param is_local A function pointer, which determines wheter a pane
+ *  \param is_local A function pointer, which determines whether a pane
  *         should be read by a process.
  *  \param time_level the time stamp of the dataset to be read.  If time
  *         level is NULL (default) or "", then the first time_level in the

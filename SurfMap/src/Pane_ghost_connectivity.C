@@ -216,16 +216,15 @@ void Pane_ghost_connectivity::get_ents_to_send(
     const int *vs =
         (const int *)pconn->pointer() + MAP::Pane_connectivity::pconn_offset();
 
-    int vs_size =
-        pconn->size_of_real_items() - MAP::Pane_connectivity::pconn_offset();
-
     // Loop through communicating panes for shared nodes.
     for (int j = 0, index = 0; j < n_comm_panes;
          ++j, index += vs[index + 1] + 2) {
       // skiping nonexistent panes to get to next communication pane
       while (_buf_window->owner_rank(vs[index]) < 0) {
         index += vs[index + 1] + 2;
-        COM_assertion_msg(index <= vs_size, "Invalid communication map");
+        COM_assertion_msg(index <= pconn->size_of_real_items() -
+                                       MAP::Pane_connectivity::pconn_offset(),
+                          "Invalid communication map");
       }
 
       for (int k = 0; k < vs[index + 1]; ++k) {
@@ -680,14 +679,19 @@ void Pane_ghost_connectivity::send_pane_info(vector<pane_i_vector> &send_info,
           adjrank = 0;
         }
 
+#ifndef NDEBUG
         int ierr =
+#endif
             COMMPI_Isend(&send_info[i][j][0], int_size * send_info[i][j].size(),
                          MPI_BYTE, adjrank, stag, comm, &req);
         COM_assertion(ierr == 0);
         reqs_send.push_back(req);
 
-        ierr = COMMPI_Irecv(&recv_info[i][j][0], int_size * comm_sizes[i][j],
-                            MPI_BYTE, adjrank, rtag, comm, &req);
+#ifndef NDEBUG
+        ierr =
+#endif
+            COMMPI_Irecv(&recv_info[i][j][0], int_size * comm_sizes[i][j],
+                         MPI_BYTE, adjrank, rtag, comm, &req);
         COM_assertion(ierr == 0);
         reqs_recv.push_back(req);
       }
@@ -695,17 +699,23 @@ void Pane_ghost_connectivity::send_pane_info(vector<pane_i_vector> &send_info,
   }
   // wait for MPI communication to finish
   if (mycomm != MPI_COMM_NULL) {
-    int ierr, index;
+    int index;
     MPI_Status status;
 
     while (!reqs_recv.empty()) {
-      ierr = MPI_Waitany(reqs_recv.size(), &reqs_recv[0], &index, &status);
+#ifndef NDEBUG
+      int ierr =
+#endif
+          MPI_Waitany(reqs_recv.size(), &reqs_recv[0], &index, &status);
       COM_assertion(ierr == 0);
       reqs_recv.erase(reqs_recv.begin() + index);
     }
 
     if (reqs_send.size()) {
-      ierr = MPI_Waitany(reqs_send.size(), &reqs_send[0], &index, &status);
+#ifndef NDEBUG
+      int ierr =
+#endif
+          MPI_Waitany(reqs_send.size(), &reqs_send[0], &index, &status);
       COM_assertion(ierr == 0);
       reqs_send.erase(reqs_send.begin() + index);
     }

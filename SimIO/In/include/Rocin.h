@@ -78,7 +78,7 @@ class Rocin : public COM_Object {
    * \param window_name the name of the window to be created.
    * \param comm The MPI communicator to use. If is NULL, the default
    *        communicator of Roccom will be used.
-   * \param is_local a function pointer which determines wheter a pane
+   * \param is_local a function pointer which determines whether a pane
    *        should be read by a process.
    * \param time_level the time stamp of the dataset to be read.  If time
    *        level is NULL (default) or "", then the first time_level in the
@@ -105,7 +105,7 @@ class Rocin : public COM_Object {
    *        material.
    * \param comm The MPI communicator to use. If is NULL, the default
    *        communicator of Roccom will be used.
-   * \param is_local a function pointer which determines wheter a pane should
+   * \param is_local a function pointer which determines whether a pane should
    *        be read by a process.
    * \param time_level the time stamp of the dataset to be read.  If time
    *        level is NULL (default) or "", then the first time_level in the

@@ -1744,7 +1744,7 @@ class CFacet : public std::vector<CPoint> {
     std::vector<CPoint>::const_iterator pi = v.begin();
     while (pi != v.end()) this->push_back(*pi++);
   };
-  CFacet(const CFacet &face) {
+  CFacet(const CFacet &face) : vector(face) {
     std::vector<CPoint>::const_iterator fi = face.begin();
     while (fi != face.end()) this->push_back(*fi++);
   };
@@ -1835,7 +1835,7 @@ class C3Facet : public std::vector<const C3Point *> {
   //       while(pi != v.end())
   // 	this->push_back(_copycreate_point(*pi++));
   //     };
-  C3Facet(const C3Facet &face) {
+  C3Facet(const C3Facet &face) : vector(face) {
     C3Facet::const_iterator fi = face.begin();
     while (fi != face.end()) this->push_back(*fi++);
   };

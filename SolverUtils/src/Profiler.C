@@ -304,8 +304,8 @@ int ProfilerObj::FunctionExit(int id) {
 int ProfilerObj::FunctionExitAll() {
   std::list<Event>::iterator ei = open_event_list.begin();
   while (ei != open_event_list.end()) {
-    unsigned int id = ei->id();
 #ifdef WITH_HPM_TOOLKIT
+    unsigned int id = ei->id();
     hpmStop((int)id);
 #endif
     double t = Time() - time0;
@@ -410,9 +410,9 @@ void ProfilerObj::SummarizeSerialExecution(std::ostream &Ostr) {
     if (cmi != configmap.end())
       routine_name = cmi->second;
     else {
-      std::ostringstream Ostr;
-      Ostr << routine_name << " (" << si->first << ")";
-      routine_name = Ostr.str();
+      std::ostringstream Ostr2;
+      Ostr2 << routine_name << " (" << si->first << ")";
+      routine_name = Ostr2.str();
     }
     double imean = si->second.incl / (double)si->second.ncalls;
     double emean = si->second.excl / (double)si->second.ncalls;
@@ -1006,20 +1006,20 @@ int ProfilerObj::PopulateScalaMap(ScalaMap &scala_map,
 }
 
 int ProfilerObj::ScalabilitySummary(ScalaStatMap &scala_statmap,
-                                    std::ostream &Out) {
+                                    std::ostream &Ost) {
   std::string appname = "Unknown";
   std::map<unsigned int, std::string>::iterator cfi = configmap.find(0);
   if (cfi != configmap.end()) appname.assign(cfi->second);
   // For every routine in the scalamap, print out the scalability information
   ScalaStatMap::iterator ssm_i = scala_statmap.begin();
-  Out << "############# Scalability Summary for " << appname << " "
+  Ost << "############# Scalability Summary for " << appname << " "
       << "#############" << std::endl;
   while (ssm_i != scala_statmap.end()) {
     std::string routine_name;
-    std::map<unsigned int, std::string>::iterator cfi =
+    std::map<unsigned int, std::string>::iterator cfi2 =
         configmap.find(ssm_i->first);
-    if (cfi != configmap.end())
-      routine_name.assign(cfi->second);
+    if (cfi2 != configmap.end())
+      routine_name.assign(cfi2->second);
     else {
       std::ostringstream Ostr;
       Ostr << "Unknown(" << ssm_i->first << ")";
@@ -1029,7 +1029,7 @@ int ProfilerObj::ScalabilitySummary(ScalaStatMap &scala_statmap,
     unsigned int nps = ss.nprocs.size();
     //      tagit(DEBUGV,"scalability_summary");
     //      vout << "Number of runs to process = " << nps << endl;
-    Out << "# " << routine_name << ":" << std::endl
+    Ost << "# " << routine_name << ":" << std::endl
         << "#-------------------------------------------------"
         << "------------------------------------------------------------"
         << "-----------------------------------------------" << std::endl
@@ -1044,7 +1044,7 @@ int ProfilerObj::ScalabilitySummary(ScalaStatMap &scala_statmap,
         << "------------------------------------------------------------"
         << "-----------------------------------------------" << std::endl;
     for (unsigned int a = 0; a < nps; a++) {
-      Out << std::resetiosflags(std::ios::floatfield)
+      Ost << std::resetiosflags(std::ios::floatfield)
           << std::setiosflags(std::ios::right) << std::setprecision(0)
           << std::setw(5) << ss.nprocs[a] << " "
 
@@ -1090,7 +1090,7 @@ int ProfilerObj::ScalabilitySummary(ScalaStatMap &scala_statmap,
           << std::setw(7) << std::setprecision(1) << ss.sstats[EMIN_S][a]
           << std::endl;
     }
-    Out << "#-------------------------------------------------"
+    Ost << "#-------------------------------------------------"
         << "------------------------------------------------------------"
         << "-----------------------------------------------" << std::endl
         << std::endl
