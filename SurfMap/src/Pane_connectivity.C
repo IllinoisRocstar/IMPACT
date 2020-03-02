@@ -381,7 +381,7 @@ double Pane_connectivity::collect_boundary_nodes(std::vector<int> &nodes,
   std::vector<int> offsets;
   std::vector<int> r_nodes, r_nodes_pre = nodes;
   std::vector<Point_3> r_pnts, r_pnts_pre;
-  int from_rank_pre = comm_rank;
+  //int from_rank_pre = comm_rank;
 
   for (int i = comm_size - 1; i >= 1; --i) {
     MPI_Request l_reqs[2];
@@ -406,7 +406,7 @@ double Pane_connectivity::collect_boundary_nodes(std::vector<int> &nodes,
     MPI_Waitall(2, l_reqs, l_stats);
     r_nodes_pre.swap(r_nodes);
     r_pnts_pre.swap(r_pnts);
-    from_rank_pre = from_rank;
+    //from_rank_pre = from_rank;
   }
 
   //  collect_coincident_nodes( r_nodes_pre, r_pnts_pre, bbox,
@@ -583,8 +583,8 @@ void Pane_connectivity::create_b2map(std::vector<std::vector<int> > &b2v,
   // Copy from b2v_t into b2v
   b2v.resize(_panes.size());
   Pane_set::const_iterator it = _panes.begin();
-  for (int i = 0, s = _panes.size(); i < s; ++i, ++it) {
-    b2v[i].swap(b2v_t[(*it)->id()]);
+  for (int i2 = 0, s = _panes.size(); i2 < s; ++i2, ++it) {
+    b2v[i2].swap(b2v_t[(*it)->id()]);
   }
 }
 

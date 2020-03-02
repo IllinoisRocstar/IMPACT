@@ -11,7 +11,7 @@
 #include "IM_Reader.h"
 #include "com.h"
 
-COM_EXTERN_MODULE(SimOUT);
+COM_EXTERN_MODULE(SimOUT)
 
 int main(int argc, char *argv[]) {
   COM_init(&argc, &argv);

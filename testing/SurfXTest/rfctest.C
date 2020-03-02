@@ -16,11 +16,11 @@
 char **ARGV;
 int ARGC;
 
-COM_EXTERN_MODULE(SimIN);
-COM_EXTERN_MODULE(SimOUT);
-COM_EXTERN_MODULE(SurfX);
-COM_EXTERN_MODULE(Simpal);
-COM_EXTERN_MODULE(SurfMap);
+COM_EXTERN_MODULE(SimIN)
+COM_EXTERN_MODULE(SimOUT)
+COM_EXTERN_MODULE(SurfX)
+COM_EXTERN_MODULE(Simpal)
+COM_EXTERN_MODULE(SurfMap)
 
 void read_file(const char *fname, const std::string &wname, double alpha) {
   char *lastdot = strrchr(const_cast<char *>(fname), '.');

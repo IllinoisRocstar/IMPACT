@@ -647,7 +647,7 @@ void COM_print_window(const std::string &wName, const std::string &timeStr,
   COM_free_buffer(&attrStr);
 }
 
-COM_EXTERN_MODULE(Rocin);
+COM_EXTERN_MODULE(Rocin)
 
 /// Remove an argument from the argument list.
 inline static void remove_arg(int *argc, char ***argv, int i) {

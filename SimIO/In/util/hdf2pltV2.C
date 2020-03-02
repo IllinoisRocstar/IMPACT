@@ -36,8 +36,8 @@
 #include "PaneConnectivity.hpp" /* Gives high-level dynamic pane connectivity access */
 
 /* External Dynamically Linked Modules */
-COM_EXTERN_MODULE(SurfIN);   // Used to read in the HDF files.
-COM_EXTERN_MODULE(SurfMap);  // Used to compute the pane connectivity.
+COM_EXTERN_MODULE(SurfIN)   // Used to read in the HDF files.
+COM_EXTERN_MODULE(SurfMap)  // Used to compute the pane connectivity.
 
 using namespace Rocstar::Rocin::Utilities;
 

@@ -99,8 +99,12 @@ int Element_node_enumerator::vertex(int lvid, bool level) const {
     // Check which boundary lvid is on.
     if (!level) {
       COM_assertion(nr > 2 && _pane->size_j() > 2);
-      const int c1 = (_base - 1) / nr, r1 = (_base - 1) % nr;
-      const int c2 = (lvid - 1) / nr, r2 = (lvid - 1) % nr;
+#ifndef NDEBUG
+      const int c1 = (_base - 1) / nr;
+#endif
+      const int r1 = (_base - 1) % nr;
+      const int c2 = (lvid - 1) / nr;
+      const int r2 = (lvid - 1) % nr;
 
       if (std::abs(r1 - r2) <= 1) {
         const int nc = _pane->size_j();

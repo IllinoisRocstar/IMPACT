@@ -17,7 +17,7 @@
 /** \namespace COM
  *  The name space for COM.
  */
-/** Macro for marking the begining of the namespace */
+/** Macro for marking the beginning of the namespace */
 #define COM_BEGIN_NAME_SPACE namespace COM {
 /** Macro for marking the end of the namespace */
 #define COM_END_NAME_SPACE }
@@ -25,23 +25,25 @@
 #define USE_COM_NAME_SPACE using namespace COM;
 
 class COM_Object {
- public:
+public:
   COM_Object() : _cookie(COM_COOKIE) {}
-  COM_Object(const COM_Object &m) : _cookie(&m ? m._cookie : COM_COOKIE) {}
-  virtual ~COM_Object() {}
+
+  virtual ~COM_Object() = default;
 
   /** Return 0 if there is no error.
    *  Return 1 if pointers do not match.
    *  Return 2 if cookie does not match
    *  return 3 if neither matches. */
-  int validate_object(void *obj = 0) const {
+  int validate_object(void *obj = nullptr) const {
     int ierr = 0;
-    if (obj && obj != this) ierr += 1;
-    if (_cookie != COM_COOKIE) ierr += 2;
+    if (obj && obj != this)
+      ierr += 1;
+    if (_cookie != COM_COOKIE)
+      ierr += 2;
     return ierr;
   }
 
- protected:
+protected:
   enum { COM_COOKIE = 762266 };
 
   int _cookie;
@@ -64,38 +66,40 @@ typedef void (COM_Object::*COM_Member_func_ptr)();
 #endif
 #include "FC.h"
 #define COM_F_FUNC2(lowcase, uppercase) FC_GLOBAL(lowcase, uppercase)
-/* #ifdef COM_UPPERCASE */
-/* #define COM_F_FUNC2( lowcase, uppercase) COM_F_FUNC( uppercase) */
-/* #else */
-/* #define COM_F_FUNC2( lowcase, uppercase) COM_F_FUNC( lowcase) */
-/* #endif */
+/*
+#ifdef COM_UPPERCASE
+#define COM_F_FUNC2(lowcase, uppercase) COM_F_FUNC(uppercase)
+#else
+#define COM_F_FUNC2(lowcase, uppercase) COM_F_FUNC(lowcase)
+#endif
+*/
 
 #endif
 
 #ifdef STATIC_LINK
-#define COM_LOAD_MODULE_STATIC_DYNAMIC(moduleName, windowString) \
-  {                                                              \
-    MPI_Comm comm = COM_get_default_communicator();              \
-    COM_set_default_communicator(MPI_COMM_SELF);                 \
-    moduleName##_load_module(windowString);                      \
-    COM_set_default_communicator(comm);                          \
-  }
-#define COM_UNLOAD_MODULE_STATIC_DYNAMIC(moduleName, windowString) \
-  moduleName##_unload_module(windowString);
+#define COM_LOAD_MODULE_STATIC_DYNAMIC(moduleName, windowString)               \
+  do {                                                                         \
+    MPI_Comm comm = COM_get_default_communicator();                            \
+    COM_set_default_communicator(MPI_COMM_SELF);                               \
+    moduleName##_load_module(windowString);                                    \
+    COM_set_default_communicator(comm);                                        \
+  } while (0)
+#define COM_UNLOAD_MODULE_STATIC_DYNAMIC(moduleName, windowString)             \
+  moduleName##_unload_module(windowString)
 
-#define COM_EXTERN_MODULE(moduleName)                     \
-  extern "C" void moduleName##_load_module(const char *); \
-  extern "C" void moduleName##_unload_module(const char *)
+#define COM_EXTERN_MODULE(moduleName)                                          \
+  extern "C" void moduleName##_load_module(const char *);                      \
+  extern "C" void moduleName##_unload_module(const char *);
 #else
-#define COM_LOAD_MODULE_STATIC_DYNAMIC(moduleName, windowString) \
+#define COM_LOAD_MODULE_STATIC_DYNAMIC(moduleName, windowString)               \
   COM_load_module(#moduleName, windowString)
-#define COM_UNLOAD_MODULE_STATIC_DYNAMIC(moduleName, windowString) \
+#define COM_UNLOAD_MODULE_STATIC_DYNAMIC(moduleName, windowString)             \
   COM_unload_module(#moduleName, windowString)
 
 #define COM_EXTERN_MODULE(moduleName)
 #endif
 
-/** The maxinum length of name string passed by users. */
+/** The maximum length of name string passed by users. */
 #define MAX_NAMELEN 128
 
 typedef int COM_Type;       /**< Indices for derived data types.*/
@@ -140,4 +144,4 @@ enum {
   COM_MIN_TYPEID = -6
 };
 
-#endif  //__COM_BASIC_H__
+#endif //__COM_BASIC_H__

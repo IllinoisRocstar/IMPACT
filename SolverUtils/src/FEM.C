@@ -927,7 +927,7 @@ int FastAssembleLocalElements(
   Mesh::IndexType index = 0;
   unsigned int edofs = 0;
   int nsearches = 0;
-  unsigned int searcherr = 0;
+  //unsigned int searcherr = 0;
   //     std::ofstream MyErrFile;
   //     std::ostringstream MyErrStr;
   //     MyErrStr << "AssErr_" << info.part;
@@ -942,7 +942,7 @@ int FastAssembleLocalElements(
     //    ndofe = (INTEGRATE ELEMENT); // integrates element and populates
     //    dofdat (add physics here)
     ndofe = NDofE[elindex];  // Number of element centered dofs
-    std::vector<Mesh::IndexType>::iterator eni = econ[elindex].begin();
+    eni = econ[elindex].begin();
     while (eni !=
            econ[elindex].end()) {  // Loop through the nodes of the element
       //     The row is the node's first dof
@@ -1256,7 +1256,7 @@ Mesh::IndexType AssembleLocalElementII(
     // numbered locally.
     Mesh::IndexType brow = edofs[0];
     std::vector<Mesh::IndexType>::iterator ieni = con.begin();
-    Mesh::IndexType datind = 0;
+    datind = 0;
     while (ieni != con.end()) {
       Mesh::IndexType inode_id = *ieni++;
       Mesh::IndexType ncol = NodalDofs.Esize(inode_id);
@@ -1359,7 +1359,7 @@ Mesh::IndexType AssembleBorderElementII(
     //    Mesh::IndexType brow = edofs[0]+info.doffset;
     Mesh::IndexType brow = edofs[0];
     std::vector<Mesh::IndexType>::iterator ieni = con.begin();
-    Mesh::IndexType datind = 0;
+    datind = 0;
     while (ieni != con.end()) {
       Mesh::IndexType bcol = 0;
       Mesh::IndexType ncol = 0;
@@ -1514,7 +1514,6 @@ std::ostream &operator<<(std::ostream &Ostr, const FEM::DataBuffer &buf) {
   if (!buf._data_ptr) return (Ostr);
   std::ostringstream OStr;
   OStr << buf._number_of_items << " " << buf._item_size << std::endl;
-  bool known_data_type = false;
   if (buf._item_size == 1) {
     buf.OutputToStream<char>(OStr);
   } else if (buf._item_size == 2) {
@@ -1524,7 +1523,7 @@ std::ostream &operator<<(std::ostream &Ostr, const FEM::DataBuffer &buf) {
   } else if (buf._item_size == 8) {
     buf.OutputToStream<double>(OStr);
   } else
-    assert(known_data_type);
+    assert(false);
   Ostr << OStr.str();
   return (Ostr);
 }
@@ -1544,7 +1543,6 @@ std::istream &operator>>(std::istream &Istr, FEM::DataBuffer &buf) {
     buf._number_of_items = in_nitems;
     buf._item_size = in_size;
   }
-  bool known_data_type = false;
   if (buf._data_ptr != NULL) {
     if (expected_size != read_size) {
       std::cout << "FEM::ERROR line      = " << line << std::endl
@@ -1567,7 +1565,7 @@ std::istream &operator>>(std::istream &Istr, FEM::DataBuffer &buf) {
   else if (buf._item_size == 8)
     buf.ReadFromStream<double>(Istr);
   else
-    assert(known_data_type);
+    assert(false);
   return (Istr);
 }
 std::istream &operator>>(std::istream &IStr, FieldMetaData &md) {

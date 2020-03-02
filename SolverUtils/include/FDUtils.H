@@ -343,8 +343,8 @@ class FDSetMan {
   int ReadyForInput(const FDContainer &fds) {
     return (NSet(fds, &readset));
   }
-  int Select(float seconds = 0.0, bool reset = true) {
-    float usec = 1.0E-6;
+  int Select(double seconds = 0.0, bool reset = true) {
+    double usec = 1.0E-6;
     struct timeval tv;
     struct timeval *tv_ptr = NULL;
     if (seconds >= 0.0) {
@@ -362,8 +362,8 @@ class FDSetMan {
     if (retval < 0) perror("Sys::FDStreamSet::Select::select");
     return (retval);
   };
-  int ListenForInput(float seconds = 0.0, bool reset = true) {
-    float usec = 1.0E-6;
+  int ListenForInput(double seconds = 0.0, bool reset = true) {
+    double usec = 1.0E-6;
     struct timeval tv;
     struct timeval *tv_ptr = NULL;
     if (seconds >= 0.0) {
@@ -379,8 +379,8 @@ class FDSetMan {
     if (retval < 0) perror("Sys::FDStreamSet::Select::select");
     return (retval);
   };
-  int ListenForOutput(float seconds = 0.0, bool reset = true) {
-    float usec = 1.0E-6;
+  int ListenForOutput(double seconds = 0.0, bool reset = true) {
+    double usec = 1.0E-6;
     struct timeval tv;
     struct timeval *tv_ptr = NULL;
     if (seconds >= 0.0) {

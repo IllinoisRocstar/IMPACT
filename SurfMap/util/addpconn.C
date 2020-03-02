@@ -11,9 +11,9 @@
 #include "com.h"
 #include "mapbasic.h"
 
-COM_EXTERN_MODULE(SimIN);
-COM_EXTERN_MODULE(SimOUT);
-COM_EXTERN_MODULE(SurfMap);
+COM_EXTERN_MODULE(SimIN)
+COM_EXTERN_MODULE(SimOUT)
+COM_EXTERN_MODULE(SurfMap)
 
 using namespace std;
 

@@ -103,14 +103,20 @@ void init_unstructure_mesh(double coors[][3], int elmts[][4], int nrow,
 
 int get_comm_rank(MPI_Comm comm) {
   int rank;
-  int ierr = MPI_Comm_rank(comm, &rank);
+#ifndef NDEBUG
+  int ierr =
+#endif
+      MPI_Comm_rank(comm, &rank);
   COM_assertion(ierr == 0);
   return rank;
 }
 
 int get_comm_size(MPI_Comm comm) {
   int size;
-  int ierr = MPI_Comm_size(comm, &size);
+#ifndef NDEBUG
+  int ierr =
+#endif
+      MPI_Comm_size(comm, &size);
   COM_assertion(ierr == 0);
   return size;
 }

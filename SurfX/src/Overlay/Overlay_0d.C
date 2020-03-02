@@ -91,24 +91,24 @@ void Overlay::match_features_0() {
                     << std::endl;
         }
 
-        HEdge b = v.halfedge_g();
-        if (b.is_border_g())
-          b = b.opposite_g();
+        HEdge b2 = v.halfedge_g();
+        if (b2.is_border_g())
+          b2 = b2.opposite_g();
         else
-          b = b.next_g();
+          b2 = b2.next_g();
 
         // Create an inode for the o-feature
         INode *x = new INode();
-        x->set_parent(b, Point_2(0, 0), BLUE);
+        x->set_parent(b2, Point_2(0, 0), BLUE);
         x->set_parent(g, Point_2(0, 0), GREEN);
 
         if (B->snap_on_features()) {
           // Update the coordinates for the blue point
-          Point_3 &pnt = const_cast<Point_3 &>(b.origin_g().point());
+          Point_3 &pnt = const_cast<Point_3 &>(b2.origin_g().point());
           pnt = g.origin_g().point();
         }
 
-        insert_node_in_blue_edge(*x, b);
+        insert_node_in_blue_edge(*x, b2);
         continue;
       }
     }

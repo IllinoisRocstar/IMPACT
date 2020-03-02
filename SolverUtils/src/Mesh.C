@@ -939,7 +939,7 @@ void GenericCell_2::jacobian(const std::vector<GeoPrim::CPoint> &p,
 
 double GenericCell_2::Area(Mesh::IndexType elnum, const Connectivity &ec,
                            const NodalCoordinates &nc) {
-  GeoPrim::CPoint P[3];
+  //GeoPrim::CPoint P[3];
   if (_size == 3) {
     GeoPrim::CPoint p0(nc[ec.Node(elnum, 1)]);
     GeoPrim::CPoint p1(nc[ec.Node(elnum, 2)]);
@@ -1328,11 +1328,8 @@ void GenericElement::interpolate(const GeoPrim::CVector f[],
       break;
     }
     case 8: {
-      const double xi = nc.x();
       const double xi_minus = 1. - xi;
-      const double eta = nc.y();
       const double eta_minus = 1. - eta;
-      const double zeta = nc.z();
       const double zeta_minus = 1. - zeta;
       v = (xi_minus * eta_minus * zeta_minus * f[0] +
            xi * eta_minus * zeta_minus * f[1] + xi * eta * zeta_minus * f[2] +
@@ -2421,7 +2418,7 @@ int ReadWRLFromStream(Mesh::UnstructuredMesh &mesh, std::istream &Istr) {
   }
   std::getline(Istr, line);
   x = line.find("]");
-  unsigned int count = 1;
+  //unsigned int count = 1;
   while (x == std::string::npos && Istr.good()) {
     std::istringstream Istr2(line);
     double xc, yc, zc;

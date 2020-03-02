@@ -177,6 +177,11 @@ void COM_base::abort(int ierr) {
     exit(ierr);
 }
 
+void COM_base::abort_msg(int ierr, const std::string &msg) {
+  std::cerr << msg << std::endl;
+  COM_base::abort(ierr);
+}
+
 void COM_base::load_module(const std::string &lname, const std::string &wname) {
 #ifndef STATIC_LINK
   if (_verb1 > 1)
@@ -1825,17 +1830,17 @@ void COM_base::call_function(int wf, int count, void **args, const int *lens,
         }
 
         // attr must be const to void throwing exception when pointer is called
-        const DataItem *attr = &get_dataitem(h);
-        if (attr->is_const() && std::tolower(func->intent(i)) != 'i')
+        const DataItem *attr2 = &get_dataitem(h);
+        if (attr2->is_const() && std::tolower(func->intent(i)) != 'i')
           throw COM_exception(COM_ERR_DATAITEM_CONST);
 
         if (func->is_rawdata(i)) {
-          ps[i] = const_cast<void *>(attr->pointer());
+          ps[i] = const_cast<void *>(attr2->pointer());
           if (verb > 1)
             std::cerr << "VALUE OF\t@" << ps[i] << "\t\"" << _attr_map.name(h)
                       << '"';
         } else {
-          ps[i] = const_cast<DataItem *>(attr);
+          ps[i] = const_cast<DataItem *>(attr2);
           if (verb > 1)
             std::cerr << "METADATA\t@" << ps[i] << "\t\"" << _attr_map.name(h)
                       << '"';

@@ -114,7 +114,7 @@ TEST_F(COMDataItemManagement, GetNonLocalDataItem) {
     ASSERT_NE(std::string::npos, x) << *edit << " data item was not found\n";
     if (*edit != "global" && ValidateHandle) {
       int result = 0;
-      int myaddress;
+      //int myaddress;
       std::string full_data_name("Solver1." + *edit);
       std::string data_name(*edit);
       char test_loc;

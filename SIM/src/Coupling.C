@@ -5,18 +5,28 @@
 //  (opensource.org/licenses/NCSA) for license information.
 //
 
-#include <cmath>
-#include <cstdlib>
+#include <cstdio>
 #include <iostream>
+#include <utility>
 
 #include "Coupling.h"
 
-// Delete all agents
+Coupling::Coupling(std::string coupl_name, MPI_Comm com)
+    : coupling_name(std::move(coupl_name)), communicator(com),
+      comm_rank(COMMPI_Comm_rank(com)) {
+  scheduler = new UserScheduler();
+  scheduler->set_name(coupling_name);
+  init_scheduler = new UserScheduler();
+  init_scheduler->set_name(coupling_name + "-init");
+}
+
 Coupling::~Coupling() {
-  for (int i = 0, n = agents.size(); i < n; ++i) {
-    delete agents[i];
-  }
-  agents.clear();
+  delete scheduler;
+  delete init_scheduler;
+
+  // Delete all agents
+  for (auto &&agent : agents)
+    delete agent;
 }
 
 Agent *Coupling::add_agent(Agent *agent) {
@@ -24,35 +34,40 @@ Agent *Coupling::add_agent(Agent *agent) {
   return agent;
 }
 
-// Schedule the actions for the scheduler and the agents
 void Coupling::schedule() {
-  get_init_scheduler().schedule();
-  get_scheduler().schedule();
+  init_scheduler->schedule();
+  scheduler->schedule();
 
-  for (int i = 0, n = agents.size(); i < n; ++i) {
-    agents[i]->schedule();
-  }
+  for (auto &&agent : agents)
+    agent->schedule();
 }
 
-// Invoke initialization of the actions in the scheduler and the agents
-void Coupling::init(double t, double dt, int reinit) {
-  for (int i = 0, n = agents.size(); i < n; ++i) {
-    agents[i]->init_module(t, dt);
-    //    agents[i]->init_buffers(t);
+void Coupling::init(double t, double dt, bool reinit) {
+  // schedule all the agent and coupling schedulers
+  schedule();
+
+  for (auto &&agent : agents) {
+    agent->init(t, dt);
+    // agent->init_buffers(t);
   }
 
-  // in warm restart, reset scheduler so that it can be re-inited
-  if (reinit) callMethod(&Scheduler::restarting, t);
+  // in warm restart, reset all schedulers so that they can be re-inited
+  if (reinit)
+    callMethod(&Scheduler::restarting, t);
 
+  // initialize all schedulers
   callMethod(&Scheduler::init_actions, t);
+
+  // initialize each modules by executing init schedulers
+  run_initactions(t, dt);
 }
 
-// Invoke finalize of the actions in the scheduler and the agents
 void Coupling::finalize() {
-  get_init_scheduler().finalize_actions();
-  get_scheduler().finalize_actions();
+  init_scheduler->finalize_actions();
+  scheduler->finalize_actions();
 
-  for (int i = 0, n = agents.size(); i < n; ++i) agents[i]->finalize();
+  for (auto &&agent : agents)
+    agent->finalize();
 }
 
 int Coupling::new_start(double t) const { return t == 0.0; }
@@ -61,11 +76,10 @@ double Coupling::run(double t, double dt, int pred, double zoom) {
   iPredCorr = pred;
 
   // Change dt to the maximum time step allowed.
-  for (int i = 0, n = agents.size(); i < n; ++i) {
-    dt = std::min(dt, agents[i]->max_timestep(t, dt));
-  }
+  for (auto &&agent : agents)
+    dt = std::min(dt, agent->max_timestep(t, dt));
 
-  get_scheduler().run_actions(t, dt);
+  scheduler->run_actions(t, dt, -1.0);
 
   // Return the new time as t + dt
   if (zoom > 0.0)
@@ -76,62 +90,57 @@ double Coupling::run(double t, double dt, int pred, double zoom) {
 
 // invoke method fn to all schedulers, and all schedulers of agents
 void Coupling::callMethod(Scheduler_voidfn1_t fn, double t) {
-  int i, n;
+  (init_scheduler->*fn)(t);
 
-  (get_init_scheduler().*fn)(t);
+  for (auto &&agent : agents)
+    agent->callMethod(fn, t);
 
-  for (i = 0, n = agents.size(); i < n; ++i) agents[i]->callMethod(fn, t);
-
-  (get_scheduler().*fn)(t);
+  (scheduler->*fn)(t);
 }
 
 void Coupling::run_initactions(double t, double dt) {
-  get_init_scheduler().set_alpha(0.0);
-  get_init_scheduler().run_actions(t, dt);
+  init_scheduler->run_actions(t, dt, 0.0);
 
-  init_started = 0;
-  init_remeshed = 0;
+  init_started = false;
+  init_remeshed = false;
 }
 
-// Invoke input functions of the agents
 void Coupling::input(double t) {
-  for (int i = 0, n = agents.size(); i < n; ++i) {
-    agents[i]->input(t);
+  for (auto &&agent : agents)
+    agent->input(t);
+}
+
+void Coupling::init_convergence(int iPredCorr_) {
+  if (maxPredCorr > 1 && iPredCorr_ > 0) {
+    for (auto &agent : agents) {
+      agent->init_convergence(iPredCorr_);
+    }
   }
 }
 
-int Coupling::check_convergence() {
-  int InterfaceConverged;
-  if (maxPredCorr > 1) {
-    InterfaceConverged = 0;
-    for (int i = 0, n = agents.size(); i < n; ++i)
-      if (!agents[i]->check_convergence()) return InterfaceConverged;
-    InterfaceConverged = 1;
-  } else
-    InterfaceConverged = 1;
-  return InterfaceConverged;
+bool Coupling::check_convergence() {
+  if (maxPredCorr > 1)
+    for (auto &&agent : agents)
+      if (!agent->check_convergence())
+        return false;
+
+  return true;
 }
 
-// Write out restart files (including visualization data)
 void Coupling::output_restart_files(double t) {
-  for (int i = 0, n = agents.size(); i < n; ++i) {
-    agents[i]->output_restart_files(t);
-  }
+  for (auto &&agent : agents)
+    agent->output_restart_files(t);
 }
 
-// Write out visualization files
 void Coupling::output_visualization_files(double t) {
-  for (int i = 0, n = agents.size(); i < n; ++i) {
-    agents[i]->output_visualization_files(t);
-  }
+  for (auto &&agent : agents)
+    agent->output_visualization_files(t);
 }
 
-// print in GDL
-void Coupling::print(const char *fname) {
+void Coupling::print(const char *fname) const {
   FILE *f = fopen(fname, "w");
 
-  fprintf(f,
-          "graph: { title: \"Coupling\" \n\
+  fprintf(f, "graph: { title: \"Coupling\" \n\
         display_edge_labels: yes \n\
         layoutalgorithm: tree   \n\
         scaling: maxspect   \n\
@@ -145,7 +154,7 @@ void Coupling::print(const char *fname) {
         edge.fontname:\"helvO08\"  \n\
         node.label: \"no type\" \n");
 
-  //  get_scheduler().print(f, name());
+  scheduler->print(f, coupling_name.c_str());
   for (unsigned int i = 0; i < agents.size(); i++) {
     agents[i]->print(f);
     if (i > 0)
@@ -156,4 +165,46 @@ void Coupling::print(const char *fname) {
 
   fprintf(f, "} \n");
   fclose(f);
+}
+
+void Coupling::read_restart_info(double CurrentTime, int iStep) {
+  if (CurrentTime != 0.0) {
+    FILE *fp = fopen(restartInfo.c_str(), "r");
+    if (fp == nullptr) {
+      COM_abort_msg(EXIT_FAILURE,
+                    "IMPACT ERROR: Failed to read file " + restartInfo);
+    }
+    int curStep = iStep;
+    double initialTime = CurrentTime;
+    while (!feof(fp)) {
+      fscanf(fp, "%d %le", &curStep, &initialTime);
+    }
+    fclose(fp);
+    if (comm_rank == 0)
+      std::cout << "IMPACT: Restart info file found with last iteration "
+                << curStep << " at time " << initialTime << std::endl;
+    /*
+    // subtle - it starts from 0
+    param->update_start_time(curStep - 1, initialTime);
+    */
+  } else {
+    if (comm_rank == 0)
+      std::cout << "IMPACT: This run is not a restart" << std::endl;
+  }
+}
+
+void Coupling::write_restart_info(double CurrentTime, int iStep) {
+  FILE *fp;
+  if (comm_rank == 0) {
+    if (CurrentTime == 0.0)
+      fp = fopen(restartInfo.c_str(), "w");
+    else
+      fp = fopen(restartInfo.c_str(), "a");
+    if (fp == nullptr) {
+      COM_abort_msg(EXIT_FAILURE,
+                    "IMPACT: Failed to open restart info file, " + restartInfo);
+    }
+    fprintf(fp, "%d %.5le \n", iStep, CurrentTime);
+    fclose(fp);
+  }
 }

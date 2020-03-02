@@ -1493,10 +1493,10 @@ extern "C" void COM_F_FUNC2(com_free_buffer_char,
 
   {  // Nullify pointer
     int one = 1, zero = 0;
-    typedef void (*Func)(void *, int *, void *, void *);
+    typedef void (*Func2)(void *, int *, void *, void *);
 
-    (*(Func)COM_F_FUNC2(com_mapptr_chr1d, COM_GETPTR_CHR1D))(buf, &one, ptr,
-                                                             &zero);
+    (*(Func2)COM_F_FUNC2(com_mapptr_chr1d, COM_GETPTR_CHR1D))(buf, &one, ptr,
+                                                              &zero);
   }
 }
 
@@ -1510,10 +1510,10 @@ extern "C" void COM_F_FUNC2(com_free_buffer_int, COM_FREE_BUFFER_INT)(void *buf,
 
   {  // Nullify pointer
     int one = 1, zero = 0;
-    typedef void (*Func)(void *, int *, void *, void *);
+    typedef void (*Func2)(void *, int *, void *, void *);
 
-    (*(Func)COM_F_FUNC2(com_mapptr_int1d, COM_GETPTR_INT1D))(buf, &one, ptr,
-                                                             &zero);
+    (*(Func2)COM_F_FUNC2(com_mapptr_int1d, COM_GETPTR_INT1D))(buf, &one, ptr,
+                                                              &zero);
   }
 }
 

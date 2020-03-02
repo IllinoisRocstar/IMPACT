@@ -122,13 +122,11 @@ operand when processing " + z->fullname())
                                 .c_str());
   } else {
     y = reinterpret_cast<DataItem *>(yin);
-    bool type_coercion = compare_types<argument_type, result_type>();
-
-    COM_assertion_msg(
-        type_coercion || COM_compatible_types(z->data_type(), y->data_type()),
-        (std::string("Incompatible data types between ") + z->fullname() +
-         " and " + y->fullname())
-            .c_str());
+    COM_assertion_msg((compare_types<argument_type, result_type>() ||
+                       COM_compatible_types(z->data_type(), y->data_type())),
+                      (std::string("Incompatible data types between ") +
+                       z->fullname() + " and " + y->fullname())
+                          .c_str());
 
     if (!y->is_windowed()) {
       y->window()->panes(ypanes);

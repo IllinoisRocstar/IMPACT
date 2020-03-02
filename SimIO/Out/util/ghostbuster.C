@@ -41,8 +41,8 @@ class AutoCloser {
   int m_fn;
 };
 
-COM_EXTERN_MODULE(Rocin);
-COM_EXTERN_MODULE(Rocout);
+COM_EXTERN_MODULE(Rocin)
+COM_EXTERN_MODULE(Rocout)
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {

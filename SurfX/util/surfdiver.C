@@ -31,7 +31,7 @@ static void read_file_rocin(const char *fname, const std::string &wname,
   // Read in HDF or CGNS format
   COM_LOAD_MODULE_STATIC_DYNAMIC(SimIN, "IN");
 
-  int IN_read;
+  int IN_read = -1;
   // Read in HDF format using Rocin::read_window or ::read_by_control_file
   if (strcmp(lastdot, ".hdf") == 0 || strcmp(lastdot, ".cgns") == 0)
     IN_read = COM_get_function_handle("IN.read_window");

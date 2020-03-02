@@ -109,7 +109,7 @@ void RFC_Window_transfer::init_nodal_buffers(const Nodal_data &nd, int size,
                elems.begin();
            it != elems.end(); ++it) {
         const int nn = (*it)->size_of_nodes_pe();
-        for (int i = 1, size = (*it)->size_of_elements(); i <= size; ++i, ++k) {
+        for (int i = 1, size2 = (*it)->size_of_elements(); i <= size2; ++i, ++k) {
           pane._emm_offset[k + 1] = pane._emm_offset[k] + nn * nn;
         }
       }

@@ -44,6 +44,7 @@ class COM_base {
   static void init(int *argc, char ***argv);
   static void finalize();
   static void abort(int ierr);
+  static void abort_msg(int ierr, const std::string &msg);
 
   /// Set the default communicator of COM. This communicator will be used
   /// as the default communicator for any new window.

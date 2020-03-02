@@ -18,8 +18,8 @@
 #include <iostream>
 #include <string>
 
-COM_EXTERN_MODULE(SimIN);
-COM_EXTERN_MODULE(SimOUT);
+COM_EXTERN_MODULE(SimIN)
+COM_EXTERN_MODULE(SimOUT)
 
 using namespace std;
 

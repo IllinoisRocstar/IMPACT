@@ -363,13 +363,13 @@ void Overlay::insert_node_in_blue_edge(INode &x, const HEdge &b1) {
       if (!il.empty()) {
         // Throw away the false intersection points.
         while (!il.empty()) {
-          INode *i = &il.front();
+          INode *inode = &il.front();
 
-          if (contains(i->halfedge(GREEN), i->parent_type(GREEN), g,
+          if (contains(inode->halfedge(GREEN), inode->parent_type(GREEN), g,
                        x.parent_type(GREEN))) {
             il.pop_front();
-            delete i;
-            i = NULL;
+            delete inode;
+            inode = NULL;
           } else
             break;
         }
@@ -377,13 +377,13 @@ void Overlay::insert_node_in_blue_edge(INode &x, const HEdge &b1) {
         INode_list &ilr = acc.get_inode_list(h.opposite_g());
         // Throw away the false intersection points.
         while (!ilr.empty()) {
-          INode *i = &ilr.back();
+          INode *inode = &ilr.back();
 
-          if (contains(i->halfedge(GREEN), i->parent_type(GREEN), g,
+          if (contains(inode->halfedge(GREEN), inode->parent_type(GREEN), g,
                        x.parent_type(GREEN))) {
             ilr.pop_back();
-            delete i;
-            i = NULL;
+            delete inode;
+            inode = NULL;
           } else
             break;
         }
@@ -642,7 +642,7 @@ void Overlay::intersect_blue_with_green() {
     } while ((h = acc.get_next_around_origin(h)) != b);
 
     while (!is_queue_empty(q, q_rdg, q_crn)) {
-      HEdge b = q.front();
+      b = q.front();
       q.pop();
       HEdge bopp = b.opposite_g();
 
@@ -717,8 +717,11 @@ void Overlay::intersect_blue_with_green() {
         RFC_assertion(t2 != PARENT_NONE);
         if (cb > 1) {  // If intersects beyond the end point, do projection.
           RFC_assertion(t2 != PARENT_VERTEX);
-          bool onto = op.project_onto_element(
-              dst.point(), &g2, &t2, Vector_3(0, 0, 0), &nc, eps_e, 0.2);
+#ifndef NDEBUG
+          bool onto =
+#endif
+              op.project_onto_element(dst.point(), &g2, &t2, Vector_3(0, 0, 0),
+                                      &nc, eps_e, 0.2);
           RFC_assertion(onto);
         }
 
@@ -798,7 +801,6 @@ void Overlay::intersect_blue_with_green() {
       }
 
       // Push unvisited incident halfedges of b.destination_l() into q.
-      HEdge h;
       h = b.next_g();
 
       do {
@@ -828,10 +830,10 @@ void Overlay::sort_on_green_edges() {
       Node v(*pit, i);
       if (!v.is_isolated() && v.halfedge_l().destination_l() == v &&
           v.is_primary()) {
-        INode *i = acc.get_inode(v);
-        RFC_assertion(i);
-        i->prev_link[GREEN] = i->next_link[GREEN] = NULL;
-        inodes.push_back(i);
+        INode *inode = acc.get_inode(v);
+        RFC_assertion(inode);
+        inode->prev_link[GREEN] = inode->next_link[GREEN] = NULL;
+        inodes.push_back(inode);
       }
     }
 
@@ -840,20 +842,20 @@ void Overlay::sort_on_green_edges() {
       do {
         INode_list &il = acc.get_inode_list(h);
         for (INode_list::iterator it = il.begin(); it != il.end(); ++it) {
-          INode *i = &*it;
-          RFC_assertion(i);
-          i->prev_link[GREEN] = i->next_link[GREEN] = NULL;
-          inodes.push_back(i);
+          INode *inode = &*it;
+          RFC_assertion(inode);
+          inode->prev_link[GREEN] = inode->next_link[GREEN] = NULL;
+          inodes.push_back(inode);
         }
 
         HEdge lopp = h.opposite_l();
         if (lopp.is_border_l()) {
-          INode_list &il = acc.get_inode_list(lopp);
-          for (INode_list::iterator it = il.begin(); it != il.end(); ++it) {
-            INode *i = &*it;
-            RFC_assertion(i);
-            i->prev_link[GREEN] = i->next_link[GREEN] = NULL;
-            inodes.push_back(i);
+          INode_list &il2 = acc.get_inode_list(lopp);
+          for (INode_list::iterator it = il2.begin(); it != il2.end(); ++it) {
+            INode *inode = &*it;
+            RFC_assertion(inode);
+            inode->prev_link[GREEN] = inode->next_link[GREEN] = NULL;
+            inodes.push_back(inode);
           }
         }
       } while ((h = h.next_l()) != h0);
@@ -1646,9 +1648,9 @@ void Overlay::write_inodes_vec(std::ostream &os) {
   // Print the coordinates of each node
   std::list<INode *>::iterator it = inodes.begin(), iend = inodes.end();
   for (; it != iend; ++it) {
-    INode *i = *it;
-    os << op.get_point(i->halfedge(BLUE), i->nat_coor(BLUE)) << ' '
-       << op.get_point(i->halfedge(GREEN), i->nat_coor(GREEN)) << std::endl;
+    INode *inode = *it;
+    os << op.get_point(inode->halfedge(BLUE), inode->nat_coor(BLUE)) << ' '
+       << op.get_point(inode->halfedge(GREEN), inode->nat_coor(GREEN)) << std::endl;
   }
 }
 
@@ -1774,7 +1776,6 @@ std::pair<const INode *, HEdge> Overlay::get_next_inode_cw(const INode *v0,
       }
       h = h.prev_l();
 
-      INode *v2;
       INode_list &il = acc.get_inode_list(h);
       if (!il.empty())
         v2 = &il.back();

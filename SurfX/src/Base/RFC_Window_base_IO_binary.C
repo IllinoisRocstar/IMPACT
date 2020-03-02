@@ -190,7 +190,7 @@ void RFC_Pane_base::read_binary(std::istream &is, std::vector<int> *b2v_all,
   }
 
   // Read in number of element types.
-  int ntypes, is_structured = false;
+  int ntypes/*, is_structured = false*/;
   read(is, ntypes);
   if (need_swap) {
     swap_endian(ntypes);
@@ -204,7 +204,7 @@ void RFC_Pane_base::read_binary(std::istream &is, std::vector<int> *b2v_all,
     }
 
     if (t1 == 2) {  // Structured mesh
-      is_structured = true;
+      //is_structured = true;
       RFC_assertion(t2 == 1);
       int dims[2];
       read(is, dims[0]);
@@ -253,7 +253,7 @@ void RFC_Pane_base::read_binary(std::istream &is, std::vector<int> *b2v_all,
           for (int j = 0; j < n; ++j) swap_endian(buf[j]);
       } else {
         int t;
-        for (int i = 0; i < n; ++i) is.read((char *)&t, sizeof(int));
+        for (int i2 = 0; i2 < n; ++i2) is.read((char *)&t, sizeof(int));
       }
     }
   }

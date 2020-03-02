@@ -187,12 +187,12 @@ void Pane_boundary::determine_border_nodes_3(std::vector<bool> &is_border,
     for (; vit != v_end; ++vit) {
       // Get all nodes of the face into vector nodes.
       const Facet_ID &fid = vit->second;
-      Element_node_enumerator_uns ene(&_pane, fid.eid());
-      Facet_node_enumerator fne(&ene, fid.lid());
+      Element_node_enumerator_uns eneuns(&_pane, fid.eid());
+      Facet_node_enumerator fne(&eneuns, fid.lid());
       fne.get_nodes(nodes, true);
 
-      for (int i = 0, n = nodes.size(); i < n; ++i)
-        is_border[nodes[i] - 1] = true;
+      for (int i2 = 0, n = nodes.size(); i2 < n; ++i2)
+        is_border[nodes[i2] - 1] = true;
 
       if (b) b->push_back(fid);
     }

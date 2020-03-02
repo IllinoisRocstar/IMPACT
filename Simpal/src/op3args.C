@@ -186,7 +186,7 @@ void Rocblas::calc(DataItem *z, const DataItem *x, const void *yin,
 template <class FuncType>
 void Rocblas::calcChoose(const DataItem *x, const DataItem *y, DataItem *z,
                          FuncType opp) {
-  typedef typename FuncType::result_type data_type;
+  //typedef typename FuncType::result_type data_type;
 
   if (x->is_windowed()) {
     if (x->size_of_components() == 1)

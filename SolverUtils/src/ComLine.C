@@ -45,7 +45,6 @@ std::istream &operator>>(std::istream &In, ComLineObject &cl) {
     cl.push_back(std::make_pair(opchar, token));
     cl._type[opchar] = optype;
     if (optype > 0) {
-      std::string token;
       OpIn >> token;
       cl._argname[opchar] = token;
     }
@@ -78,7 +77,7 @@ std::istream &operator>>(std::istream &In, ComLineObject &cl) {
     cl._arghelp[argname] = argtype;
     std::string tag;
     ArgIn >> tag;
-    std::string::size_type x = tag.find("<help>");
+    x = tag.find("<help>");
     if (x == std::string::npos) {
       cl._error_messages.push_back(
           "Configuration input format error in arghelp section.");
@@ -128,7 +127,9 @@ std::ostream &operator<<(std::ostream &Out, const ComLineObject &cl) {
   return (Out);
 }
 
-ComLineObject::ComLineObject(ComLineObject &incom) { Copy(incom); }
+ComLineObject::ComLineObject(ComLineObject &incom) : vector(incom) {
+  Copy(incom);
+}
 
 void ComLineObject::Copy(ComLineObject &incom) {
   _description.erase();

@@ -43,7 +43,7 @@ TEST(Intest, ParallelRead1FromControlFile) {
   stringstream ss;
   ss << rank;
   string fileName(ARGV[3]);
-  std::size_t pos = fileName.find_last_of(".");
+  std::size_t pos = fileName.find_last_of('.');
   fileName = fileName.substr(0, pos);
   fileName = fileName + ss.str() + ".cgns";
 
@@ -75,7 +75,7 @@ TEST(Intest, ParallelRead1FromControlFile) {
       << "An error occurred when reading from a control file" << std::endl;
 
   // Obtain the list of panes
-  int np, *pane_ids;
+  int np = 0, *pane_ids = nullptr;
   ASSERT_NO_THROW(COM_get_panes(win_in, &np, &pane_ids))
       << "An error occured when "
       << "getting the list of panes" << std::endl;
@@ -87,8 +87,8 @@ TEST(Intest, ParallelRead1FromControlFile) {
 
   // Loop through the panes to register the meshes
   for (int i = 0; i < np; ++i) {
-    int nconn;     // Number of connectivity tables
-    char *cnames;  // Names of connectivity tables separated by space
+    int nconn = 0;           // Number of connectivity tables
+    char *cnames = nullptr;  // Names of connectivity tables separated by space
 
     // Obtain the connectivity tables
     ASSERT_NO_THROW(
@@ -161,7 +161,7 @@ TEST(Intest, ParallelRead1FromControlFile) {
     int type, ncomp;
     std::string unit;
 
-    COM_get_dataitem((win_in_pre + aname).c_str(), &loc, &type, &ncomp, &unit);
+    COM_get_dataitem(win_in_pre + aname, &loc, &type, &ncomp, &unit);
     std::cout << (win_in_pre + aname).c_str() << " has type " << type << endl;
     std::cout << (win_in_pre + aname).c_str() << " has " << ncomp
               << " components" << endl;
@@ -177,21 +177,21 @@ TEST(Intest, ParallelRead1FromControlFile) {
 
       COM_set_size(waname.c_str(), 0, nitems, ng);
 
-      COM_resize_array(waname.c_str(), 0, NULL, ncomp);
+      COM_resize_array(waname.c_str(), 0, nullptr, ncomp);
     }
     // Loop through the panes to allocate memory
     else {
       std::cout << "Panel dataitem" << endl;
       // This is to demonstrate the loop over panes.
       // Could be replaced by a single call with paneID=0.
-      for (int i = 0; i < np; ++i) {
+      for (int i2 = 0; i2 < np; ++i2) {
         if (loc == 'p') {
           // Obtain the size for a pane dataitem.
           int nitems, ng;
-          COM_get_size((win_in_pre + aname).c_str(), pane_ids[i], &nitems, &ng);
-          COM_set_size(waname.c_str(), pane_ids[i], nitems, ng);
+          COM_get_size((win_in_pre + aname).c_str(), pane_ids[i2], &nitems, &ng);
+          COM_set_size(waname.c_str(), pane_ids[i2], nitems, ng);
         }
-        COM_resize_array(waname.c_str(), pane_ids[i], NULL, ncomp);
+        COM_resize_array(waname.c_str(), pane_ids[i2], nullptr, ncomp);
       }
     }
   }

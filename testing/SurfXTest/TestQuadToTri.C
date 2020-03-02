@@ -16,8 +16,8 @@
 #include "commpi.h"
 #include "gtest/gtest.h"
 
-COM_EXTERN_MODULE(SurfX);
-COM_EXTERN_MODULE(SimOUT);
+COM_EXTERN_MODULE(SurfX)
+COM_EXTERN_MODULE(SimOUT)
 
 using namespace std;
 

@@ -206,8 +206,8 @@ void Overlay_primitives::intersect(const Point_set &pbs, const Point_set &pgs,
 
     if (std::fabs(t1 - 1.) < eps || std::fabs(t2 - 1.) < eps) {
       // Use alternative formula to compute intersection
-      Real b = -(c - d - a);
-      Real sqrt_d = std::sqrt(b * b - 4 * a * d);
+      b = -(c - d - a);
+      sqrt_d = std::sqrt(b * b - 4 * a * d);
       if (det < 0) {
         *c1 = *c2 = HUGE_VAL;
         return;

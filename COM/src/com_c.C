@@ -16,9 +16,12 @@
 #include "com_assertion.h"
 
 // Include C++ implementation
+#ifdef __cplusplus
 #define C_ONLY
 #include "com_c++.hpp"
+#else /* __cplusplus */
 #include "com_c.h"
+#endif /* __cplusplus */
 
 USE_COM_NAME_SPACE
 

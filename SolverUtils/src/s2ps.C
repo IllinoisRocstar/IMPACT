@@ -181,14 +181,14 @@ int main(int argc, char *argv[]) {
   std::cout << name << std::endl;
   std::cout << "Now writing PS file." << std::endl;
 
-  double haf = 0.5;
-  double zero = 0.0;
+  //double haf = 0.5;
+  //double zero = 0.0;
   double conv = 2.54;
   double siz = 13.0;
   int nr = nglobal_dof;
   int nc = nglobal_dof;
-  int maxdim = nglobal_dof;
-  int n = nglobal_dof;
+  //int maxdim = nglobal_dof;
+  //int n = nglobal_dof;
   nc++;
   nr++;
   int m = nglobal_dof;

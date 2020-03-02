@@ -13,7 +13,7 @@
 
 COM_BEGIN_NAME_SPACE
 
-Pane::Pane(Window *w, int i) : _window(w), _id(i), _ignore_ghost(false) {
+Pane::Pane(Window *w, int id) : _window(w), _id(id), _ignore_ghost(false) {
   _attr_set.resize(COM_NUM_KEYWORDS);
   DataItem *as = new DataItem[COM_NUM_KEYWORDS];
 
@@ -306,13 +306,14 @@ void Pane::reinit_dataitem(int aid, OP_Init op, void **addr, int strd,
       return;
   }
 
-  int errcode;
+  //int errcode;
   void *p;
   int ncomp = a->size_of_components();
 
   if (op == OP_DEALLOC) {
     // Deallocate if was allocated by Roccom
-    errcode = a->deallocate();
+    //errcode =
+    a->deallocate();
     p = NULL;
   } else {
     COM_assertion(op == OP_SET_CONST || op == OP_SET || op == OP_ALLOC ||
@@ -369,7 +370,7 @@ void Pane::reinit_dataitem(int aid, OP_Init op, void **addr, int strd,
       p = a->allocate(strd, cap, op == OP_ALLOC);
       if (addr) *addr = p;
     }
-    errcode = 0;
+    //errcode = 0;
   }
 }
 

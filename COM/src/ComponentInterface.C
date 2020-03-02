@@ -96,9 +96,10 @@ DataItem *ComponentInterface::new_dataitem(const std::string &aname,
       ((Pane_friend &)_dummy).new_dataitem(aname, id, loc, type, ncomp, unit);
   _attr_map[aname] = a;
 
-  // Propagete onto all existing panes.
-  for (Pane_map::iterator it = _pane_map.begin(); it != _pane_map.end(); ++it) {
-    Pane_friend *pn = (Pane_friend *)it->second;
+  // Propagate onto all existing panes.
+  for (Pane_map::iterator it2 = _pane_map.begin(); it2 != _pane_map.end();
+       ++it2) {
+    Pane_friend *pn = (Pane_friend *)it2->second;
     pn->new_dataitem(aname, id, loc, type, ncomp, unit);
   }
 
@@ -128,8 +129,9 @@ void ComponentInterface::delete_dataitem(const std::string &aname) {
   ((Pane_friend &)_dummy).delete_dataitem(id);
 
   // Remove from all panes.
-  for (Pane_map::iterator it = _pane_map.begin(); it != _pane_map.end(); ++it) {
-    Pane_friend *pn = (Pane_friend *)it->second;
+  for (Pane_map::iterator it2 = _pane_map.begin(); it2 != _pane_map.end();
+       ++it2) {
+    Pane_friend *pn = (Pane_friend *)it2->second;
     pn->delete_dataitem(id);
   }
 
@@ -765,9 +767,9 @@ Pane &ComponentInterface::pane(const int pid, bool insert) {
       // print missing pane ID and known IDs in the pane map
       std::cerr << "No such Pane ID: " << pid << std::endl;
       std::cerr << "While the known Pane IDs are: [ ";
-      Pane_map::iterator pit;
-      for (pit = _pane_map.begin(); pit != _pane_map.end(); ++pit)
-        std::cerr << pit->first << " ";
+      for (Pane_map::iterator pit2 = _pane_map.begin(); pit2 != _pane_map.end();
+           ++pit2)
+        std::cerr << pit2->first << " ";
       std::cerr << "]" << std::endl;
       throw COM_exception(COM_ERR_PANE_NOTEXIST,
                           append_frame(_name, ComponentInterface::pane));

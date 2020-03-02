@@ -4,12 +4,18 @@ add_library(SIM
     # Action
     src/Action.C
     src/SchedulerAction.C
+    src/Interpolate.C
     # Scheduler
     src/Scheduler.C
+    src/DDGScheduler.C
+    src/UserScheduler.C
     # Agent
     src/Agent.C
     # Coupling
     src/Coupling.C
+
+    # Helper
+    src/RocBlas.C
 )
 
 # rpath settings

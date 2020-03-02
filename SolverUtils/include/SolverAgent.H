@@ -74,7 +74,6 @@ class SolverAgent {
     while (ci != mesh.con.end()) {
       Mesh::IndexType esize = ci->size();
       Mesh::GenericElement el(4);
-      bool known_element_type = false;
       switch (esize) {
         case 3:
           ntri++;
@@ -101,7 +100,7 @@ class SolverAgent {
           nhex++;
           break;
         default:
-          assert(known_element_type);
+          assert(false);
       }
       ci++;
     }

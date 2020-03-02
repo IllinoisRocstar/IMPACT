@@ -56,7 +56,7 @@ void Rocin::read_parameter_file(const char *file_name, const char *window_name,
           case COM_INTEGER:
           case COM_UNSIGNED:
           case COM_INT: {
-            *(int *)addr = std::atoi(param_list[i].second.c_str());
+            *(int *)addr = std::strtol(param_list[i].second.c_str(), nullptr, 10);
             break;
           }
           case COM_DOUBLE_PRECISION:
@@ -66,7 +66,7 @@ void Rocin::read_parameter_file(const char *file_name, const char *window_name,
                     'd', 'e');
             replace(param_list[i].second.begin(), param_list[i].second.end(),
                     'D', 'e');
-            *(double *)addr = std::atof(param_list[i].second.c_str());
+            *(double *)addr = std::strtod(param_list[i].second.c_str(), nullptr);
             break;
           }
           case COM_FLOAT:
@@ -75,19 +75,19 @@ void Rocin::read_parameter_file(const char *file_name, const char *window_name,
                     'd', 'e');
             replace(param_list[i].second.begin(), param_list[i].second.end(),
                     'D', 'e');
-            *(float *)addr = std::atof(param_list[i].second.c_str());
+            *(float *)addr = std::strtof(param_list[i].second.c_str(), nullptr);
             break;
           }
           case COM_CHAR: {
-            int param_size = param_list[i].second.size();
-            COM_assertion_msg(param_size < param_att->size_of_items(),
+            COM_assertion_msg(param_list[i].second.size() <
+                                  param_att->size_of_items(),
                               "DataItem does not have enough space");
 
             std::strcpy((char *)addr, param_list[i].second.c_str());
             break;
           }
           case COM_BOOL: {
-            int param_size = param_list[i].second.size();
+            //int param_size = param_list[i].second.size();
             const char *str = param_list[i].second.c_str();
             char val = str[0];
             if (val == 'T') val = 1;
