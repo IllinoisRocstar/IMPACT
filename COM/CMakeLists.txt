@@ -5,22 +5,6 @@ option(BUILD_SHARED_LIBS "Build shared libraries." ON)
 option(ENABLE_MPI "Build with MPI support." ON)
 option(ENABLE_EPIC "Using IMPACT with EPIC" OFF)
 
-# Find MPI package or use a dummy.
-#if(NOT ENABLE_MPI)
-#  add_definitions( -DDUMMY_MPI )
-#else()
-#  find_package(MPI REQUIRED)
-#  include_directories(${MPI_INCLUDE_PATH})
-#  if(MPI_LIBRARY)
-#    set(MPI_LIBRARIES ${MPI_LIBRARY})
-#  endif(MPI_LIBRARY)
-#  if(MPI_EXTRA_LIBRARY)
-#    set(MPI_LIBRARIES ${MPI_LIBRARIES} "${MPI_EXTRA_LIBRARY}")
-#  endif(MPI_EXTRA_LIBRARY)
-  # Needed for mpich 2
-#  add_definitions( -DMPICH_IGNORE_CXX_SEEK )
-#endif()
-
 # Add preprocessor definition if building static or on Apple system
 if(NOT BUILD_SHARED_LIBS)
   add_definitions(-DSTATIC_LINK)
@@ -54,11 +38,18 @@ add_library(SITCOM
 #    src/COM_substrate.C
 #    src/ParallelAdapter.C
 )
+
+set_target_properties(SITCOM PROPERTIES VERSION ${IMPACT_VERSION}
+        SOVERSION ${IMPACT_MAJOR_VERSION})
+
 add_library(SITCOMF
     src/com_f.C
     src/m_pointers.F90
     src/utilities.F90
 )
+
+set_target_properties(SITCOMF PROPERTIES VERSION ${IMPACT_VERSION}
+        SOVERSION ${IMPACT_MAJOR_VERSION})
 
 file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/include/comf90.h "")
 if(ENABLE_EPIC)
@@ -66,10 +57,6 @@ if(ENABLE_EPIC)
 else(ENABLE_EPIC)
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/comf90.h.in2 ${CMAKE_CURRENT_SOURCE_DIR}/include/comf90.h COPYONLY)
 endif(ENABLE_EPIC)
-
-# rpath settings
-#set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 if(ENABLE_MPI)
   if(NOT BUILD_SHARED_LIB)
@@ -79,10 +66,10 @@ if(ENABLE_MPI)
   endif()
   
   foreach(include_dir IN LISTS ${MPI_INCLUDE_PATH})
-  target_include_directories(SITCOM 
-      PUBLIC
-          $<BUILD_INTERFACE:${include_dir}>
-          $<INSTALL_INTERFACE:${include_dir}>)
+    target_include_directories(SITCOM 
+        PUBLIC
+            $<BUILD_INTERFACE:${include_dir}>
+            $<INSTALL_INTERFACE:${include_dir}>)
   endforeach()
   target_compile_definitions(SITCOM 
       PUBLIC
@@ -107,28 +94,21 @@ endif()
 target_include_directories(SITCOM
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include/impact>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/impact>
 )
 target_include_directories(SITCOMF
     PUBLIC
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-         $<INSTALL_INTERFACE:include/impact>
+         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/impact>
 )
 
-#target_link_libraries(SITCOMF SITCOM)
-#[[if(NOT BUILD_SHARED_LIB)
-  target_link_libraries(SITCOM ${CMAKE_DL_LIBS})
-endif()]]
-
-#install(FILES ${COM_INC_FILES} DESTINATION include)
-#install(FILES ${CMAKE_BINARY_DIR}/include/FC.h DESTINATION include)
 # install the headers and export the targets
 install(DIRECTORY include/ 
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/include/impact)
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/impact)
 install(TARGETS SITCOM SITCOMF
         EXPORT IMPACT
-        RUNTIME DESTINATION bin
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        INCLUDES DESTINATION include
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )

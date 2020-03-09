@@ -49,6 +49,9 @@ add_library(SimIN
     src/read_parameter_file.C
 )
 
+set_target_properties(SimIN PROPERTIES VERSION ${IMPACT_VERSION}
+        SOVERSION ${IMPACT_MAJOR_VERSION})
+
 if(NOGLOB)
   target_sources(SimIN PRIVATE
       src/Directory.C)
@@ -67,7 +70,7 @@ endif()
 target_include_directories(SimIN
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include/impact>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/impact>
 )
 
 if(NOT BUILD_SHARED_LIBS)
@@ -92,11 +95,11 @@ endif()
 
 # install the headers and export the targets
 install(DIRECTORY include/ 
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/include/impact)
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/impact)
 install(TARGETS SimIN # hdf2plt printfeas hdf2vtk sepin plagprep
     EXPORT IMPACT
-    RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    INCLUDES DESTINATION include
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )

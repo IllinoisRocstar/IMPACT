@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.1)
 
 # set project metadata #########################################################
 
-set(IMPACT_MAJOR_VERSION 1)
-set(IMPACT_MINOR_VERSION 0)
+set(IMPACT_MAJOR_VERSION 2)
+set(IMPACT_MINOR_VERSION 1)
 set(IMPACT_PATCH_VERSION 0)
 set(IMPACT_EXTRA_VERSION "" CACHE STRING "IMPACT extra version string")
 set(IMPACT_VERSION "${IMPACT_MAJOR_VERSION}.${IMPACT_MINOR_VERSION}")
@@ -14,15 +14,13 @@ set(IMPACT_HOMEPAGE_URL "http://git.illinois.rocstar/IR/IMPACT-NO-IRAD")
 set(IMPACT_AUTHOR
     "Masoud Safdari (lead)"
     "Alessandro Gondolo"
-    "Taiyo Wilson"
-    "Michael Pope")
+    "Michael Pope"
+    "Taiyo Wilson")
 set(IMPACT_AUTHOR_EMAIL "msafdari@illinoisrocstar.com")
-# TODO: Update the Python Classifier information
 set(IMPACT_PYTHON_CLASSIFIERS
     "Development Status :: 2 - Pre-Alpha"
-    "License :: OSI Approved :: "
+    "License :: OSI Approved :: University of Illinois/NCSA Open Source License"
     "Natural Language :: English"
-    "Operating System :: Microsoft :: Windows :: Windows 10"
     "Operating System :: POSIX"
     "Programming Language :: C"
     "Programming Language :: C++"
@@ -32,8 +30,6 @@ set(IMPACT_DESCRIPTION "Multiphysics application coupling toolkit")
 set(PROJECT_NAME "IMPACT version ${IMPACT_VERSION}")
 project(${PROJECT_NAME} CXX C Fortran)
 
-#should this be turned off? Modern CMake messiah says to allow CMake to figure
-#it out on its own
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -50,6 +46,9 @@ option(ENABLE_MPI "Build with MPI support." ON)
 option(ENABLE_CGNS "Build with CGNS support." ON)
 option(ENABLE_TESTS "Build with tests." OFF)
 
+# Installation Directories
+include(GNUInstallDirs)
+
 # Setting compile and link options #############################################
 
 # Compiled objects output paths
@@ -65,7 +64,10 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra -Wno-unused-parameter")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Woverloaded-virtual -Wnon-virtual-dtor")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wstrict-null-sentinel -Wredundant-decls")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wshadow")
+  # -Wshadow gives false positives for gcc versions <= 4.8
+  if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.9)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wshadow")
+  endif (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.9)
   #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wfloat-conversion")
 endif()
 
@@ -122,9 +124,9 @@ add_subdirectory(SurfUtil)
 add_subdirectory(SurfMap)
 add_subdirectory(SurfX)
 add_subdirectory(SIM)
-add_subdirectory(SolverUtils)
 if(ENABLE_TESTS)
   enable_testing()
+  add_subdirectory(SolverUtils)
   add_subdirectory(testing)
 endif(ENABLE_TESTS)
 
@@ -152,5 +154,72 @@ if(BUILD_DOCUMENTATION)
       DEPENDS ${doxyfile} ${doxy_extra_files}
       COMMENT "Generating documentation")
   add_custom_target(docs ALL DEPENDS ${documentation})
-  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs DESTINATION share/IMPACT)
+  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs
+          DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/IMPACT)
 endif()
+
+# Packaging ####################################################################
+set(CPACK_PACKAGE_NAME "IMPACT")
+set(CPACK_PACKAGE_VENDOR "${IMPACT_AUTHOR}")
+set(CPACK_PACKAGE_VERSION "${IMPACT_VERSION}")
+set(CPACK_PACKAGE_VERSION_MAJOR "${IMPACT_MAJOR_VERSION}")
+set(CPACK_PACKAGE_VERSION_MINOR "${IMPACT_MINOR_VERSION}")
+set(CPACK_PACKAGE_VERSION_PATCH "${IMPACT_PATCH_VERSION}")
+set(CPACK_PACKAGE_DESCRIPTION "${IMPACT_DESCRIPTION}")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${IMPACT_DESCRIPTION}")
+set(CPACK_PACKAGE_HOMEPAGE_URL "")
+set(CPACK_PACKAGE_CONTACT "${IMPACT_AUTHOR_EMAIL}")
+#set(CPACK_PACKAGE_INSTALL_DIRECTORY "") # Use default location.
+#set(CPACK_PACKAGE_ICON "") # image used by GUI installers
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
+
+if(WIN32)
+  set(CPACK_GENERATOR NSIS)
+else()
+  if(CMAKE_VERSION VERSION_LESS 3.10)
+    message(WARNING "CMake 3.10 or above is required to build a DEB package.")
+  else()
+    set(CPACK_GENERATOR DEB)
+    #set(CPACK_DEBIAN_PACKAGE_NAME "")
+    #set(CPACK_DEBIAN_PACKAGE_VERSION "")
+    #set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "")
+    #set(CPACK_DEBIAN_PACKAGE_MAINTAINER "")
+    #set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "")
+    set(CPACK_DEBIAN_PACKAGE_SECTION "science")
+    #set(CPACK_DEBIAN_COMPRESSION_TYPE "gzip")
+    #set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+    set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "${CPACK_PACKAGE_HOMEPAGE_URL}")
+    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+    set(CPACK_DEBIAN_PACKAGE_DEBUG ON)  # For testing only
+    #set(CPACK_DEBIAN_PACKAGE_PREDEPENDS "")
+    #set(CPACK_DEBIAN_PACKAGE_ENHANCES "")
+    #set(CPACK_DEBIAN_PACKAGE_BREAKS "")
+    #set(CPACK_DEBIAN_PACKAGE_CONFLICTS "")
+    #set(CPACK_DEBIAN_PACKAGE_PROVIDES "")
+    #set(CPACK_DEBIAN_PACKAGE_REPLACES "")
+    #set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "")
+    #set(CPACK_DEBIAN_PACKAGE_SUGGESTS "")
+    #set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "")
+
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION TRUE)  # CMake 3.4
+    #set(CPACK_DEBIAN_PACKAGE_SOURCE "")  # CMake 3.5
+    #set(CPACK_DEB_COMPONENT_INSTALL OFF)  # CMake 3.6
+    set(CPACK_DEBIAN_FILE_NAME "DEB-DEFAULT")  # CMake 3.6
+    #set(CPACK_DEBIAN_PACKAGE_RELEASE "1")  # CMake 3.6
+    set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS ON)  # CMake 3.6
+    #set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS_POLICY "=")  # CMake 3.6
+    #set(CPACK_DEBIAN_ARCHIVE_TYPE "gnutar")  # CMake 3.7
+    #set(CPACK_DEBIAN_PACKAGE_EPOCH "")  # Cmake 3.10
+  endif()
+endif()
+# Lists exe and text label used for Start Menu shortcuts
+#set(CPACK_PACKAGE_EXECUTABLES "")
+# Must have matching Start Menu shortcut to create a Desktop link
+#set(CPACK_CREATE_DESKTOP_LINKS "")
+
+# WIN32 NOTE: - Run CPack from a MSVC environment as dumpbin is required
+#               for the fixup_bundle search of DLL dependecies.
+#             - The system libraries pulled in are release DLLs.
+#               Do NOT package in Debug! THAT APPLIES TO DEPENDENCIES TOO!!
+include(CPack)

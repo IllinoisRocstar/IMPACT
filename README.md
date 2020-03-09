@@ -4,7 +4,7 @@ IMPACT
 Multiphysics application coupling toolkit
 
 ## Version ##
-Version 1.0.0
+Version 2.1.0
 
 IMPACT follows semantic versioning. The version will be major.minor.patch.
 We will:
@@ -33,7 +33,7 @@ Make sure to `apt install` following before you start
 * libblas-dev
 * libjpeg-dev
 
-all of these can be obtained using linux $apt-get install$ command.
+all of these can be obtained using linux `apt-get install` command.
 
 ### Build IMPACT ###
 **NOTE** Currently IMPACT is only tested with MPICH compilers. If you have both OpenMPI and MPICH installed make sure `mpicxx`, `mpicc`, and `mpif90` point to MPICH. In the following we have assumed both MPI libraries are installed.
@@ -45,7 +45,7 @@ Start the build process by executing:
 $ cd $IMPACT_PROJECT_PATH
 $ mkdir build && cd build
 $ cmake -DCMAKE_INSTALL_PREFIX=$IMPACT_INSTALL_PATH -DMPI_C_COMPILER=/usr/bin/mpicc.mpich -DMPI_CXX_COMPILER=/usr/bin/mpicxx.mpich -DMPIEXEC_EXECUTABLE=/usr/bin/mpiexec.mpich -DMPI_Fortran_COMPILER=/usr/bin/mpif90.mpich -DCMAKE_C_COMPILER=mpicc.mpich -DCMAKE_CXX_COMPILER=mpicxx.mpich -DCMAKE_Fortran_COMPILER=mpif90.mpich .. 
-$ make -j6
+$ make -j$(nproc)
 $ make install
 ```
 

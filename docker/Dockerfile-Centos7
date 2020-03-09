@@ -9,17 +9,14 @@ RUN yum groupinstall "Development Tools" -y
 RUN yum install cmake3 gcc-c++.x86_64 make mpich-3.2-devel.x86_64 cgnslib-devel hdf5-devel hdf-devel.x86_64 blas-devel lapack-devel centos-release-scl scl-utils devtoolset-7 -y
 
 # Change the default compilers to gcc7
-RUN scl enable devtoolset-7 bash
+# RUN echo "scl enable devtoolset-7 bash" >> /etc/skel/.bashrc
 
 # Finds the module command, loads the mpich module
-RUN source /etc/profile.d/modules.sh
-RUN module load mpi/mpich-3.2-x86_64
-RUN . /etc/bashrc
+RUN echo "source /etc/profile.d/modules.sh" >> /etc/skel/.bashrc
+RUN echo "module load mpi/mpich-3.2-x86_64" >> /etc/skel/.bashrc
+ENV BASH_ENV "/etc/skel/.bashrc"
 
 RUN yum install vim -y
-
-# Copy the TPLs ( metis-4 & IMPACT )
-COPY . /home/
 
 WORKDIR /IMPACT-NO-IRAD/
 ENTRYPOINT /bin/bash
