@@ -44,13 +44,16 @@ add_library(SurfX
     src/Transfer/Transfer_base.C
 )
 
+set_target_properties(SurfX PROPERTIES VERSION ${IMPACT_VERSION}
+        SOVERSION ${IMPACT_MAJOR_VERSION})
+
 target_include_directories(SurfX
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/Base>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/Overlay>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/Transfer>
-        $<INSTALL_INTERFACE:include/impact>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/impact>
 )
 target_link_libraries(SurfX SurfUtil SimIN SimOUT)
 
@@ -73,13 +76,13 @@ target_link_libraries(surfextractor SurfX)
 
 # install the headers and export the targets
 install(DIRECTORY include/Base/ include/Overlay/ include/Transfer/
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/include/impact)
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/impact)
 install(FILES include/Rocface.h
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/include/impact)
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/impact)
 install(TARGETS SurfX surfdiver autosurfer surfjumper surfextractor
         EXPORT IMPACT
-        RUNTIME DESTINATION bin
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        INCLUDES DESTINATION include
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )

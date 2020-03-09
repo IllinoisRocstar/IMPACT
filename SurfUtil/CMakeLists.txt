@@ -16,19 +16,23 @@ add_library(SurfUtil
     src/compute_bounded_volumes.C
     src/compute_curvature.C
 )
+
+set_target_properties(SurfUtil PROPERTIES VERSION ${IMPACT_VERSION}
+        SOVERSION ${IMPACT_MAJOR_VERSION})
+
 target_include_directories(SurfUtil
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include/impact>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/impact>
 )
 target_link_libraries(SurfUtil SurfMap Simpal)
 
 install(DIRECTORY include/ 
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/include/impact)
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/impact)
 install(TARGETS SurfUtil
     EXPORT IMPACT
-    RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    INCLUDES DESTINATION include
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )

@@ -23,7 +23,7 @@ test:ubuntu16:
       -DCMAKE_CXX_COMPILER=mpicxx.mpich 
       -DCMAKE_Fortran_COMPILER=mpif90.mpich ..
     - make -j$(nproc)
-    - make test
+    - ctest --output-on-failure
 
 test:ubuntu18:
   image: ilrocstar/impact:v1
@@ -50,4 +50,28 @@ test:ubuntu18:
       -DCMAKE_CXX_COMPILER=mpicxx.mpich 
       -DCMAKE_Fortran_COMPILER=mpif90.mpich ..
     - make -j$(nproc)
-    - make test
+    - ctest --output-on-failure
+
+test:centos7:
+  image: ilrocstar/impact-centos7:v1
+  tags:
+    - linux
+  script:
+    - mkdir build && cd build
+    - >
+      cmake3
+      -DENABLE_MPI=ON
+      -DENABLE_TESTS=ON
+      -DMPI_C_COMPILER=/usr/lib64/mpich-3.2/bin/mpicc
+      -DMPI_CXX_COMPILER=/usr/lib64/mpich-3.2/bin/mpicxx
+      -DMPIEXEC_EXECUTABLE=/usr/lib64/mpich-3.2/bin/mpiexec
+      -DMPI_Fortran_COMPILER=/usr/lib64/mpich-3.2/bin/mpif90
+      -DCMAKE_C_COMPILER=/usr/lib64/mpich-3.2/bin/mpicc
+      -DCMAKE_CXX_COMPILER=/usr/lib64/mpich-3.2/bin/mpicxx
+      -DCMAKE_Fortran_COMPILER=/usr/lib64/mpich-3.2/bin/mpif90
+      -DENABLE_MPI=ON
+      -DENABLE_TESTS=ON
+      -DHDF4_LIB=/usr/lib64/hdf/libdf.a
+      -DMFHDF_LIB=/usr/lib64/hdf/libmfhdf.a ..
+    - make -j$(nproc)
+    - ctest3 --output-on-failure

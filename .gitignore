@@ -1,1 +1,3 @@
 *build*/
+*.log
+COM/include/FC.h
