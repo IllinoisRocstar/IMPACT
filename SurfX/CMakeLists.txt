@@ -1,19 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
 
-# Options
-option(ENABLE_CGNS "Build with CGNS support." OFF)
-
-# Find CGNS package
-#if(ENABLE_CGNS)
-#  find_package(HDF5 REQUIRED)
-#  find_library(CGNS_LIB cgns)
-#  if(NOT CGNS_LIB)
-#    message(FATAL_ERROR "CGNS library not found.")
-#  endif()
-#  find_path(CGNS_INC cgnslib.h)
-#  add_definitions(-DUSE_CGNS)
-#endif()
-
 # rpath settings
 #set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 #set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
@@ -55,15 +41,7 @@ target_include_directories(SurfX
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/Transfer>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/impact>
 )
-target_link_libraries(SurfX SurfUtil SimIN SimOUT)
-
-if(ENABLE_CGNS)
-  target_link_libraries(SurfX ${CGNS_LIBRARY} ${HDF5_LIBRARIES})
-  target_include_directories(SurfX
-    PUBLIC
-      ${CGNS_INCLUDE_PATH}
-      ${HDF5_INCLUDE_DIRS}) 
-endif()
+target_link_libraries(SurfX SurfUtil)
 
 add_executable(surfdiver util/surfdiver.C)
 target_link_libraries(surfdiver SurfX)

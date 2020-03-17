@@ -16,8 +16,7 @@
 char **ARGV;
 int ARGC;
 
-extern "C" void SimIN_load_module(const char *);
-extern "C" void SimIN_unload_module(const char *);
+COM_EXTERN_MODULE(SimIN)
 
 struct Subdiv {
   std::vector<int> subfaces;  // Connectivity of subfaces
@@ -42,7 +41,6 @@ struct Subdiv {
 void read_pane_sp(std::string &fname, const std::string &prefix, int pid,
                   Subdiv &sd) {
   // Load Rocin into Roccom
-  // SimIN_load_module( "SDV_IN");
   ASSERT_NO_THROW(COM_LOAD_MODULE_STATIC_DYNAMIC(SimIN, "SDV_IN"));
 
   // Obtain function handles to Rocin functions
@@ -145,7 +143,6 @@ void read_pane_sp(std::string &fname, const std::string &prefix, int pid,
       << "An error occurred when deleting the window!\n";
 
   // Unload Rocin from Roccom.
-  // SimIN_unload_module( "SDV_IN");
   EXPECT_NO_THROW(COM_UNLOAD_MODULE_STATIC_DYNAMIC(SimIN, "SDV_IN"))
       << "An error occurred when unloading SimIN\n";
 }

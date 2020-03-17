@@ -147,7 +147,6 @@ TEST(SurfParallelTest, ComputeNormals) {
   int vb = (ARGC > 1) ? atoi(ARGV[1]) : 1;
   if (comm_rank == 0) COM_set_verbose(vb);
 
-  // COM_load_module("Rocout", "OUT");
   ASSERT_NO_THROW(COM_LOAD_MODULE_STATIC_DYNAMIC(SimOUT, "OUT"));
 
   if (comm_rank == 0) std::cout << "Creating window \"unstr\"" << std::endl;
@@ -170,7 +169,6 @@ TEST(SurfParallelTest, ComputeNormals) {
   int normals = COM_get_dataitem_handle("unstr.normals");
   ASSERT_NE(-1, normals) << "Dataitem unstr normals was not found!\n";
 
-  // COM_load_module( "Rocsurf", "SURF");
   ASSERT_NO_THROW(COM_LOAD_MODULE_STATIC_DYNAMIC(SurfUtil, "SURF"));
   int SURF_init = COM_get_function_handle("SURF.initialize");
   ASSERT_NE(-1, SURF_init) << "Function SURF.initialize was not found!\n";

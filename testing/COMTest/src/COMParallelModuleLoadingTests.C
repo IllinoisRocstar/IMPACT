@@ -106,7 +106,7 @@ TEST_F(COMParallelModuleLoading, LoadModuleInSpecificComm) {
     if (h != -1) errorSend = 1;
   }
 
-  MPI_Allreduce(&errorSend, &errorReceive, 1, MPI_INTEGER, MPI_SUM, worldComm);
+  MPI_Allreduce(&errorSend, &errorReceive, 1, MPI_INT, MPI_SUM, worldComm);
   EXPECT_EQ(0, errorReceive)
       << "An error occured in: " << errorReceive << " threads\n";
 }
@@ -149,7 +149,7 @@ TEST_F(COMParallelModuleLoading, LoadModuleOnAllProcesses) {
         << std::endl;
   }
 
-  MPI_Allreduce(&errorSend, &errorReceive, 1, MPI_INTEGER, MPI_SUM, worldComm);
+  MPI_Allreduce(&errorSend, &errorReceive, 1, MPI_INT, MPI_SUM, worldComm);
   EXPECT_EQ(0, errorReceive)
       << "An error occured in: " << errorReceive << " threads\n";
 

@@ -481,7 +481,7 @@ void Pane_communicator::reduce_on_shared_nodes(MPI_Op op) {
       int ierr =
 #endif
           MPI_Waitany(_reqs_recv.size(), &_reqs_recv[0], &index, &status);
-      COM_assertion_msg(ierr == MPI_SUCCESS, "MPI_Waitany failed.");
+      COM_assertion_msg(ierr == 0, "MPI_Waitany failed.");
     } else {
       index = _reqs_recv.size() - 1;
     }

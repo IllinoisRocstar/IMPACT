@@ -2406,7 +2406,7 @@ int main(int argc, char *argv[]) {
     if (LogOut && debug)
       *LogOut << "Siffness storage(bytes): " << nnz * datasize << std::endl;
     Mesh::IndexType totsize = 0;
-    MPI_Reduce(&k._sizes[nglobdof], &totsize, 1, MPI_INTEGER, MPI_SUM, 0,
+    MPI_Reduce(&k._sizes[nglobdof], &totsize, 1, MPI_INT, MPI_SUM, 0,
                MPI_COMM_WORLD);
     if (StdOut && verblevel)
       *StdOut << "Total number of local Stiffness entries: " << nnz << ":"
@@ -2915,7 +2915,7 @@ int main(int argc, char *argv[]) {
       if (LogOut && debug)
         *LogOut << "Stiffness storage(bytes): " << nnz * datasize << std::endl;
       Mesh::IndexType totsize = 0;
-      MPI_Reduce(&k._sizes[nglobdof], &totsize, 1, MPI_INTEGER, MPI_SUM, 0,
+      MPI_Reduce(&k._sizes[nglobdof], &totsize, 1, MPI_INT, MPI_SUM, 0,
                  MPI_COMM_WORLD);
       if (debug)
         *LogOut << "Total number of local Stiffness entries: "

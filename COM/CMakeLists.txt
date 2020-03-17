@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.1)
 
 # Options
 option(BUILD_SHARED_LIBS "Build shared libraries." ON)
-option(ENABLE_MPI "Build with MPI support." ON)
 option(ENABLE_EPIC "Using IMPACT with EPIC" OFF)
 
 # Add preprocessor definition if building static or on Apple system
@@ -59,12 +58,7 @@ else(ENABLE_EPIC)
 endif(ENABLE_EPIC)
 
 if(ENABLE_MPI)
-  if(NOT BUILD_SHARED_LIB)
-    target_link_libraries(SITCOM PUBLIC ${CMAKE_DL_LIBS} ${MPI_LIBRARIES})
-  else()
-    target_link_libraries(SITCOM PUBLIC ${MPI_LIBRARIES})
-  endif()
-  
+  target_link_libraries(SITCOM PUBLIC ${CMAKE_DL_LIBS} ${MPI_LIBRARIES})
   foreach(include_dir IN LISTS ${MPI_INCLUDE_PATH})
     target_include_directories(SITCOM 
         PUBLIC
@@ -86,6 +80,7 @@ if(ENABLE_MPI)
       PUBLIC
           -DMPICH_IGNORE_CXX_SEEK)
 else()
+  target_link_libraries(SITCOM PUBLIC ${CMAKE_DL_LIBS})
   target_link_libraries(SITCOMF PUBLIC SITCOM)
   target_compile_definitions(SITCOM PUBLIC -DDUMMY_MPI)
   target_compile_definitions(SITCOMF PUBLIC -DDUMMY_MPI)
