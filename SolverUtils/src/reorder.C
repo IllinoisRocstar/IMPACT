@@ -1,5 +1,5 @@
 #include <vector>
-#include "mpi.h"
+#include "commpi.h"
 
 void Reorder(int *Nrows, int *XADJ, int *ADJ, int *Order, MPI_Comm comm) {
   int rank = 0;

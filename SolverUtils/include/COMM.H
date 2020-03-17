@@ -7,7 +7,7 @@
 #ifndef _COMM_H_
 #define _COMM_H_
 #include <cstdlib>
-#include "mpi.h"
+#include "commpi.h"
 
 #include "primitive_utilities.H"
 
@@ -82,7 +82,7 @@ class CommunicatorObject {
 
  public:
   MPI_Comm GetCommunicator() { return (_comm); };
-  MPI_Datatype IntegerTypeID;  // = MPI_INTEGER;
+  MPI_Datatype IntegerTypeID;  // = MPI_INT;
   CommunicatorObject();
   CommunicatorObject(MPI_Comm &incomm);
   CommunicatorObject(int *narg, char ***args);
@@ -202,7 +202,7 @@ class CommunicatorObject {
     //    size_t datasize = sizeof(DataType);
     //    MPI_Datatype mpi_data_type = MPI_DOUBLE;
     //    if(datasize == sizeof(int))
-    //      mpi_data_type = MPI_INTEGER;
+    //      mpi_data_type = MPI_INT;
     if (_rank == root) recv.resize(count);
     _rc = MPI_Reduce(&send[0], &recv[0], count, ResolveDataType(dt),
                      ResolveOp(op), root, _comm);

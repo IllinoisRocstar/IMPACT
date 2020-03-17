@@ -75,7 +75,7 @@ TEST_F(COMGetSetCommunicator, WithInitializedWindow) {
   int errorSend = 0;
   int errorReceive = 0;
   if (comm != MPI_COMM_SELF) errorSend = 1;
-  MPI_Allreduce(&errorSend, &errorReceive, 1, MPI_INTEGER, MPI_SUM, comm);
+  MPI_Allreduce(&errorSend, &errorReceive, 1, MPI_INT, MPI_SUM, comm);
   EXPECT_EQ(0, errorReceive)
       << "An error occured in: " << errorReceive << " threads\n";
   COM_delete_window("testparallelwindow2");
@@ -97,7 +97,7 @@ TEST_F(COMGetSetCommunicator, GetSetDefault) {
   int errorSend = 0;
   int errorReceive = 0;
   if (comm != MPI_COMM_SELF) errorSend = 1;
-  MPI_Allreduce(&errorSend, &errorReceive, 1, MPI_INTEGER, MPI_SUM, comm);
+  MPI_Allreduce(&errorSend, &errorReceive, 1, MPI_INT, MPI_SUM, comm);
   EXPECT_EQ(0, errorReceive)
       << "An error occured in: " << errorReceive << " threads\n";
   COM_delete_window("testparallelwindow3");

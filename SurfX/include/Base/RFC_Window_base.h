@@ -609,7 +609,7 @@ class RFC_Window_base {
   void build_pc_tables();
 
  protected:
-  enum { SDV_OFF, SDV_BINARY, SDV_HDF, SDV_CGNS };
+  enum { SDV_OFF, SDV_BINARY, SDV_HDF, SDV_CGNS, SDV_SIMIO };
 
   // Obtain the file name for a specific pane.
   static std::string get_sdv_fname(const char *prefix, int pane_id,

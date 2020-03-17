@@ -70,7 +70,7 @@ int MobileObject::UnPack(const void *inbuf) {
 }
 
 CommunicatorObject::CommunicatorObject()
-    : IntegerTypeID(MPI_INTEGER)
+    : IntegerTypeID(MPI_INT)
 
 {
   _rank = -1;
@@ -83,7 +83,7 @@ CommunicatorObject::CommunicatorObject()
   _error = 0;
 }
 CommunicatorObject::CommunicatorObject(MPI_Comm &incomm)
-    : IntegerTypeID(MPI_INTEGER) {
+    : IntegerTypeID(MPI_INT) {
   _rc = MPI_Comm_rank(incomm, &_rank);
   if (_rc) _error = _rc;
   _comm = incomm;
@@ -94,7 +94,7 @@ CommunicatorObject::CommunicatorObject(MPI_Comm &incomm)
 }
 
 CommunicatorObject::CommunicatorObject(int *narg, char ***args)
-    : IntegerTypeID(MPI_INTEGER) {
+    : IntegerTypeID(MPI_INT) {
   _nproc = 0;
   _rc = Initialize(narg, args);
   assert(_rc == 0);
@@ -206,7 +206,7 @@ int CommunicatorObject::Initialize(int *narg, char ***args) {
 int CommunicatorObject::Check(Comm::Ops op) {
   int errcheck = 0;
   // i guess for now we'll reduce max and make sure it's zero
-  _rc = MPI_Allreduce(&_error, &errcheck, 1, MPI_INTEGER, ResolveOp(op), _comm);
+  _rc = MPI_Allreduce(&_error, &errcheck, 1, MPI_INT, ResolveOp(op), _comm);
   return (errcheck);
 }
 
@@ -670,7 +670,7 @@ MPI_Datatype CommunicatorObject::ResolveDataType(const Comm::DataTypes &dt) {
     case Comm::DTFLOAT:
       return (MPI_FLOAT);
     case Comm::DTINT:
-      return (MPI_INTEGER);
+      return (MPI_INT);
     case Comm::DTUBYTE:
     case Comm::DTUCHAR:
       return (MPI_UNSIGNED_CHAR);

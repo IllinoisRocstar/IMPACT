@@ -15,7 +15,10 @@
 #include <string>
 
 #include "Rocout.h"
+#ifdef USE_HDF4
+#include "HDF4.h"
 #include "Rocout_hdf4.h"
+#endif  // USE_HDF4
 #ifdef USE_CGNS
 #include "Rocout_cgns.h"
 #endif  // USE_CGNS
@@ -122,15 +125,18 @@ Semaphore Rocout::_writesem(MAX_ASYNC_WRITES, MAX_ASYNC_WRITES);
 #endif  // USE_PTHREADS
 
 void Rocout::init(const std::string &mname) {
+#ifdef USE_HDF4
   HDF4::init();
+#endif  // USE_HDF4
 
   Rocout *rout = new Rocout();
 
-#ifndef USE_CGNS
+#ifdef USE_HDF4
   rout->_options["format"] = "HDF4";
-#else
+#endif  // USE_HDF4
+#ifdef USE_CGNS
   rout->_options["format"] = "CGNS";
-#endif
+#endif  // USE_CGNS
   rout->_options["async"] = "off";
   rout->_options["mode"] = "w";
   rout->_options["localdir"] = "";
@@ -213,7 +219,9 @@ void Rocout::finalize(const std::string &mname) {
 #endif  // USE_PTHREADS
 
   delete rout;
+#ifdef USE_HDF4
   HDF4::finalize();
+#endif  // USE_HDF4
 }
 
 //! Write an dataitem to file.
@@ -525,11 +533,6 @@ void Rocout::set_option(const char *option_name, const char *option_val) {
     return;
   }
 
-#ifdef USE_CGNS
-  COM_assertion_msg(!(name.compare("format") == 0 && val.compare("CGNS") != 0),
-                    "Impact is not built with option CGNS=1.\n");
-#endif  // USE_CGNS
-
   _options[name] = val;
 }
 
@@ -694,15 +697,21 @@ void *Rocout::write_dataitem_internal(void *attrInfo) {
 
     const std::string fmt = ai->m_rout->_options["format"];
     if (fmt == "HDF4" || fmt == "HDF") {
+#ifdef USE_HDF4
       write_dataitem_HDF4(fname, mfile, attr, ai->m_material.c_str(),
                           ai->m_timelevel.c_str(), *p,
                           ai->m_rout->_options["errorhandle"], ap);
+#else
+      COM_abort_msg(EXIT_FAILURE, "IMPACT not built with HDF4 format.");
+#endif  // USE_HDF4
     } else if (fmt == "CGNS") {
 #ifdef USE_CGNS
       write_dataitem_CGNS(fname, mfile, attr, ai->m_material.c_str(),
                           ai->m_timelevel.c_str(), *p,
                           ai->m_rout->_options["ghosthandle"],
                           ai->m_rout->_options["errorhandle"], ap);
+#else
+      COM_abort_msg(EXIT_FAILURE, "IMPACT not built with CGNS format.");
 #endif  // USE_CGNS
     }
   }

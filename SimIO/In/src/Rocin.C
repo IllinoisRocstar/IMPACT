@@ -273,7 +273,7 @@ bool elementType_to_string(CGNS_ENUMT(ElementType_t) etype,
   }
   return true;
 }
-#endif  // ifdef CGNS
+#endif  // USE_CGNS
 
 #ifdef USE_VTK
 /**
@@ -378,9 +378,9 @@ bool elementType_to_string(ElementType_t etype, std::string &roccom_elem) {
   }
   return true;
 }
-#endif  // ifdef CGNS
+#endif  // USE_VTK
 
-#ifndef USE_CGNS
+#ifdef USE_HDF4
 /**
  ** Find the first geometry dataset for the given block.
  **
@@ -782,12 +782,12 @@ static void scan_files_HDF4(int pathc, char *pathv[], BlockMM_HDF4 &blocks,
             }
           } else {
             // If the table is empty, set number of elements to 0.
-            char *pos = strchr(label, '|');
-            if (pos && *(pos + 2) == '0') {
+            char *pos2 = strchr(label, '|');
+            if (pos2 && *(pos2 + 2) == '0') {
               size[1] = ghostCount = 0;
             } else {
               // Get a trustworthy count of the number of ghost elements.
-              std::istringstream in(pos + 3);
+              std::istringstream in(pos2 + 3);
               in >> ghostCount;
             }
           }
@@ -843,8 +843,8 @@ static void scan_files_HDF4(int pathc, char *pathv[], BlockMM_HDF4 &blocks,
         bool is_null = false;
         location = 'w';
         if (label[0] != ':') {
-          char *pos = strchr(label, '|');
-          if (pos == NULL) {
+          char *pos2 = strchr(label, '|');
+          if (pos2 == NULL) {
             /* Old HDF file without nice labels. For backward compatability,
                guess the data location from the size of the data:
             */
@@ -884,18 +884,18 @@ static void scan_files_HDF4(int pathc, char *pathv[], BlockMM_HDF4 &blocks,
                         << location << "(" << sz << ")" << std::endl;
               /* display size of variable */
               std::cerr << "    size of variable: ";
-              for (int i = 0; i < rank; i++) std::cerr << size[i] << ',';
+              for (int j = 0; j < rank; j++) std::cerr << size[j] << ',';
               std::cerr << std::endl;
             }
           } else { /* New HDF file: gives location of data directly. */
-            location = *(pos + 1);
+            location = *(pos2 + 1);
             // Also obtain the number of ghost items
-            if (*(pos + 2) == '0') {
+            if (*(pos2 + 2) == '0') {
               size[0] = ng = 0;
               is_null = true;
-            } else if ((*(pos + 2) == ',' || *(pos + 2) == '@')) {
-              ng = std::atoi(pos + 3);
-              is_null = *(pos + 2) == '@';
+            } else if ((*(pos2 + 2) == ',' || *(pos2 + 2) == '@')) {
+              ng = std::atoi(pos2 + 3);
+              is_null = *(pos2 + 2) == '@';
             }
           }
         }
@@ -1007,7 +1007,6 @@ static void scan_files_HDF4(int pathc, char *pathv[], BlockMM_HDF4 &blocks,
     }
   }
 }
-#endif
 
 static void load_data_HDF4(BlockMM_HDF4::iterator p,
                            const BlockMM_HDF4::iterator &end,
@@ -1202,6 +1201,7 @@ static void load_data_HDF4(BlockMM_HDF4::iterator p,
     HDF4::SDend(sd_id);
   }
 }
+#endif  // USE_HDF4
 
 #ifdef USE_CGNS
 /**
@@ -2202,8 +2202,11 @@ static void load_data_CGNS(BlockMM_CGNS::iterator p,
 }
 #endif  // USE_CGNS
 
-static void new_dataitems(BlockMM_HDF4::iterator hdf4,
+static void new_dataitems(
+#ifdef USE_HDF4
+                          BlockMM_HDF4::iterator hdf4,
                           const BlockMM_HDF4::iterator &hdf4End,
+#endif  // USE_HDF4
 #ifdef USE_CGNS
                           BlockMM_CGNS::iterator cgns,
                           const BlockMM_CGNS::iterator &cgnsEnd,
@@ -2215,6 +2218,7 @@ static void new_dataitems(BlockMM_HDF4::iterator hdf4,
   std::ostringstream sout;
   std::set<std::string> added;
 
+#ifdef USE_HDF4
   while (hdf4 != hdf4End) {
     std::vector<VarInfo_HDF4> &vars = hdf4->second->m_variables;
     std::vector<VarInfo_HDF4>::const_iterator q;
@@ -2230,6 +2234,7 @@ static void new_dataitems(BlockMM_HDF4::iterator hdf4,
     }
     ++hdf4;
   }
+#endif  // USE_HDF4
 
 #ifdef USE_CGNS
   while (cgns != cgnsEnd) {
@@ -2378,8 +2383,11 @@ static void broadcast_win_dataitems(bool isEmpty, const std::string &window,
   COM_free_buffer(&atts);
 }
 
-void Rocin::register_panes(BlockMM_HDF4::iterator hdf4,
+void Rocin::register_panes(
+#ifdef USE_HDF4
+                           BlockMM_HDF4::iterator hdf4,
                            const BlockMM_HDF4::iterator &hdf4End,
+#endif  // USE_HDF4
 #ifdef USE_CGNS
                            BlockMM_CGNS::iterator cgns,
                            const BlockMM_CGNS::iterator &cgnsEnd,
@@ -2389,6 +2397,8 @@ void Rocin::register_panes(BlockMM_HDF4::iterator hdf4,
   int local;
   std::string name;
   bool is_first = true;
+
+#ifdef USE_HDF4
   for (; hdf4 != hdf4End; ++hdf4) {
     Block_HDF4 *block = (*hdf4).second;
 
@@ -2467,6 +2477,7 @@ void Rocin::register_panes(BlockMM_HDF4::iterator hdf4,
       }
     }
   }
+#endif  // USE_HDF4
 
 #ifdef USE_CGNS
   for (; cgns != cgnsEnd; ++cgns) {
@@ -2557,15 +2568,17 @@ void free_blocks(BLOCK &blocks) {
 }
 
 void Rocin::init(const std::string &mname) {
-  HDF4::init();
-
   Rocin *rin = new Rocin();
+
+#ifdef USE_HDF4
+  HDF4::init();
 
   /// This data structure maps HDF4 data types to roccom data types.
   rin->m_HDF2COM[DFNT_CHAR8] = COM_CHAR;
   rin->m_HDF2COM[DFNT_INT32] = COM_INT;
   rin->m_HDF2COM[DFNT_FLOAT32] = COM_FLOAT;
   rin->m_HDF2COM[DFNT_FLOAT64] = COM_DOUBLE;
+#endif  // USE_HDF4
 
 #ifdef USE_CGNS
   /// This data structure maps CGNS data types to roccom data types.
@@ -2639,7 +2652,10 @@ void Rocin::finalize(const std::string &mname) {
 
   // Delete the object
   delete rin;
+
+#ifdef USE_HDF4
   HDF4::finalize();
+#endif  // USE_HDF4
 }
 
 void Rocin::obtain_dataitem(const COM::DataItem *dataitem_in,
@@ -3026,9 +3042,10 @@ void Rocin::read_windows(const char *filename_patterns,
   buffer = new char[strlen(filename_patterns) + 1];
   strcpy(buffer, filename_patterns);
 
-#ifndef USE_CGNS
+#ifdef USE_HDF4
   BlockMM_HDF4 blocks_HDF4;
-#else
+#endif  // USE_HDF4
+#ifdef USE_CGNS
   BlockMM_CGNS blocks_CGNS;
 #endif  // USE_CGNS
 
@@ -3051,13 +3068,14 @@ void Rocin::read_windows(const char *filename_patterns,
       // Extracts metadata from a list of files.
       // Opens each file, scans dataset, identifies windows, panes, and dataitem
       // Puts this information into blocks.
-#ifndef USE_CGNS
+#ifdef USE_HDF4
     scan_files_HDF4(globbuf.gl_pathc, globbuf.gl_pathv, blocks_HDF4, time,
                     m_HDF2COM);
-#else
+#endif  // USE_HDF4
+#ifdef USE_CGNS
     scan_files_CGNS(globbuf.gl_pathc, globbuf.gl_pathv, blocks_CGNS, time,
                     m_CGNS2COM);
-#endif
+#endif  // USE_CGNS
     globfree(&globbuf);
 #else  // No glob function on this system
     // Create a char** of n filenames matching patterns stored in buffer
@@ -3096,11 +3114,12 @@ void Rocin::read_windows(const char *filename_patterns,
       matches[ccount - 1][lis] = '\0';
       li++;
     }
-#ifndef USE_CGNS
+#ifdef USE_HDF4
     scan_files_HDF4(nmatch, &matches[0], blocks_HDF4, time, m_HDF2COM);
-#else
+#endif  // USE_HDF4
+#ifdef USE_CGNS
     scan_files_CGNS(nmatch, &matches[0], blocks_CGNS, time, m_CGNS2COM);
-#endif
+#endif  // USE_CGNS
     ccount = 0;
     while (ccount < nmatch) {
       if (matches[ccount]) delete[] matches[ccount];
@@ -3121,7 +3140,9 @@ void Rocin::read_windows(const char *filename_patterns,
 
   std::string name;
   std::set<std::string>::iterator p = materials.begin();
+#ifdef USE_HDF4
   std::pair<BlockMM_HDF4::iterator, BlockMM_HDF4::iterator> range_HDF4;
+#endif  // USE_HDF4
 #ifdef USE_CGNS
   std::pair<BlockMM_CGNS::iterator, BlockMM_CGNS::iterator> range_CGNS;
 #endif  // USE_CGNS
@@ -3130,10 +3151,11 @@ void Rocin::read_windows(const char *filename_patterns,
     // Default value of material_names is NULL
     // we assume the file only contains one type of material, and
     // the window name is the window_prefix.
-#ifndef USE_CGNS
+#ifdef USE_HDF4
     range_HDF4.first = blocks_HDF4.begin();
     range_HDF4.second = blocks_HDF4.end();
-#else
+#endif  // USE_HDF4
+#ifdef USE_CGNS
     range_CGNS.first = blocks_CGNS.begin();
     range_CGNS.second = blocks_CGNS.end();
 #endif  // USE_CGNS
@@ -3141,38 +3163,49 @@ void Rocin::read_windows(const char *filename_patterns,
 
     COM_new_window(name.c_str(), *myComm);
 
-    new_dataitems(range_HDF4.first, range_HDF4.second,
+    new_dataitems(
+#ifdef USE_HDF4
+                  range_HDF4.first, range_HDF4.second,
+#endif  // USE_HDF4
 #ifdef USE_CGNS
                   range_CGNS.first, range_CGNS.second,
 #endif  // USE_CGNS
                   name, myComm, rank, nprocs);
-    register_panes(range_HDF4.first, range_HDF4.second,
+    register_panes(
+#ifdef USE_HDF4
+                   range_HDF4.first, range_HDF4.second,
+#endif  // USE_HDF4
 #ifdef USE_CGNS
                    range_CGNS.first, range_CGNS.second,
 #endif  // USE_CGNS
                    name, is_local, myComm, rank, nprocs);
 
+#ifdef USE_HDF4
     load_data_HDF4(range_HDF4.first, range_HDF4.second, name, myComm, rank,
                    nprocs);
+#endif  // USE_HDF4
 #ifdef USE_CGNS
     load_data_CGNS(range_CGNS.first, range_CGNS.second, name, myComm, rank,
                    nprocs);
 #endif  // USE_CGNS
 
-    broadcast_win_dataitems(range_HDF4.first == range_HDF4.second
+    broadcast_win_dataitems(
+#ifdef USE_HDF4
+                            range_HDF4.first == range_HDF4.second,
+#endif  // USE_HDF4
 #ifdef USE_CGNS
-                                && range_CGNS.first == range_CGNS.second
+                            range_CGNS.first == range_CGNS.second,
 #endif  // USE_CGNS
-                            ,
                             name, myComm, rank, nprocs);
 
     COM_window_init_done(name.c_str());
   } else {
     // Iterate through each material (one window per material).
     while (p != materials.end()) {
-#ifndef USE_CGNS
+#ifdef USE_HDF4
       if (blocks_HDF4.count(*p) == 0
-#else
+#endif  // USE_HDF4
+#ifdef USE_CGNS
       if (blocks_CGNS.count(*p) == 0
 #endif  // USE_CGNS
       ) {
@@ -3182,38 +3215,49 @@ void Rocin::read_windows(const char *filename_patterns,
         continue;
       }
 
-#ifndef USE_CGNS
+#ifdef USE_HDF4
       range_HDF4 = blocks_HDF4.equal_range(*p);
-#else
+#endif  // USE_HDF4
+#ifdef USE_CGNS
       range_CGNS = blocks_CGNS.equal_range(*p);
 #endif  // USE_CGNS
       name = window_prefix + *p;
 
       COM_new_window(name.c_str(), *myComm);
 
-      new_dataitems(range_HDF4.first, range_HDF4.second,
+      new_dataitems(
+#ifdef USE_HDF4
+                    range_HDF4.first, range_HDF4.second,
+#endif  // USE_HDF4
 #ifdef USE_CGNS
                     range_CGNS.first, range_CGNS.second,
 #endif  // USE_CGNS
                     name, myComm, rank, nprocs);
-      register_panes(range_HDF4.first, range_HDF4.second,
+      register_panes(
+#ifdef USE_HDF4
+                     range_HDF4.first, range_HDF4.second,
+#endif  // USE_HDF4
 #ifdef USE_CGNS
                      range_CGNS.first, range_CGNS.second,
 #endif  // USE_CGNS
                      name, is_local, myComm, rank, nprocs);
 
+#ifdef USE_HDF4
       load_data_HDF4(range_HDF4.first, range_HDF4.second, name, myComm, rank,
                      nprocs);
+#endif  // USE_HDF4
 #ifdef USE_CGNS
       load_data_CGNS(range_CGNS.first, range_CGNS.second, name, myComm, rank,
                      nprocs);
 #endif  // USE_CGNS
 
-      broadcast_win_dataitems(range_HDF4.first == range_HDF4.second
+      broadcast_win_dataitems(
+#ifdef USE_HDF4
+                              range_HDF4.first == range_HDF4.second,
+#endif  // USE_HDF4
 #ifdef USE_CGNS
-                                  && range_CGNS.first == range_CGNS.second
+                              range_CGNS.first == range_CGNS.second,
 #endif  // USE_CGNS
-                              ,
                               name, myComm, rank, nprocs);
 
       COM_window_init_done(name.c_str());
@@ -3223,9 +3267,10 @@ void Rocin::read_windows(const char *filename_patterns,
   }
 
   // Free memory.
-#ifndef USE_CGNS
+#ifdef USE_HDF4
   free_blocks(blocks_HDF4);
-#else
+#endif  // USE_HDF4
+#ifdef USE_CGNS
   free_blocks(blocks_CGNS);
 #endif  // USE_CGNS
 }

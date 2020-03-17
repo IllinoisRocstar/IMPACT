@@ -8,7 +8,6 @@
 #define _ROCOUT_H_
 
 #include <map>
-#include "HDF4.h"
 #include "com.h"
 #include "com_devel.hpp"
 

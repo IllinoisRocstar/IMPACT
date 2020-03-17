@@ -48,7 +48,6 @@ TEST(PCommTest, readFromWindow) {
   cout << "Creating window \"" << wname << '"' << endl;
 
   // Read in CGNS format
-  // COM_load_module( "SimIN", "IN");
   ASSERT_NO_THROW(COM_LOAD_MODULE_STATIC_DYNAMIC(SimIN, "IN"));
   cout << "Reading window " << endl;
   int IN_read = COM_get_function_handle("IN.read_window");
@@ -97,7 +96,6 @@ TEST(PCommTest, readFromWindow) {
   int pid_hdl = COM_get_dataitem_handle("surf.pane_ids");
   ASSERT_NE(-1, pid_hdl) << "Dataitem surf.pane_ids not found!\n";
 
-  // COM_load_module( "SurfMap", "MAP");
   ASSERT_NO_THROW(COM_LOAD_MODULE_STATIC_DYNAMIC(SurfMap, "MAP"));
 
   cout << "Performing an average-reduction on shared nodes." << endl;
@@ -117,7 +115,6 @@ TEST(PCommTest, readFromWindow) {
   ASSERT_NO_THROW(COM_window_init_done(wname.c_str()));
 
   cout << "Loading Rocout" << endl;
-  // COM_load_module("SimOUT", "OUT");
   ASSERT_NO_THROW(COM_LOAD_MODULE_STATIC_DYNAMIC(SimOUT, "OUT"));
 
   cout << "Output window into file..." << endl;

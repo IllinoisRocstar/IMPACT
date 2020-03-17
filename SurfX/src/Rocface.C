@@ -576,8 +576,7 @@ void Rocface::init(const std::string &mname) {
   COM_window_init_done(mname.c_str());
 }
 
-extern "C" void SimIN_load_module(const char *);
-extern "C" void SimIN_unload_module(const char *);
+COM_EXTERN_MODULE(SimIN)
 
 // Read Rocface control file.
 void Rocface::read_control_file(const char *fname) {
@@ -599,10 +598,10 @@ void Rocface::read_control_file(const char *fname) {
   COM_window_init_done(ctrlname.c_str());
 
   // Read in using Rocin.
-  SimIN_load_module("RFC_CNTRL_IN");
+  COM_LOAD_MODULE_STATIC_DYNAMIC(SimIN, "RFC_CNTRL_IN");
   int hdl_read = COM_get_function_handle("RFC_CNTRL_IN.read_parameter_file");
   COM_call_function(hdl_read, fname, ctrlname.c_str());
-  SimIN_unload_module("RFC_CNTRL_IN");
+  COM_UNLOAD_MODULE_STATIC_DYNAMIC(SimIN, "RFC_CNTRL_IN");
 
   COM_delete_window(ctrlname.c_str());
 }

@@ -10,6 +10,10 @@
 
 #include <map>
 
+#ifdef USE_HDF4
+
+#include "HDF4.h"
+
 /**
  ** Struct containing necessary information about an attribute in a window.
  **/
@@ -101,6 +105,8 @@ struct Block_HDF4 {
   std::vector<VarInfo_HDF4> m_variables;  ///< Info on each variable.
 };
 typedef std::multimap<std::string, Block_HDF4 *> BlockMM_HDF4;
+
+#endif  // USE_HDF4
 
 #ifdef USE_CGNS
 

@@ -193,15 +193,10 @@ int main(int argc, char *argv[]) {
   int tri1_mesh = COM_get_dataitem_handle((wnames[0] + ".mesh").c_str());
   int tri2_mesh = COM_get_dataitem_handle((wnames[1] + ".mesh").c_str());
 
-  const char *format = "HDF";
-#ifdef USE_CGNS
-  format = "CGNS";
-#endif
-
   std::cout << "Starting mesh overlay..." << std::endl;
   COM_call_function(RFC_overlay, &tri1_mesh, &tri2_mesh);
   COM_call_function(RFC_write, &tri1_mesh, &tri2_mesh, wnames[0].c_str(),
-                    wnames[1].c_str(), format);
+                    wnames[1].c_str());
 
   COM_print_profile("", "");
 
