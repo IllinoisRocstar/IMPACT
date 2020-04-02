@@ -317,11 +317,11 @@ void Transfer_base::integrate(const RFC_Window_transfer &win,
       Nodal_coor_const coors;
       Element_coor_const pnts(coors, (*pit)->coordinates(), ene);
 
-      for (int i = 0, n = e.get_num_gp(doa); i < n; ++i) {
-        e.get_gp_nat_coor(i, nc, doa);
+      for (int i2 = 0, n = e.get_num_gp(doa); i2 < n; ++i2) {
+        e.get_gp_nat_coor(i2, nc, doa);
 
         t = make_field(sDF, *pit, ene);
-        Real a = e.get_gp_weight(i, doa) * e.Jacobian_det(pnts, nc);
+        Real a = e.get_gp_weight(i2, doa) * e.Jacobian_det(pnts, nc);
         t *= a;
         integral += t;
       }
@@ -356,11 +356,11 @@ void Transfer_base::integrate(const RFC_Window_transfer &win,
       Nodal_coor_const coors;
       Element_coor_const pnts(coors, (*pit)->coordinates(), ene);
 
-      for (int i = 0, n = e.get_num_gp(doa); i < n; ++i) {
-        e.get_gp_nat_coor(i, nc, doa);
+      for (int i2 = 0, n = e.get_num_gp(doa); i2 < n; ++i2) {
+        e.get_gp_nat_coor(i2, nc, doa);
 
         interpolate(e, make_field(sDF, *pit, ene), nc, t);
-        Real a = e.get_gp_weight(i, doa) * e.Jacobian_det(pnts, nc);
+        Real a = e.get_gp_weight(i2, doa) * e.Jacobian_det(pnts, nc);
         t *= a;
         integral += t;
       }

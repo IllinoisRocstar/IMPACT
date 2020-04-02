@@ -93,8 +93,8 @@ void CompareSolutionsWithDetail(std::vector<double> &solution1,
   double diffmax = 0;
   double diffmin = 10000.0;
   while (soln1It != solution1.end()) {
-    double value1 = *soln1It++;
-    double value2 = *soln2It++;
+    /*double value1 = **/soln1It++;
+    /*double value2 = **/soln2It++;
     double diff = std::abs(*soln1It - *soln2It);
     sum += diff;
     if (diff > diffmax) diffmax = diff;
@@ -167,8 +167,8 @@ class TransferSolver : public SolverUtils::FEM::SolverAgent {
     SolverUtils::Mesh::WriteVTKToStream(meshName, Mesh(), vtkOut);
     vtkOut.close();
 
-    int nNodes = Mesh().nc.NNodes();
-    int nElem = Mesh().con.Nelem();
+    nNodes = Mesh().nc.NNodes();
+    nElem = Mesh().con.Nelem();
 
     nodeCoordinates1.resize(3 * nNodes);
     nodeCoordinates2.resize(3 * nNodes);
@@ -410,7 +410,6 @@ class COMQuadraticDataTransfer : public ::testing::Test {
     errorOrder = new std::vector<std::vector<double> >(6);
 
     for (int i = 1; i < *nTrial; i++) {
-      std::vector<double> logSpacing2(nMeshes, 0);
       std::vector<double> dlogSpacing(nMeshes, 0);
       for (int j = 0; j < nMeshes; j++) {
         double logSpacing2 = std::log(meshSpacing[j][i]);

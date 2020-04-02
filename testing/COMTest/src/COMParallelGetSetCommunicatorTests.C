@@ -75,7 +75,7 @@ TEST_F(COMGetSetCommunicator, WithInitializedWindow) {
   int errorSend = 0;
   int errorReceive = 0;
   if (comm != MPI_COMM_SELF) errorSend = 1;
-  MPI_Allreduce(&errorSend, &errorReceive, 1, MPI_INTEGER, MPI_SUM, comm);
+  MPI_Allreduce(&errorSend, &errorReceive, 1, MPI_INT, MPI_SUM, comm);
   EXPECT_EQ(0, errorReceive)
       << "An error occured in: " << errorReceive << " threads\n";
   COM_delete_window("testparallelwindow2");
@@ -97,7 +97,7 @@ TEST_F(COMGetSetCommunicator, GetSetDefault) {
   int errorSend = 0;
   int errorReceive = 0;
   if (comm != MPI_COMM_SELF) errorSend = 1;
-  MPI_Allreduce(&errorSend, &errorReceive, 1, MPI_INTEGER, MPI_SUM, comm);
+  MPI_Allreduce(&errorSend, &errorReceive, 1, MPI_INT, MPI_SUM, comm);
   EXPECT_EQ(0, errorReceive)
       << "An error occured in: " << errorReceive << " threads\n";
   COM_delete_window("testparallelwindow3");
@@ -128,7 +128,7 @@ TEST_F(COMGetSetCommunicator, GetCommWindowInitialized) {
   COM::COM_base* rbase = COM_get_com();
   MPI_Comm comm;
   MPI_Comm default_comm = COM_get_default_communicator();
-  COM_new_window("testparallelwindow6", MPI_COMM_SELF);
+  COM_new_window("testparallelwindow6", default_comm);
 
   int h = COM_get_window_handle("testparallelwindow6");
   EXPECT_GT(h, 0) << "window handle not found!\n";
@@ -136,7 +136,7 @@ TEST_F(COMGetSetCommunicator, GetCommWindowInitialized) {
 
   comm = param_window->get_communicator();
 
-  EXPECT_EQ(comm, MPI_COMM_SELF)
+  EXPECT_EQ(comm, default_comm)
       << "window::get_communicator does not return communicator used"
       << " in window initialization!" << std::endl;
 
@@ -203,11 +203,11 @@ TEST_F(COMGetSetCommunicator, SplitCommunicator) {
 }
 
 TEST_F(COMGetSetCommunicator, ModuleGetSetComm) {
-  int commworksnew = 1;
-  MPI_Comm comm;
-  int rank, size;
+  int commworksnew = 0;
+  //MPI_Comm comm;
+  int rank/*, size*/;
   int funchand, h;
-  const char* name = "TestParallelWin1";
+  //const char* name = "TestParallelWin1";
 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -221,9 +221,8 @@ TEST_F(COMGetSetCommunicator, ModuleGetSetComm) {
   h = COM_get_window_handle("TestParallelWin1");
   EXPECT_GT(h, 0) << "Com window not found!\n";
 
-  if (h > 0)
-    funchand =
-        COM_get_function_handle("TestParallelWin1.get_communicator_module");
+  funchand =
+      COM_get_function_handle("TestParallelWin1.get_communicator_module");
 
   if (funchand > 0) COM_call_function(funchand, &commworksnew);
   EXPECT_NE(0, commworksnew)

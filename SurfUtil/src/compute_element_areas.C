@@ -42,14 +42,14 @@ void Rocsurf::compute_element_areas(COM::DataItem *element_areas,
     COM_assertion(pane.size_of_elements() == 0 ||
                   (nc_pane->stride() == 3 && a_pane->stride() == 1));
 
-    const Point_3<Real> *pnts = (const Point_3<Real> *)(nc_pane->pointer());
+    const Point_3<Real> *pnts2 = (const Point_3<Real> *)(nc_pane->pointer());
     Real *ptr = (Real *)(a_pane->pointer());
 
     // Loop through elements of the pane
     Element_node_enumerator ene(&pane, 1);
     for (int j = pane.size_of_elements(); j > 0; --j, ene.next(), ++ptr) {
       Generic_element_2 e(ene.size_of_edges(), ene.size_of_nodes());
-      ps.set(pnts, ene, 1);
+      ps.set(pnts2, ene, 1);
       int size = e.get_num_gp();
       Real this_area = 0;
 

@@ -156,7 +156,7 @@ TEST(SurfMap, HexBorderGhostTest) {
   int elmts[num_elmts][8];
 
   COM_init(&ARGC, &ARGV);
-  const char* format = ARGV[1];
+  //const char* format = ARGV[1];
 
   std::cout << "Creating window \"unstr\"" << std::endl;
   COM_new_window("unstr");

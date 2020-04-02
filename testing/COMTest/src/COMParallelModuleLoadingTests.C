@@ -106,13 +106,13 @@ TEST_F(COMParallelModuleLoading, LoadModuleInSpecificComm) {
     if (h != -1) errorSend = 1;
   }
 
-  MPI_Allreduce(&errorSend, &errorReceive, 1, MPI_INTEGER, MPI_SUM, worldComm);
+  MPI_Allreduce(&errorSend, &errorReceive, 1, MPI_INT, MPI_SUM, worldComm);
   EXPECT_EQ(0, errorReceive)
       << "An error occured in: " << errorReceive << " threads\n";
 }
 
 TEST_F(COMParallelModuleLoading, LoadModuleOnAllProcesses) {
-  int rank, color, size;
+  int rank/*, color*/, size;
   int errorSend = 0;
   int errorReceive = 0;
   MPI_Comm worldComm = MPI_COMM_WORLD;
@@ -140,8 +140,8 @@ TEST_F(COMParallelModuleLoading, LoadModuleOnAllProcesses) {
   int numbers[4];
   // Change the size of the numbers array accordingly with the number of threads
 
-  int commstat =
-      MPI_Allgather(&number, 1, MPI_INT, &numbers, 1, MPI_INT, worldComm);
+  //int commstat =
+  MPI_Allgather(&number, 1, MPI_INT, &numbers, 1, MPI_INT, worldComm);
 
   for (int i = 0; i < size; i++) {
     EXPECT_EQ(i + 1, numbers[i])
@@ -149,7 +149,7 @@ TEST_F(COMParallelModuleLoading, LoadModuleOnAllProcesses) {
         << std::endl;
   }
 
-  MPI_Allreduce(&errorSend, &errorReceive, 1, MPI_INTEGER, MPI_SUM, worldComm);
+  MPI_Allreduce(&errorSend, &errorReceive, 1, MPI_INT, MPI_SUM, worldComm);
   EXPECT_EQ(0, errorReceive)
       << "An error occured in: " << errorReceive << " threads\n";
 
@@ -169,7 +169,7 @@ TEST_F(COMParallelModuleLoading, BarrierTest) {
   int rank, size;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
-  int h, sleep_handle, b;
+  int h, sleep_handle/*, b*/;
   time_t t1, t2;
 
   ASSERT_NO_THROW(COM_set_default_communicator(MPI_COMM_SELF))
@@ -204,14 +204,14 @@ TEST_F(COMParallelModuleLoading, BarrierTest) {
   t2 = time(NULL);
 
   // barrier function to force all processes to wait
-  b = MPI_Barrier(comm);
+  /*b = */MPI_Barrier(comm);
 
   // get current time
   t2 = time(NULL);
 
   // check that it took all the procceses the same amount of time
   double difft = static_cast<double>(t2 - t1);
-  EXPECT_PRED_FORMAT2(::testing::FloatLE, static_cast<double>(size - 1) - difft,
+  EXPECT_PRED_FORMAT2(::testing::DoubleLE, static_cast<double>(size - 1) - difft,
                       1.0e-3)
       << "Somehow, processes did not take the same"
       << "amount of time to a tolerance of 1.0e-3 sec\n";

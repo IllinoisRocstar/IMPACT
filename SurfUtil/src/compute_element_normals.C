@@ -33,7 +33,7 @@ void Rocsurf::compute_element_normals(COM::DataItem *elem_nrmls,
         (pnts == NULL) ? pane.dataitem(COM::COM_NC) : pane.dataitem(pnts->id());
     COM_assertion(pane.size_of_elements() == 0 || nc_pane->stride() == 3);
 
-    const Point_3<Real> *pnts = (const Point_3<Real> *)(nc_pane->pointer());
+    const Point_3<Real> *pnts2 = (const Point_3<Real> *)(nc_pane->pointer());
     Vector_3<Real> *ptr =
         (Vector_3<Real> *)(pane.dataitem(elem_nrmls->id())->pointer());
 
@@ -42,7 +42,7 @@ void Rocsurf::compute_element_normals(COM::DataItem *elem_nrmls,
 
     for (int j = pane.size_of_elements(); j > 0; --j, ene.next(), ++ptr) {
       Generic_element_2 e(ene.size_of_edges(), ene.size_of_nodes());
-      ps.set(pnts, ene, 1);
+      ps.set(pnts2, ene, 1);
 
       e.Jacobian(ps, nc, J);
       *ptr = Vector_3<Real>::cross_product(J[0], J[1]);

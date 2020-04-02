@@ -55,6 +55,7 @@ int GenerateCartesianGrid(Mesh::NodalCoordinates &nc,
       }
     }
   }
+  return 0;
 }
 }  // namespace Mesh
 }  // namespace SolverUtils

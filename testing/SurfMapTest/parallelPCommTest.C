@@ -19,14 +19,20 @@ int ARGC;
 
 int get_comm_rank(MPI_Comm comm) {
   int rank;
-  int ierr = MPI_Comm_rank(comm, &rank);
-  assert(ierr == 0);
+#ifndef NDEBUG
+  int ierr =
+#endif
+      MPI_Comm_rank(comm, &rank);
+  COM_assertion(ierr == 0);
   return rank;
 }
 int get_comm_size(MPI_Comm comm) {
   int size;
-  int ierr = MPI_Comm_size(comm, &size);
-  assert(ierr == 0);
+#ifndef NDEBUG
+  int ierr =
+#endif
+      MPI_Comm_size(comm, &size);
+  COM_assertion(ierr == 0);
   return size;
 }
 
@@ -54,7 +60,6 @@ TEST(PCommTest, ParallelTest) {
   COM_set_profiling(1);
 
   // Read in CGNS format
-  // COM_load_module( "SimIN", "IN");
   ASSERT_NO_THROW(COM_LOAD_MODULE_STATIC_DYNAMIC(SimIN, "IN"));
 
   /* std::string fname("surf000");
@@ -127,7 +132,6 @@ TEST(PCommTest, ParallelTest) {
   EXPECT_NE(-1, pid_hdl) << "Dataitem surf.pane_ids was not found!\n";
 
   if (myrank == 0) std::cout << "Loading Rocmap" << std::endl;
-  // COM_load_module( "SurfMap", "MAP");
   ASSERT_NO_THROW(COM_LOAD_MODULE_STATIC_DYNAMIC(SurfMap, "MAP"));
 
   if (myrank == 0)
@@ -150,7 +154,6 @@ TEST(PCommTest, ParallelTest) {
   EXPECT_NO_THROW(COM_window_init_done(wname.c_str()));
 
   if (myrank == 0) std::cout << "loading Rocout" << std::endl;
-  // COM_load_module("SimOUT", "OUT");
   ASSERT_NO_THROW(COM_LOAD_MODULE_STATIC_DYNAMIC(SimOUT, "OUT"));
 
   const std::string pconn = wname + ".pconn";

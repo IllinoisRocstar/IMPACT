@@ -198,7 +198,10 @@ class AutoCDer {
  public:
   inline AutoCDer() : m_cwd(getcwd(NULL, 0)) {}
   inline ~AutoCDer() {
-    chdir(m_cwd);
+    if (chdir(m_cwd) != 0)
+      perror(("Rocin::~AutoCDer chdir() to " + std::string(m_cwd) + " failed")
+                 .c_str());
+
     free(m_cwd);
   }
 
@@ -270,7 +273,7 @@ bool elementType_to_string(CGNS_ENUMT(ElementType_t) etype,
   }
   return true;
 }
-#endif  // ifdef CGNS
+#endif  // USE_CGNS
 
 #ifdef USE_VTK
 /**
@@ -375,8 +378,9 @@ bool elementType_to_string(ElementType_t etype, std::string &roccom_elem) {
   }
   return true;
 }
-#endif  // ifdef CGNS
+#endif  // USE_VTK
 
+#ifdef USE_HDF4
 /**
  ** Find the first geometry dataset for the given block.
  **
@@ -778,12 +782,12 @@ static void scan_files_HDF4(int pathc, char *pathv[], BlockMM_HDF4 &blocks,
             }
           } else {
             // If the table is empty, set number of elements to 0.
-            char *pos = strchr(label, '|');
-            if (pos && *(pos + 2) == '0') {
+            char *pos2 = strchr(label, '|');
+            if (pos2 && *(pos2 + 2) == '0') {
               size[1] = ghostCount = 0;
             } else {
               // Get a trustworthy count of the number of ghost elements.
-              std::istringstream in(pos + 3);
+              std::istringstream in(pos2 + 3);
               in >> ghostCount;
             }
           }
@@ -839,8 +843,8 @@ static void scan_files_HDF4(int pathc, char *pathv[], BlockMM_HDF4 &blocks,
         bool is_null = false;
         location = 'w';
         if (label[0] != ':') {
-          char *pos = strchr(label, '|');
-          if (pos == NULL) {
+          char *pos2 = strchr(label, '|');
+          if (pos2 == NULL) {
             /* Old HDF file without nice labels. For backward compatability,
                guess the data location from the size of the data:
             */
@@ -880,18 +884,18 @@ static void scan_files_HDF4(int pathc, char *pathv[], BlockMM_HDF4 &blocks,
                         << location << "(" << sz << ")" << std::endl;
               /* display size of variable */
               std::cerr << "    size of variable: ";
-              for (int i = 0; i < rank; i++) std::cerr << size[i] << ',';
+              for (int j = 0; j < rank; j++) std::cerr << size[j] << ',';
               std::cerr << std::endl;
             }
           } else { /* New HDF file: gives location of data directly. */
-            location = *(pos + 1);
+            location = *(pos2 + 1);
             // Also obtain the number of ghost items
-            if (*(pos + 2) == '0') {
+            if (*(pos2 + 2) == '0') {
               size[0] = ng = 0;
               is_null = true;
-            } else if ((*(pos + 2) == ',' || *(pos + 2) == '@')) {
-              ng = std::atoi(pos + 3);
-              is_null = *(pos + 2) == '@';
+            } else if ((*(pos2 + 2) == ',' || *(pos2 + 2) == '@')) {
+              ng = std::atoi(pos2 + 3);
+              is_null = *(pos2 + 2) == '@';
             }
           }
         }
@@ -1197,6 +1201,7 @@ static void load_data_HDF4(BlockMM_HDF4::iterator p,
     HDF4::SDend(sd_id);
   }
 }
+#endif  // USE_HDF4
 
 #ifdef USE_CGNS
 /**
@@ -1234,7 +1239,10 @@ static void scan_files_CGNS(
     std::string fname(pathv[i]);
     std::string::size_type cloc = fname.rfind('/');
     if (cloc != std::string::npos) {
-      chdir(fname.substr(0, cloc).c_str());
+      if (chdir(fname.substr(0, cloc).c_str()) != 0)
+        perror(("Rocin::scan_files_CGNS chdir() to " + fname.substr(0, cloc) +
+                " failed")
+                   .c_str());
       fname.erase(0, cloc + 1);
     }
 
@@ -1354,10 +1362,10 @@ static void scan_files_CGNS(
 
       int Z;
       for (Z = 1; Z <= nZones; ++Z) {
-        int nPoints, nGhostPoints;
+        int nPoints = 0, nGhostPoints = 0;
         std::string units;
         char zoneName[33];
-        int gridSize[3], coreSize[9];
+        int gridSize[6], coreSize[9];
         CG_CHECK_RET(
             cg_zone_read,
             (fn, B, Z, zoneName, reinterpret_cast<cgsize_t *>(coreSize)),
@@ -1483,8 +1491,8 @@ static void scan_files_CGNS(
                            delete block;
                            continue);
 
-              int rind[2];
-              if (cg_rind_read(rind) == 0) nGhostElems = rind[1];
+              int rind2[2];
+              if (cg_rind_read(rind2) == 0) nGhostElems = rind2[1];
             }
             // Fix for the Boeing fix
             // If the conn table name doesn't begin with a ':', it's not
@@ -1547,7 +1555,7 @@ static void scan_files_CGNS(
                 CG_CHECK_RET(cg_ndescriptors, (&nDescriptors), continue);
 
                 char *text = NULL;
-                std::string units;
+                std::string units2;
                 bool isNull = false;
                 int nGhostItems = 0, D;
                 for (D = 1; D <= nDescriptors; ++D) {
@@ -1566,30 +1574,30 @@ static void scan_files_CGNS(
                       in >> nGhostItems;
                     }
                   } else if (strcmp(buffer, "Units") == 0) {
-                    units = text;
+                    units2 = text;
                   }
                   free(text);
                 }
 
                 int nComps = 1, comp = 0;
-                std::string::size_type i = label.rfind('#');
-                if (i != std::string::npos) {
-                  std::istringstream in(&label[i + 1]);
+                std::string::size_type i2 = label.rfind('#');
+                if (i2 != std::string::npos) {
+                  std::istringstream in(&label[i2 + 1]);
                   in >> comp;
                   --comp;
                   in.get();
                   in.get();
                   in >> nComps;
-                  label.erase(i);
+                  label.erase(i2);
                 } else {
-                  i = label.length() - 1;
-                  if (label[i] >= 'X' && label[i] <= 'Z') {
-                    comp = label[i] - 'X';
-                    label.erase(i);
-                    --i;
-                    if (label[i] >= 'X' && label[i] <= 'Z') {
-                      comp += 3 * (label[i] - 'X');
-                      label.erase(i);
+                  i2 = label.length() - 1;
+                  if (label[i2] >= 'X' && label[i2] <= 'Z') {
+                    comp = label[i2] - 'X';
+                    label.erase(i2);
+                    --i2;
+                    if (label[i2] >= 'X' && label[i2] <= 'Z') {
+                      comp += 3 * (label[i2] - 'X');
+                      label.erase(i2);
                       nComps = 9;
                     } else {
                       nComps = 3;
@@ -1603,7 +1611,7 @@ static void scan_files_CGNS(
                   vi.m_is_null[comp] = isNull;
                 } else {
                   block->m_variables.push_back(
-                      VarInfo_CGNS(label, 'w', CGNS2COM[dataType], units,
+                      VarInfo_CGNS(label, 'w', CGNS2COM[dataType], units2,
                                    nComps, A, size[0], nGhostItems, isNull));
                 }
               }
@@ -1669,7 +1677,7 @@ static void scan_files_CGNS(
                 CG_CHECK_RET(cg_ndescriptors, (&nDescriptors), continue);
 
                 char *text = NULL;
-                std::string units;
+                std::string units2;
                 bool isNull = false;
                 int nGhostItems = 0, D;
                 for (D = 1; D <= nDescriptors; ++D) {
@@ -1688,30 +1696,30 @@ static void scan_files_CGNS(
                       in >> nGhostItems;
                     }
                   } else if (strcmp(buffer, "Units") == 0) {
-                    units = text;
+                    units2 = text;
                   }
                   free(text);
                 }
 
                 int nComps = 1, comp = 0;
-                std::string::size_type i = label.rfind('#');
-                if (i != std::string::npos) {
-                  std::istringstream in(&label[i + 1]);
+                std::string::size_type i2 = label.rfind('#');
+                if (i2 != std::string::npos) {
+                  std::istringstream in(&label[i2 + 1]);
                   in >> comp;
                   --comp;
                   in.get();
                   in.get();
                   in >> nComps;
-                  label.erase(i);
+                  label.erase(i2);
                 } else {
-                  i = label.length() - 1;
-                  if (label[i] >= 'X' && label[i] <= 'Z') {
-                    comp = label[i] - 'X';
-                    label.erase(i);
-                    --i;
-                    if (label[i] >= 'X' && label[i] <= 'Z') {
-                      comp += 3 * (label[i] - 'X');
-                      label.erase(i);
+                  i2 = label.length() - 1;
+                  if (label[i2] >= 'X' && label[i2] <= 'Z') {
+                    comp = label[i2] - 'X';
+                    label.erase(i2);
+                    --i2;
+                    if (label[i2] >= 'X' && label[i2] <= 'Z') {
+                      comp += 3 * (label[i2] - 'X');
+                      label.erase(i2);
                       nComps = 9;
                     } else {
                       nComps = 3;
@@ -1726,7 +1734,7 @@ static void scan_files_CGNS(
                 } else {
                   // std::cout << "Units now == " << units << std::endl;
                   block->m_variables.push_back(
-                      VarInfo_CGNS(label, attrType, CGNS2COM[dataType], units,
+                      VarInfo_CGNS(label, attrType, CGNS2COM[dataType], units2,
                                    nComps, A, size[0], nGhostItems, isNull));
                 }
               }
@@ -1761,23 +1769,23 @@ static void scan_files_CGNS(
                          (fn, B, "Zone_t", Z, "FlowSolution_t", S, "end"),
                          break);
 
-            int rind[6];
-            if (cg_rind_read(rind) != 0) std::fill_n(rind, 6, 0);
+            int rind2[6];
+            if (cg_rind_read(rind2) != 0) std::fill_n(rind2, 6, 0);
 
             int nItems;
             int start = isNodal ? 0 : 1;
             if (zoneType == CGNS_ENUMV(Structured)) {
               start *= cellDim;
               // Note: the rind values should always be the same.
-              nItems = coreSize[start] + rind[0] + rind[1];
+              nItems = coreSize[start] + rind2[0] + rind2[1];
               if (cellDim > 1) {
-                nItems *= coreSize[start + 1] + rind[2] + rind[3];
+                nItems *= coreSize[start + 1] + rind2[2] + rind2[3];
                 if (cellDim > 2)
-                  nItems *= coreSize[start + 2] + rind[4] + rind[5];
+                  nItems *= coreSize[start + 2] + rind2[4] + rind2[5];
               }
             } else {
               // Note: rind[0] should always be 0.
-              nItems = coreSize[start] + rind[0] + rind[1];
+              nItems = coreSize[start] + rind2[0] + rind2[1];
             }
 
             int nFields;
@@ -1800,7 +1808,7 @@ static void scan_files_CGNS(
               CG_CHECK_RET(cg_ndescriptors, (&nDescriptors), continue);
 
               char *text = NULL;
-              std::string units;
+              std::string units2;
               bool isNull = false;
               int D;
               for (D = 1; D <= nDescriptors; ++D) {
@@ -1808,35 +1816,35 @@ static void scan_files_CGNS(
 
                 if (strcmp(buffer, "Range") == 0) {
                   if (strcmp(text, "EMPTY") == 0) {
-                    rind[1] = nItems = 0;
+                    rind2[1] = nItems = 0;
                     isNull = true;
                   } else if (strcmp(text, "NULL") == 0)
                     isNull = true;
                 } else if (strcmp(buffer, "Units") == 0)
-                  units = text;
+                  units2 = text;
                 free(text);
               }
 
               unsigned int nComps = 1;
               int comp = 0;
-              std::string::size_type i = label.rfind('#');
-              if (i != std::string::npos) {
-                std::istringstream in(&label[i + 1]);
+              std::string::size_type i2 = label.rfind('#');
+              if (i2 != std::string::npos) {
+                std::istringstream in(&label[i2 + 1]);
                 in >> comp;
                 --comp;
                 in.get();
                 in.get();
                 in >> nComps;
-                label.erase(i);
+                label.erase(i2);
               } else {
-                i = label.length() - 1;
-                if (label[i] >= 'X' && label[i] <= 'Z') {
-                  comp = label[i] - 'X';
-                  label.erase(i);
-                  --i;
-                  if (label[i] >= 'X' && label[i] <= 'Z') {
-                    comp += 3 * (label[i] - 'X');
-                    label.erase(i);
+                i2 = label.length() - 1;
+                if (label[i2] >= 'X' && label[i2] <= 'Z') {
+                  comp = label[i2] - 'X';
+                  label.erase(i2);
+                  --i2;
+                  if (label[i2] >= 'X' && label[i2] <= 'Z') {
+                    comp += 3 * (label[i2] - 'X');
+                    label.erase(i2);
                     nComps = 9;
                   } else {
                     nComps = 3;
@@ -1859,7 +1867,7 @@ static void scan_files_CGNS(
               } else {
                 block->m_variables.push_back(
                     VarInfo_CGNS(label, isNodal ? 'n' : 'e', CGNS2COM[dataType],
-                                 units, nComps, F, nItems, rind[1], isNull));
+                                 units2, nComps, F, nItems, rind2[1], isNull));
               }
             }
           }
@@ -1883,20 +1891,20 @@ static void scan_files_CGNS(
                          (fn, B, "Zone_t", Z, "DiscreteData_t", S, "end"),
                          break);
 
-            int rind[6];
-            if (cg_rind_read(rind) != 0) std::fill_n(rind, 6, 0);
+            int rind2[6];
+            if (cg_rind_read(rind2) != 0) std::fill_n(rind2, 6, 0);
 
             int nItems;
             if (zoneType == CGNS_ENUMV(Structured)) {
               // Note: the rind values should always be the same.
-              nItems = coreSize[0] + rind[0] + rind[1];
+              nItems = coreSize[0] + rind2[0] + rind2[1];
               if (cellDim > 1) {
-                nItems *= coreSize[1] + rind[2] + rind[3];
-                if (cellDim > 2) nItems *= coreSize[2] + rind[4] + rind[5];
+                nItems *= coreSize[1] + rind2[2] + rind2[3];
+                if (cellDim > 2) nItems *= coreSize[2] + rind2[4] + rind2[5];
               }
             } else {
               // Note: rind[0] should always be 0.
-              nItems = coreSize[0] + rind[0] + rind[1];
+              nItems = coreSize[0] + rind2[0] + rind2[1];
             }
 
             int nArrays;
@@ -1934,7 +1942,7 @@ static void scan_files_CGNS(
               CG_CHECK_RET(cg_ndescriptors, (&nDescriptors), continue);
 
               char *text = NULL;
-              std::string units;
+              std::string units2;
               bool isNull = false;
               int D;
               for (D = 1; D <= nDescriptors; ++D) {
@@ -1942,34 +1950,34 @@ static void scan_files_CGNS(
 
                 if (strcmp(buffer, "Range") == 0) {
                   if (strcmp(text, "EMPTY") == 0) {
-                    rind[1] = nItems = 0;
+                    rind2[1] = nItems = 0;
                     isNull = true;
                   } else if (strcmp(text, "NULL") == 0)
                     isNull = true;
                 } else if (strcmp(buffer, "Units") == 0)
-                  units = text;
+                  units2 = text;
                 free(text);
               }
 
               int nComps = 1, comp = 0;
-              std::string::size_type i = label.rfind('#');
-              if (i != std::string::npos) {
-                std::istringstream in(&label[i + 1]);
+              std::string::size_type i2 = label.rfind('#');
+              if (i2 != std::string::npos) {
+                std::istringstream in(&label[i2 + 1]);
                 in >> comp;
                 --comp;
                 in.get();
                 in.get();
                 in >> nComps;
-                label.erase(i);
+                label.erase(i2);
               } else {
-                i = label.length() - 1;
-                if (label[i] >= 'X' && label[i] <= 'Z') {
-                  comp = label[i] - 'X';
-                  label.erase(i);
-                  --i;
-                  if (label[i] >= 'X' && label[i] <= 'Z') {
-                    comp += 3 * (label[i] - 'X');
-                    label.erase(i);
+                i2 = label.length() - 1;
+                if (label[i2] >= 'X' && label[i2] <= 'Z') {
+                  comp = label[i2] - 'X';
+                  label.erase(i2);
+                  --i2;
+                  if (label[i2] >= 'X' && label[i2] <= 'Z') {
+                    comp += 3 * (label[i2] - 'X');
+                    label.erase(i2);
                     nComps = 9;
                   } else {
                     nComps = 3;
@@ -1984,8 +1992,8 @@ static void scan_files_CGNS(
                 vi.m_is_null[comp] = isNull;
               } else {
                 block->m_variables.push_back(
-                    VarInfo_CGNS(label, 'n', CGNS2COM[dataType], units, nComps,
-                                 A, nItems, rind[1], isNull));
+                    VarInfo_CGNS(label, 'n', CGNS2COM[dataType], units2, nComps,
+                                 A, nItems, rind2[1], isNull));
               }
             }
 
@@ -2021,7 +2029,10 @@ static void load_data_CGNS(BlockMM_CGNS::iterator p,
     std::string fname(block->m_file);
     std::string::size_type cloc = fname.rfind('/');
     if (cloc != std::string::npos) {
-      chdir(fname.substr(0, cloc).c_str());
+      if (chdir(fname.substr(0, cloc).c_str()) != 0)
+        perror(("Rocin::load_data_CGNS chdir() to " + fname.substr(0, cloc) +
+                " failed")
+                   .c_str());
       fname.erase(0, cloc + 1);
     }
 
@@ -2191,8 +2202,11 @@ static void load_data_CGNS(BlockMM_CGNS::iterator p,
 }
 #endif  // USE_CGNS
 
-static void new_dataitems(BlockMM_HDF4::iterator hdf4,
+static void new_dataitems(
+#ifdef USE_HDF4
+                          BlockMM_HDF4::iterator hdf4,
                           const BlockMM_HDF4::iterator &hdf4End,
+#endif  // USE_HDF4
 #ifdef USE_CGNS
                           BlockMM_CGNS::iterator cgns,
                           const BlockMM_CGNS::iterator &cgnsEnd,
@@ -2204,6 +2218,7 @@ static void new_dataitems(BlockMM_HDF4::iterator hdf4,
   std::ostringstream sout;
   std::set<std::string> added;
 
+#ifdef USE_HDF4
   while (hdf4 != hdf4End) {
     std::vector<VarInfo_HDF4> &vars = hdf4->second->m_variables;
     std::vector<VarInfo_HDF4>::const_iterator q;
@@ -2219,6 +2234,7 @@ static void new_dataitems(BlockMM_HDF4::iterator hdf4,
     }
     ++hdf4;
   }
+#endif  // USE_HDF4
 
 #ifdef USE_CGNS
   while (cgns != cgnsEnd) {
@@ -2367,8 +2383,11 @@ static void broadcast_win_dataitems(bool isEmpty, const std::string &window,
   COM_free_buffer(&atts);
 }
 
-void Rocin::register_panes(BlockMM_HDF4::iterator hdf4,
+void Rocin::register_panes(
+#ifdef USE_HDF4
+                           BlockMM_HDF4::iterator hdf4,
                            const BlockMM_HDF4::iterator &hdf4End,
+#endif  // USE_HDF4
 #ifdef USE_CGNS
                            BlockMM_CGNS::iterator cgns,
                            const BlockMM_CGNS::iterator &cgnsEnd,
@@ -2378,6 +2397,8 @@ void Rocin::register_panes(BlockMM_HDF4::iterator hdf4,
   int local;
   std::string name;
   bool is_first = true;
+
+#ifdef USE_HDF4
   for (; hdf4 != hdf4End; ++hdf4) {
     Block_HDF4 *block = (*hdf4).second;
 
@@ -2456,6 +2477,7 @@ void Rocin::register_panes(BlockMM_HDF4::iterator hdf4,
       }
     }
   }
+#endif  // USE_HDF4
 
 #ifdef USE_CGNS
   for (; cgns != cgnsEnd; ++cgns) {
@@ -2546,15 +2568,17 @@ void free_blocks(BLOCK &blocks) {
 }
 
 void Rocin::init(const std::string &mname) {
-  HDF4::init();
-
   Rocin *rin = new Rocin();
+
+#ifdef USE_HDF4
+  HDF4::init();
 
   /// This data structure maps HDF4 data types to roccom data types.
   rin->m_HDF2COM[DFNT_CHAR8] = COM_CHAR;
   rin->m_HDF2COM[DFNT_INT32] = COM_INT;
   rin->m_HDF2COM[DFNT_FLOAT32] = COM_FLOAT;
   rin->m_HDF2COM[DFNT_FLOAT64] = COM_DOUBLE;
+#endif  // USE_HDF4
 
 #ifdef USE_CGNS
   /// This data structure maps CGNS data types to roccom data types.
@@ -2628,7 +2652,10 @@ void Rocin::finalize(const std::string &mname) {
 
   // Delete the object
   delete rin;
+
+#ifdef USE_HDF4
   HDF4::finalize();
+#endif  // USE_HDF4
 }
 
 void Rocin::obtain_dataitem(const COM::DataItem *dataitem_in,
@@ -2754,20 +2781,20 @@ void Rocin::read_by_control_file(const char *control_file_name,
       // The @Panes section may not be present
       if (fin.eof()) break;
 
-      std::string::size_type pos = buffer.find("%t");
-      if (pos != std::string::npos) buffer.replace(pos, 2, time_level);
+      std::string::size_type pos2 = buffer.find("%t");
+      if (pos2 != std::string::npos) buffer.replace(pos2, 2, time_level);
 
-      pos = buffer.find('%');
-      if (pos != std::string::npos) {
+      pos2 = buffer.find('%');
+      if (pos2 != std::string::npos) {
         std::string::size_type pos_key =
-            buffer.find_first_not_of("0123456789", pos + 1);
+            buffer.find_first_not_of("0123456789", pos2 + 1);
 
         COM_assertion_msg(
             pos_key != std::string::npos,
             (std::string("Incomplete placeholder in file name ") + buffer)
                 .c_str());
 
-        std::string width = buffer.substr(pos + 1, pos_key - pos - 1);
+        std::string width = buffer.substr(pos2 + 1, pos_key - pos2 - 1);
 
         int w = 4;  // The default rankwidth is 4, if width is empty
         if (!width.empty()) {
@@ -2801,7 +2828,7 @@ void Rocin::read_by_control_file(const char *control_file_name,
                            .c_str());
         }
 
-        buffer.replace(pos, pos_key - pos + 1, sout.str());
+        buffer.replace(pos2, pos_key - pos2 + 1, sout.str());
       }
 
       // Determine whether buffer has directory part. If not, prepend that
@@ -2935,7 +2962,7 @@ void Rocin::read_by_control_file(const char *control_file_name,
  *  \param window_name Specifies a name of the window to be created.
  *  \param comm The MPI communicator to use. If is NULL, the default
  *         communicator of Roccom will be used.
- *  \param is_local A function pointer, which determines wheter a pane
+ *  \param is_local A function pointer, which determines whether a pane
  *         should be read by a process.
  *  \param time_level the time stamp of the dataset to be read.  If time
  *         level is NULL (default) or "", then the first time_level in the
@@ -2965,7 +2992,7 @@ std::string CWD() {
  *         to be read from the files.
  *  \param comm The MPI communicator to use. If is NULL, the default
  *         communicator of Roccom will be used.
- *  \param is_local A function pointer, which determines wheter a pane
+ *  \param is_local A function pointer, which determines whether a pane
  *         should be read by a process.
  *  \param time_level the time stamp of the dataset to be read.  If time
  *         level is NULL (default) or "", then the first time_level in the
@@ -3015,9 +3042,10 @@ void Rocin::read_windows(const char *filename_patterns,
   buffer = new char[strlen(filename_patterns) + 1];
   strcpy(buffer, filename_patterns);
 
-#ifndef USE_CGNS
+#ifdef USE_HDF4
   BlockMM_HDF4 blocks_HDF4;
-#else
+#endif  // USE_HDF4
+#ifdef USE_CGNS
   BlockMM_CGNS blocks_CGNS;
 #endif  // USE_CGNS
 
@@ -3040,13 +3068,14 @@ void Rocin::read_windows(const char *filename_patterns,
       // Extracts metadata from a list of files.
       // Opens each file, scans dataset, identifies windows, panes, and dataitem
       // Puts this information into blocks.
-#ifndef USE_CGNS
+#ifdef USE_HDF4
     scan_files_HDF4(globbuf.gl_pathc, globbuf.gl_pathv, blocks_HDF4, time,
                     m_HDF2COM);
-#else
+#endif  // USE_HDF4
+#ifdef USE_CGNS
     scan_files_CGNS(globbuf.gl_pathc, globbuf.gl_pathv, blocks_CGNS, time,
                     m_CGNS2COM);
-#endif
+#endif  // USE_CGNS
     globfree(&globbuf);
 #else  // No glob function on this system
     // Create a char** of n filenames matching patterns stored in buffer
@@ -3085,11 +3114,12 @@ void Rocin::read_windows(const char *filename_patterns,
       matches[ccount - 1][lis] = '\0';
       li++;
     }
-#ifndef USE_CGNS
+#ifdef USE_HDF4
     scan_files_HDF4(nmatch, &matches[0], blocks_HDF4, time, m_HDF2COM);
-#else
+#endif  // USE_HDF4
+#ifdef USE_CGNS
     scan_files_CGNS(nmatch, &matches[0], blocks_CGNS, time, m_CGNS2COM);
-#endif
+#endif  // USE_CGNS
     ccount = 0;
     while (ccount < nmatch) {
       if (matches[ccount]) delete[] matches[ccount];
@@ -3110,7 +3140,9 @@ void Rocin::read_windows(const char *filename_patterns,
 
   std::string name;
   std::set<std::string>::iterator p = materials.begin();
+#ifdef USE_HDF4
   std::pair<BlockMM_HDF4::iterator, BlockMM_HDF4::iterator> range_HDF4;
+#endif  // USE_HDF4
 #ifdef USE_CGNS
   std::pair<BlockMM_CGNS::iterator, BlockMM_CGNS::iterator> range_CGNS;
 #endif  // USE_CGNS
@@ -3119,10 +3151,11 @@ void Rocin::read_windows(const char *filename_patterns,
     // Default value of material_names is NULL
     // we assume the file only contains one type of material, and
     // the window name is the window_prefix.
-#ifndef USE_CGNS
+#ifdef USE_HDF4
     range_HDF4.first = blocks_HDF4.begin();
     range_HDF4.second = blocks_HDF4.end();
-#else
+#endif  // USE_HDF4
+#ifdef USE_CGNS
     range_CGNS.first = blocks_CGNS.begin();
     range_CGNS.second = blocks_CGNS.end();
 #endif  // USE_CGNS
@@ -3130,38 +3163,49 @@ void Rocin::read_windows(const char *filename_patterns,
 
     COM_new_window(name.c_str(), *myComm);
 
-    new_dataitems(range_HDF4.first, range_HDF4.second,
+    new_dataitems(
+#ifdef USE_HDF4
+                  range_HDF4.first, range_HDF4.second,
+#endif  // USE_HDF4
 #ifdef USE_CGNS
                   range_CGNS.first, range_CGNS.second,
 #endif  // USE_CGNS
                   name, myComm, rank, nprocs);
-    register_panes(range_HDF4.first, range_HDF4.second,
+    register_panes(
+#ifdef USE_HDF4
+                   range_HDF4.first, range_HDF4.second,
+#endif  // USE_HDF4
 #ifdef USE_CGNS
                    range_CGNS.first, range_CGNS.second,
 #endif  // USE_CGNS
                    name, is_local, myComm, rank, nprocs);
 
+#ifdef USE_HDF4
     load_data_HDF4(range_HDF4.first, range_HDF4.second, name, myComm, rank,
                    nprocs);
+#endif  // USE_HDF4
 #ifdef USE_CGNS
     load_data_CGNS(range_CGNS.first, range_CGNS.second, name, myComm, rank,
                    nprocs);
 #endif  // USE_CGNS
 
-    broadcast_win_dataitems(range_HDF4.first == range_HDF4.second
+    broadcast_win_dataitems(
+#ifdef USE_HDF4
+                            range_HDF4.first == range_HDF4.second,
+#endif  // USE_HDF4
 #ifdef USE_CGNS
-                                && range_CGNS.first == range_CGNS.second
+                            range_CGNS.first == range_CGNS.second,
 #endif  // USE_CGNS
-                            ,
                             name, myComm, rank, nprocs);
 
     COM_window_init_done(name.c_str());
   } else {
     // Iterate through each material (one window per material).
     while (p != materials.end()) {
-#ifndef USE_CGNS
+#ifdef USE_HDF4
       if (blocks_HDF4.count(*p) == 0
-#else
+#endif  // USE_HDF4
+#ifdef USE_CGNS
       if (blocks_CGNS.count(*p) == 0
 #endif  // USE_CGNS
       ) {
@@ -3171,38 +3215,49 @@ void Rocin::read_windows(const char *filename_patterns,
         continue;
       }
 
-#ifndef USE_CGNS
+#ifdef USE_HDF4
       range_HDF4 = blocks_HDF4.equal_range(*p);
-#else
+#endif  // USE_HDF4
+#ifdef USE_CGNS
       range_CGNS = blocks_CGNS.equal_range(*p);
 #endif  // USE_CGNS
       name = window_prefix + *p;
 
       COM_new_window(name.c_str(), *myComm);
 
-      new_dataitems(range_HDF4.first, range_HDF4.second,
+      new_dataitems(
+#ifdef USE_HDF4
+                    range_HDF4.first, range_HDF4.second,
+#endif  // USE_HDF4
 #ifdef USE_CGNS
                     range_CGNS.first, range_CGNS.second,
 #endif  // USE_CGNS
                     name, myComm, rank, nprocs);
-      register_panes(range_HDF4.first, range_HDF4.second,
+      register_panes(
+#ifdef USE_HDF4
+                     range_HDF4.first, range_HDF4.second,
+#endif  // USE_HDF4
 #ifdef USE_CGNS
                      range_CGNS.first, range_CGNS.second,
 #endif  // USE_CGNS
                      name, is_local, myComm, rank, nprocs);
 
+#ifdef USE_HDF4
       load_data_HDF4(range_HDF4.first, range_HDF4.second, name, myComm, rank,
                      nprocs);
+#endif  // USE_HDF4
 #ifdef USE_CGNS
       load_data_CGNS(range_CGNS.first, range_CGNS.second, name, myComm, rank,
                      nprocs);
 #endif  // USE_CGNS
 
-      broadcast_win_dataitems(range_HDF4.first == range_HDF4.second
+      broadcast_win_dataitems(
+#ifdef USE_HDF4
+                              range_HDF4.first == range_HDF4.second,
+#endif  // USE_HDF4
 #ifdef USE_CGNS
-                                  && range_CGNS.first == range_CGNS.second
+                              range_CGNS.first == range_CGNS.second,
 #endif  // USE_CGNS
-                              ,
                               name, myComm, rank, nprocs);
 
       COM_window_init_done(name.c_str());
@@ -3212,9 +3267,10 @@ void Rocin::read_windows(const char *filename_patterns,
   }
 
   // Free memory.
-#ifndef USE_CGNS
+#ifdef USE_HDF4
   free_blocks(blocks_HDF4);
-#else
+#endif  // USE_HDF4
+#ifdef USE_CGNS
   free_blocks(blocks_CGNS);
 #endif  // USE_CGNS
 }

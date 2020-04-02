@@ -103,14 +103,20 @@ void init_unstructure_mesh(double coors[][3], int elmts[][4], int nrow,
 
 int get_comm_rank(MPI_Comm comm) {
   int rank;
-  int ierr = MPI_Comm_rank(comm, &rank);
+#ifndef NDEBUG
+  int ierr =
+#endif
+      MPI_Comm_rank(comm, &rank);
   COM_assertion(ierr == 0);
   return rank;
 }
 
 int get_comm_size(MPI_Comm comm) {
   int size;
-  int ierr = MPI_Comm_size(comm, &size);
+#ifndef NDEBUG
+  int ierr =
+#endif
+      MPI_Comm_size(comm, &size);
   COM_assertion(ierr == 0);
   return size;
 }
@@ -141,7 +147,6 @@ TEST(SurfParallelTest, ComputeNormals) {
   int vb = (ARGC > 1) ? atoi(ARGV[1]) : 1;
   if (comm_rank == 0) COM_set_verbose(vb);
 
-  // COM_load_module("Rocout", "OUT");
   ASSERT_NO_THROW(COM_LOAD_MODULE_STATIC_DYNAMIC(SimOUT, "OUT"));
 
   if (comm_rank == 0) std::cout << "Creating window \"unstr\"" << std::endl;
@@ -164,7 +169,6 @@ TEST(SurfParallelTest, ComputeNormals) {
   int normals = COM_get_dataitem_handle("unstr.normals");
   ASSERT_NE(-1, normals) << "Dataitem unstr normals was not found!\n";
 
-  // COM_load_module( "Rocsurf", "SURF");
   ASSERT_NO_THROW(COM_LOAD_MODULE_STATIC_DYNAMIC(SurfUtil, "SURF"));
   int SURF_init = COM_get_function_handle("SURF.initialize");
   ASSERT_NE(-1, SURF_init) << "Function SURF.initialize was not found!\n";

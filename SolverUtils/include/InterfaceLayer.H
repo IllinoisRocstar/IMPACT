@@ -119,14 +119,13 @@ int SurfaceMeshToPane(const std::string &wname, int pane_id,
   Mesh::Connectivity tris;
   Mesh::Connectivity quads;
   Mesh::Connectivity::iterator ci = mesh.con.begin();
-  bool known_element_type = false;
   while (ci != mesh.con.end()) {
     if (ci->size() == 3)
       tris.AddElement(*ci++);
     else if (ci->size() == 4)
       quads.AddElement(*ci++);
     else
-      assert(known_element_type);
+      COM_assertion_msg(false, "known_element_type");
   }
   unsigned int number_of_tris = tris.Nelem();
   unsigned int number_of_quads = quads.Nelem();
@@ -186,7 +185,6 @@ int VolumeMeshToPane(const std::string &wname, int pane_id,
   Mesh::Connectivity pyrs;
   Mesh::Connectivity pris;
   Mesh::Connectivity::iterator ci = mesh.con.begin();
-  bool known_element_type = false;
   while (ci != mesh.con.end()) {
     if (ci->size() == 4)
       tets.AddElement(*ci++);
@@ -197,7 +195,7 @@ int VolumeMeshToPane(const std::string &wname, int pane_id,
     else if (ci->size() == 8)
       bricks.AddElement(*ci++);
     else
-      assert(known_element_type);
+      COM_assertion_msg(false, "known_element_type");
   }
   unsigned int number_of_tets = tets.Nelem();
   unsigned int number_of_bricks = bricks.Nelem();
@@ -380,10 +378,10 @@ class TransferObjectPar {
   TransferObjectPar(const std::string &inSurfxName, MPI_Comm inComm,
                     int inVerbLevel = 1)
       : surfxWinName(inSurfxName),
-        _comm(inComm),
         verbLevel(inVerbLevel),
         nItrLsqTrans(100),
-        tolLsqTrans(1.0e-6) {
+        tolLsqTrans(1.0e-6),
+        _comm(inComm) {
     MPI_Comm_rank(inComm, &_rank);
     MPI_Comm_size(inComm, &_nProc);
 
@@ -568,19 +566,19 @@ int CreateDataItemsFromSolution(const std::string &name,
              ? COM_CHAR
              : md.dsize == 4 ? COM_INT
                              : md.dsize == 8 ? COM_DOUBLE : COM_RAWDATA);
-    assert(datatype >= 0);
+    COM_assertion(datatype >= 0);
     COM::DataItem::Shorter_size wloc =
         (md.loc == 's'
              ? 'w'
              : md.loc == 'm' ? 'p'
                              : md.loc == 'c' ? 'e' : md.loc == 'n' ? 'n' : '0');
-    assert(wloc != '0');
+    COM_assertion(wloc != '0');
     COM_new_dataitem(dataitem_name, wloc, datatype, md.ncomp, md.unit.c_str());
     // Can go ahead and set the arrays for the solver globals
     if (md.loc == 's') {
       Mesh::IndexType bufsize = md.dsize * md.ncomp;
       if (md.dsize == 1) bufsize = data[data_index].size();
-      assert(data[data_index].size() == bufsize);
+      COM_assertion(data[data_index].size() == bufsize);
       bufsize = 1;
       if (md.dsize == 1) bufsize = data[data_index].size();
       COM_set_size(dataitem_name, 0,
@@ -606,7 +604,7 @@ inline std::vector<std::string> GetDataItemNames(
 
 int PopulateSolutionMetaDataFromPane(const std::string &windowName, int paneID,
                                      FEM::SolutionData &soln) {
-  FEM::SolutionData::DataContainer &data(soln.Data());
+  //FEM::SolutionData::DataContainer &data(soln.Data());
   FEM::SolutionMetaData &meta(soln.Meta());
   std::vector<std::string> dataItemNames(GetDataItemNames(windowName));
   std::vector<std::string>::iterator itemNameIt = dataItemNames.begin();
@@ -667,22 +665,23 @@ int AgentToPane(const std::string &name, int pane_id, FEM::SolverAgent &agent,
     Mesh::IndexType data_index = mdi - meta.begin();
     FEM::FieldMetaData &md = *mdi++;
     std::string dataitem_name(name + "." + md.name);
+#ifndef NDEBUG
     COM_Type datatype =
         (md.dsize == 1
              ? COM_CHAR
              : md.dsize == 4 ? COM_INT
                              : md.dsize == 8 ? COM_DOUBLE : COM_RAWDATA);
-    assert(datatype >= 0);
     COM::DataItem::Shorter_size wloc =
         (md.loc == 's'
              ? 'w'
              : md.loc == 'm' ? 'p'
                              : md.loc == 'c' ? 'e' : md.loc == 'n' ? 'n' : '0');
-    assert(wloc != '0');
+#endif
+    COM_assertion(datatype >= 0);
+    COM_assertion(wloc != '0');
     //      COM_new_dataitem(dataitem_name,wloc,datatype,md.ncomp,md.unit.c_str());
     // Can go ahead and set the arrays for the solver globals
     if (md.loc != 's') {
-      Mesh::IndexType orig_bufsize = data[data_index].size();
       Mesh::IndexType datasize = md.dsize * md.ncomp;
       Mesh::IndexType wanted_bufsize =
           datasize * ((md.loc == 'm')
@@ -691,7 +690,7 @@ int AgentToPane(const std::string &name, int pane_id, FEM::SolverAgent &agent,
                                 ? mesh.con.Nelem()
                                 : (md.loc == 'n') ? mesh.nc.Size() : 0);
       if (md.dsize != 1)
-        assert(wanted_bufsize == orig_bufsize);
+        COM_assertion(wanted_bufsize == data[data_index].size());
       else
         wanted_bufsize = data[data_index].size();
       if (md.loc == 'm')  // all global data get a size of 1, except strings
@@ -721,7 +720,7 @@ int WriteVTKToStream(const std::string &name, FEM::SolverAgent &agent,
 
   Mesh::WriteVTKToStream(name, mesh, Ostr);
 
-  FEM::SolutionData::DataContainer &data = soln.Data();
+  //FEM::SolutionData::DataContainer &data = soln.Data();
   FEM::SolutionMetaData &meta = soln.Meta();
   FEM::SolutionMetaData::iterator mdi = meta.begin();
   Mesh::IndexType nnodes = mesh.nc.NNodes();
@@ -729,7 +728,7 @@ int WriteVTKToStream(const std::string &name, FEM::SolverAgent &agent,
   // Write Point Data:
   bool there_is_point_data = false;
   while (mdi != meta.end()) {
-    Mesh::IndexType data_index = mdi - meta.begin();
+    //Mesh::IndexType data_index = mdi - meta.begin();
     FEM::FieldMetaData &md = *mdi++;
     // It's a scalar or a double at nodes (i.e. its nodal field or flag data)
     if (md.loc == 'n' && ((md.dsize == 4) || (md.dsize == 8))) {
@@ -766,7 +765,7 @@ int WriteVTKToStream(const std::string &name, FEM::SolverAgent &agent,
   mdi = meta.begin();
   bool there_is_cell_data = false;
   while (mdi != meta.end()) {
-    Mesh::IndexType data_index = mdi - meta.begin();
+    //Mesh::IndexType data_index = mdi - meta.begin();
     FEM::FieldMetaData &md = *mdi++;
     // It's a scalar or a double at cells (i.e. its nodal field or flag data)
     if (((md.loc == 'c') || (md.loc == 'e')) &&
@@ -888,6 +887,7 @@ int CreateSolutionFromPane(const std::string &windowName, int paneID,
   solutionData.Create(solverAgent.Mesh());
   if (PopulateSolutionDataFromPane(windowName, paneID, solutionData, copyMode))
     return (2);
+  return 0;
 }
 int PaneToAgent(const std::string &windowName, int paneID,
                 FEM::SolverAgent &solverAgent, bool copyMode = false) {
@@ -897,6 +897,7 @@ int PaneToAgent(const std::string &windowName, int paneID,
   returnCode =
       CreateSolutionFromPane(windowName, paneID, solverAgent, copyMode);
   if (returnCode) return (returnCode + 2);
+  return 0;
 }
 int PopulateSolverAgentFromWindow(const std::string &windowName,
                                   FEM::SolverAgent &solverAgent,

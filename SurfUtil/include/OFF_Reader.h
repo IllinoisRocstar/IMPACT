@@ -114,9 +114,10 @@ class OFF_Reader {
         if (num_ele == ne) break;
         get_nextline(is, buf);
         numEdges2 = 0;
-        std::istringstream sin(buf);
-        sin >> numEdges2;
-        for (int i = 0; i < numEdges2; ++i) sin >> vs[i];
+        std::istringstream sin2(buf);
+        sin2 >> numEdges2;
+        for (int i = 0; i < numEdges2; ++i)
+          sin2 >> vs[i];
       } while (numEdges1 == numEdges2);
 
       char ext1[10];

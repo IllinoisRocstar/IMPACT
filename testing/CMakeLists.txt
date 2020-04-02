@@ -21,11 +21,11 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/data/testResults)
 
 SET (TEST_DATA ${CMAKE_CURRENT_BINARY_DIR}/data)
 SET (TEST_RESULTS ${TEST_DATA}/testResults)
-if(ENABLE_CGNS)
+if("${IO_FORMAT}" STREQUAL "CGNS")
   set(format "CGNS")
-else(ENABLE_CGNS)
+elseif("${IO_FORMAT}" STREQUAL "HDF4")
   set(format "HDF")
-endif(ENABLE_CGNS)
+endif()
 
 #adding gtest subdir with its own cmake file
 ADD_SUBDIRECTORY(lib/googletest-release-1.8.1)
@@ -91,14 +91,14 @@ ADD_EXECUTABLE(runCOMDataItemManagementTests COMTest/src/COMDataItemManagementTe
 TARGET_LINK_LIBRARIES(runCOMDataItemManagementTests gtest gtest_main SITCOM COMTESTMOD COMFTESTMOD SITCOMF SolverUtils)
 
 #--------------- SimIO Test Executables ---------------
-if(ENABLE_CGNS)
+if("${IO_FORMAT}" STREQUAL "CGNS")
   ADD_EXECUTABLE(runSimInSerialTests SimIOTest/serialReadTests.C)
-  TARGET_LINK_LIBRARIES(runSimInSerialTests gtest gtest_main SITCOM SITCOMF RHDF4 SimIN)
+  TARGET_LINK_LIBRARIES(runSimInSerialTests gtest gtest_main SITCOM SimIN)
   #[[TARGET_INCLUDE_DIRECTORIES(runSimInSerialTests
                             PUBLIC 
                                   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/SimIO/In/include> )]]
   ADD_EXECUTABLE(runSimOutSerialTests SimIOTest/serialWriteTest.C)
-  TARGET_LINK_LIBRARIES(runSimOutSerialTests gtest gtest_main SITCOM SITCOMF RHDF4)
+  TARGET_LINK_LIBRARIES(runSimOutSerialTests gtest gtest_main SITCOM)
 endif()
 
 #--------------- Simpal Test Executables ---------------
@@ -115,7 +115,7 @@ ADD_EXECUTABLE(runSimTest ${CMAKE_CURRENT_SOURCE_DIR}/SIMTest/SchedulerTest.C)
 TARGET_LINK_LIBRARIES(runSimTest SIM gtest gtest_main )
 
 #--------------- SurfMap Test Executables ---------------
-if(ENABLE_CGNS)
+if("${IO_FORMAT}" STREQUAL "CGNS")
   ADD_EXECUTABLE(runPConnTest ${CMAKE_CURRENT_SOURCE_DIR}/SurfMapTest/pconntest.C)
   TARGET_LINK_LIBRARIES(runPConnTest gtest gtest_main SurfMap SITCOM )
   ADD_EXECUTABLE(runPCommTest ${CMAKE_CURRENT_SOURCE_DIR}/SurfMapTest/pcommtest.C)
@@ -129,7 +129,7 @@ ADD_EXECUTABLE(runSurfMapGhostHexBorderTest ${CMAKE_CURRENT_SOURCE_DIR}/SurfMapT
 TARGET_LINK_LIBRARIES(runSurfMapGhostHexBorderTest gtest gtest_main SurfMap SITCOM)
 
 #--------------- SurfUtil Test Executables ---------------
-if(ENABLE_CGNS)
+if("${IO_FORMAT}" STREQUAL "CGNS")
   ADD_EXECUTABLE(runSurfUtilSerializeTest ${CMAKE_CURRENT_SOURCE_DIR}/SurfUtilTest/serialize.C)
   TARGET_LINK_LIBRARIES(runSurfUtilSerializeTest gtest gtest_main SimOUT Simpal SurfMap SurfUtil SITCOM )
   ADD_EXECUTABLE(runSurfUtilComputeFaceNormals ${CMAKE_CURRENT_SOURCE_DIR}/SurfUtilTest/surfComputeFaceNormalsTest.C)
@@ -148,10 +148,10 @@ ADD_EXECUTABLE(runSurfXDataTransferTest ${CMAKE_CURRENT_SOURCE_DIR}/SurfXTest/Te
 TARGET_LINK_LIBRARIES(runSurfXDataTransferTest gtest gtest_main SITCOM SurfX SimOUT)
 ADD_EXECUTABLE(runSurfXCellCenteredTest ${CMAKE_CURRENT_SOURCE_DIR}/SurfXTest/TestCellCentered.C)
 TARGET_LINK_LIBRARIES(runSurfXCellCenteredTest gtest gtest_main SITCOM SurfX SimOUT)
-if(ENABLE_CGNS)
+if("${IO_FORMAT}" STREQUAL "CGNS")
   ADD_EXECUTABLE(runSurfXReadSdvTest ${CMAKE_CURRENT_SOURCE_DIR}/SurfXTest/readsdv.C)
   TARGET_LINK_LIBRARIES(runSurfXReadSdvTest gtest gtest_main SITCOM SurfX SimOUT)
-endif(ENABLE_CGNS)
+endif()
 #[[ADD_EXECUTABLE(runSurfXRfcTest ${CMAKE_CURRENT_SOURCE_DIR}/SurfXTest/rfctest.C)
 TARGET_LINK_LIBRARIES(runSurfXRfcTest gtest gtest_main SITCOM SurfX Simpal SimIN SimOUT SurfMap)]]
 
@@ -231,18 +231,18 @@ ADD_TEST(NAME SIM.Test
          WORKING_DIRECTORY ${TEST_DATA})
 
 #--------------- SimIO Serial Tests ---------------
-if(ENABLE_CGNS)
+if("${IO_FORMAT}" STREQUAL "CGNS")
   ADD_TEST(NAME SimIn.SerialTests
-          COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
-          runSimInSerialTests "-com-home" ${PROJECT_BINARY_DIR}
-                              ifluid-grid_00.000000_00001.cgns "WindowTestOneResults" 
-                              "WindowTestTwoResults" "ControlFileResults" ifluid_in_00.000000.txt
-          WORKING_DIRECTORY ${TEST_DATA}/simIO_serial_test_files)
+           COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
+           runSimInSerialTests "-com-home" ${PROJECT_BINARY_DIR}
+                               ifluid-grid_00.000000_00001.cgns "WindowTestOneResults"
+                               "WindowTestTwoResults" "ControlFileResults" ifluid_in_00.000000.txt
+           WORKING_DIRECTORY ${TEST_DATA}/simIO_serial_test_files)
   ADD_TEST(NAME SimOut.SerialTests
-          COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
-          runSimOutSerialTests "-com-home" ${PROJECT_BINARY_DIR}
+           COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
+           runSimOutSerialTests "-com-home" ${PROJECT_BINARY_DIR}
                                 ifluid_in_00.000000.txt simOutSerialTestResults
-          WORKING_DIRECTORY ${TEST_DATA}/simIO_serial_test_files)
+           WORKING_DIRECTORY ${TEST_DATA}/simIO_serial_test_files)
   #[[ADD_TEST(NAME simIOParamOutTest
             COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
             SimIOTest ${TEST_DATA}/ACM_Rocflu/ACM_4/Rocflu/Rocin/ifluid_in_00.000000.txt
@@ -250,17 +250,17 @@ if(ENABLE_CGNS)
 endif()
 
 #--------------- SurfMap Serial Tests ---------------
-if(ENABLE_CGNS)
+if("${IO_FORMAT}" STREQUAL "CGNS")
   ADD_TEST(NAME SurfMap.PConnTest
-          COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
-          runPConnTest "-com-home" ${PROJECT_BINARY_DIR}
+           COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
+           runPConnTest "-com-home" ${PROJECT_BINARY_DIR}
                         ifluid-grid_00.000000_00001.cgns PConnTestResults.cgns
-          WORKING_DIRECTORY ${TEST_DATA}/simIO_parallel_test_files/cube_4/Rocflu/Rocin)
+           WORKING_DIRECTORY ${TEST_DATA}/simIO_parallel_test_files/cube_4/Rocflu/Rocin)
   ADD_TEST(NAME SurfMap.PCommTest
-          COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
-          runPCommTest "-com-home" ${PROJECT_BINARY_DIR}
+           COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
+           runPCommTest "-com-home" ${PROJECT_BINARY_DIR}
                         ifluid-grid_00.000000_00001.cgns PaneConnWindowTestResults.cgns
-          WORKING_DIRECTORY ${TEST_DATA}/simIO_parallel_test_files/cube_4/Rocflu/Rocin)
+           WORKING_DIRECTORY ${TEST_DATA}/simIO_parallel_test_files/cube_4/Rocflu/Rocin)
 endif()
 ADD_TEST(NAME SurfMap.HexBorderTest
          COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
@@ -270,17 +270,17 @@ ADD_TEST(NAME SurfMap.StrcBorderTest
          COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
          runSurfMapStrcBorderTest "-com-home" ${PROJECT_BINARY_DIR}
          WORKING_DIRECTORY ${TEST_RESULTS})
-if(ENABLE_CGNS)
+if("${IO_FORMAT}" STREQUAL "CGNS")
 ADD_TEST(NAME SurfMap.GhostHexBorderTest
          COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
          runSurfMapGhostHexBorderTest "-com-home" ${PROJECT_BINARY_DIR} 
          WORKING_DIRECTORY ${TEST_RESULTS})
-else(ENABLE_CGNS)
+elseif("${IO_FORMAT}" STREQUAL "HDF4")
 ADD_TEST(NAME SurfMap.GhostHexBorderTest
          COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
          runSurfMapGhostHexBorderTest "-com-home" ${PROJECT_BINARY_DIR} "HDF"
          WORKING_DIRECTORY ${TEST_RESULTS})
-endif(ENABLE_CGNS)
+endif()
 
 #--------------- SurfUtil Serial Tests ---------------
 ADD_TEST(NAME SurfUtil.QuadNormalsTest
@@ -288,35 +288,34 @@ ADD_TEST(NAME SurfUtil.QuadNormalsTest
          runSurfUtilQuadNormalsTest "-com-home" ${PROJECT_BINARY_DIR}
                                     100 100
          WORKING_DIRECTORY ${TEST_RESULTS})
-if(ENABLE_CGNS)
+if("${IO_FORMAT}" STREQUAL "CGNS")
   ADD_TEST(NAME SurfUtil.SerializeTest
-          COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
-          runSurfUtilSerializeTest "-com-home" ${PROJECT_BINARY_DIR} 
-                                    ifluid-grid_00.000000_00001.cgns SurfUtilSerializeResults.cgns
-          WORKING_DIRECTORY ${TEST_DATA}/simIO_serial_test_files/)
+           COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
+           runSurfUtilSerializeTest "-com-home" ${PROJECT_BINARY_DIR}
+                                     ifluid-grid_00.000000_00001.cgns SurfUtilSerializeResults.cgns
+           WORKING_DIRECTORY ${TEST_DATA}/simIO_serial_test_files/)
   ADD_TEST(NAME SurfUtil.ComputeFaceNormals
-          COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
-          runSurfUtilComputeFaceNormals "-com-home" ${PROJECT_BINARY_DIR}
-                                        ifluid-grid_00.000000_00001.cgns FaceNormalsOutput.cgns
-          WORKING_DIRECTORY ${TEST_DATA}/simIO_serial_test_files/)
-  ADD_TEST(NAME SurfUtil.MCN_CGNS_Test 
-          COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}" 
-          runMCNTest "-com-home" ${PROJECT_BINARY_DIR} 
+           COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
+           runSurfUtilComputeFaceNormals "-com-home" ${PROJECT_BINARY_DIR}
+                                         ifluid-grid_00.000000_00001.cgns FaceNormalsOutput.cgns
+           WORKING_DIRECTORY ${TEST_DATA}/simIO_serial_test_files/)
+  ADD_TEST(NAME SurfUtil.MCN_CGNS_Test
+           COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
+           runMCNTest "-com-home" ${PROJECT_BINARY_DIR}
                       ifluid-grid_00.000000_00002.cgns
                       ${TEST_RESULTS}/MCN_CGNS_TestResults.cgns  
-          WORKING_DIRECTORY ${TEST_DATA}/ACM_Rocflu/ACM_4/Rocflu/Rocin)
-endif()
-if(NOT ENABLE_CGNS)
-ADD_TEST(NAME SurfUtil.MCN_HDF_Test 
-         COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}" 
-         runMCNTest "-com-home" ${PROJECT_BINARY_DIR}
-                    ifluid_b_03.400000_0001.hdf
-                    ${TEST_RESULTS}/MCN_HDF_TestResults.hdf
-         WORKING_DIRECTORY ${TEST_DATA}/ACM_Rocflu/ACM_4/Rocflu/Rocout)
+           WORKING_DIRECTORY ${TEST_DATA}/ACM_Rocflu/ACM_4/Rocflu/Rocin)
+elseif("${IO_FORMAT}" STREQUAL "CGNS")
+  ADD_TEST(NAME SurfUtil.MCN_HDF_Test
+           COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
+           runMCNTest "-com-home" ${PROJECT_BINARY_DIR}
+                      ifluid_b_03.400000_0001.hdf
+                      ${TEST_RESULTS}/MCN_HDF_TestResults.hdf
+           WORKING_DIRECTORY ${TEST_DATA}/ACM_Rocflu/ACM_4/Rocflu/Rocout)
 endif()
 
 #--------------- SurfX Serial Tests ----------------
-if(ENABLE_CGNS)
+if("${IO_FORMAT}" STREQUAL "CGNS")
 ADD_TEST(NAME SurfX.OverlayUnstrcStrcTest
          COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
          runSurfXOverlayUnstrcStrcTest "-com-home" ${PROJECT_BINARY_DIR}
@@ -338,7 +337,7 @@ ADD_TEST(NAME SurfX.ReadSdvTest
          COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
          runSurfXReadSdvTest "-com-home" ${PROJECT_BINARY_DIR} quad21_4_sdv.cgns quad21 4
          WORKING_DIRECTORY ${TEST_RESULTS})
-else(ENABLE_CGNS)
+elseif("${IO_FORMAT}" STREQUAL "HDF4")
 ADD_TEST(NAME SurfX.OverlayUnstrcStrcTest
          COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
          runSurfXOverlayUnstrcStrcTest "-com-home" ${PROJECT_BINARY_DIR} "HDF"
@@ -361,7 +360,7 @@ ADD_TEST(NAME SurfX.ReadSdvTest
          COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
          runSurfXReadSdvTest "-com-home" ${PROJECT_BINARY_DIR} quad21_4_sdv.hdf quad21 4
          WORKING_DIRECTORY ${TEST_RESULTS})
-endif(ENABLE_CGNS)
+endif()
 
 #[[ADD_TEST(NAME SurfX.RfcTest
   COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
@@ -382,13 +381,13 @@ IF(ENABLE_MPI)
            ${MPIEXEC_EXECUTABLE} -np 4 ${MPIEXEC_PREFLAGS} runSimInParallelTests ${MPI_EXEC_POSTFLAGS} "-com-home" ${PROJECT_BINARY_DIR}
                                  fluid_in_00.000000.txt "TestTwoResults" TestOneResults.cgns
            WORKING_DIRECTORY ${TEST_DATA}/simIO_parallel_test_files/cube_4/Rocflu/Rocin)
-  if(ENABLE_CGNS)
+  if("${IO_FORMAT}" STREQUAL "CGNS")
     ADD_TEST(NAME SurfMap.PCommParallelTest
-            COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
-            ${MPIEXEC_EXECUTABLE} -np 4 ${MPIEXEC_PREFLAGS} runPCommParallelTest ${MPI_EXEC_POSTFLAGS} "-com-home" ${PROJECT_BINARY_DIR}
-                                  ifluid-grid_00.000000_0000 PCommParallelTestResults
-            WORKING_DIRECTORY ${TEST_DATA}/simIO_parallel_test_files/cube_4/Rocflu/Rocin)
-  endif(ENABLE_CGNS)
+             COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
+             ${MPIEXEC_EXECUTABLE} -np 4 ${MPIEXEC_PREFLAGS} runPCommParallelTest ${MPI_EXEC_POSTFLAGS} "-com-home" ${PROJECT_BINARY_DIR}
+                                   ifluid-grid_00.000000_0000 PCommParallelTestResults
+             WORKING_DIRECTORY ${TEST_DATA}/simIO_parallel_test_files/cube_4/Rocflu/Rocin)
+  endif()
   ADD_TEST(NAME SurfUtil.ParallelTest
            COMMAND ${CMAKE_COMMAND} -E env "${TEST_ENV_PATH_OPTIONS}" "${TEST_ENV_LD_OPTIONS}"
            ${MPIEXEC_EXECUTABLE} -np 4 ${MPIEXEC_PREFLAGS} runSurfParallelTest ${MPI_EXEC_POSTFLAGS} "-com-home" ${PROJECT_BINARY_DIR}

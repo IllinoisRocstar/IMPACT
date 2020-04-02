@@ -41,8 +41,8 @@ class AutoCloser {
   int m_fn;
 };
 
-COM_EXTERN_MODULE(Rocin);
-COM_EXTERN_MODULE(Rocout);
+COM_EXTERN_MODULE(Rocin)
+COM_EXTERN_MODULE(Rocout)
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
   string::size_type c = file_in.length();
   if (file_in.substr(c - 5) == ".cgns") {
     int fn;
-    CG_CHECK(cg_open, (file_in.c_str(), MODE_READ, &fn));
+    CG_CHECK(cg_open, (file_in.c_str(), CG_MODE_READ, &fn));
     AutoCloser auto1(fn);
 
     int nBases;

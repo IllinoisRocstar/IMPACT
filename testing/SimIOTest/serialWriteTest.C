@@ -206,17 +206,17 @@ TEST(SerialWrite, WriteCGNS) {
       cout << "Panel dataitem" << endl;
       // This is to demonstrate the loop over panes.
       // Could be replaced by a single call with paneID=0.
-      for (int i = 0; i < np; ++i) {
+      for (int i2 = 0; i2 < np; ++i2) {
         if (loc == 'p') {
           // Obtain the size for a pane dataitem.
           int nitems, ng;
-          COM_get_size((win_in_pre + aname).c_str(), pane_ids[i], &nitems, &ng);
+          COM_get_size((win_in_pre + aname).c_str(), pane_ids[i2], &nitems, &ng);
           cout << (win_in_pre + aname).c_str() << " has " << nitems
                << " items and " << ng << " ghost items." << endl;
-          COM_set_size(waname.c_str(), pane_ids[i], nitems, ng);
+          COM_set_size(waname.c_str(), pane_ids[i2], nitems, ng);
         }
 
-        COM_resize_array(waname.c_str(), pane_ids[i], NULL, ncomp);
+        COM_resize_array(waname.c_str(), pane_ids[i2], NULL, ncomp);
       }
     }
   }

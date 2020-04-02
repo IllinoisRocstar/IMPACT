@@ -15,7 +15,7 @@
 #include <vector>
 #include "surfbasic.h"
 
-COM_EXTERN_MODULE(SimIN);
+COM_EXTERN_MODULE(SimIN)
 
 // This class provides an interface for reading in a surface mesh
 // from the ".smf" or ".obj" file.

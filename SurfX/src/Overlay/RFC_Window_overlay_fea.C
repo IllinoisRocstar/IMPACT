@@ -511,12 +511,12 @@ void RFC_Window_overlay::subdiv_feature_curve(const Feature_1 &f1,
       for (Feature_1::const_iterator i = sit->begin(); i != sit->end(); ++i)
         set_on_feature(i->destination_g());
 
-      Node src = sit->front().origin_g();
-      Node dst = sit->back().destination_g();
+      src = sit->front().origin_g();
+      trg = sit->back().destination_g();
 
-      if (src != dst) {
+      if (src != trg) {
         set_feature_0(src);
-        set_feature_0(dst);
+        set_feature_0(trg);
       }
       new_flist.push_back(Feature_1());
       new_flist.back().swap(*sit);
@@ -795,10 +795,10 @@ void RFC_Window_overlay::detect_features() {
   unmark_alledges();
   float min_fa_r = HUGE_VALF;
   t0 = get_wtime();
-  for (vector<pair<float, HEdge> >::iterator it = tstrong_edges.begin(),
-                                             iend = tstrong_edges.end();
-       it != iend; ++it) {
-    HEdge h = it->second;
+  for (vector<pair<float, HEdge> >::iterator it2 = tstrong_edges.begin(),
+                                             iend2 = tstrong_edges.end();
+       it2 != iend2; ++it2) {
+    HEdge h = it2->second;
     if (acc.marked(h)) continue;
     HEdge hopp = h.opposite_g();
 
@@ -819,7 +819,7 @@ void RFC_Window_overlay::detect_features() {
     // r-strong edge to the curve until we reach a non-strong curve.
     for (int c = 0; c < 2; ++c) {
       for (;;) {
-        HEdge h = ((c == 0) ? f1.back() : f1.front());
+        h = ((c == 0) ? f1.back() : f1.front());
         if (src == dst || (c == 0 && is_on_feature(dst)) ||
             (c && is_on_feature(src)))
           break;
@@ -828,10 +828,10 @@ void RFC_Window_overlay::detect_features() {
         iedges.clear();
         HEdge h0 = h.opposite_g();
         float d0 = cos_face_angle(h, h0);
-        pair<float, HEdge> t0(d0, (c == 0) ? h0 : h);
+        pair<float, HEdge> t_0(d0, (c == 0) ? h0 : h);
         pair<float, HEdge> cos_max(HUGE_VALF, HEdge());
 
-        HEdge h1 = acc.get_next_around_origin(t0.second);
+        HEdge h1 = acc.get_next_around_origin(t_0.second);
         do {
           HEdge h1o = h1.opposite_g();
           float d = cos_face_angle(h1, h1o);
@@ -839,10 +839,10 @@ void RFC_Window_overlay::detect_features() {
           iedges.push_back(t);
 
           if (t < cos_max) cos_max = t;
-        } while ((h1 = acc.get_next_around_origin(h1)) != t0.second);
+        } while ((h1 = acc.get_next_around_origin(h1)) != t_0.second);
 
         bool is_strong = true;
-        const Vector_3 v1 = get_tangent(t0.second);
+        const Vector_3 v1 = get_tangent(t_0.second);
         if (cos_max.first > _cos_uf && iedges.size() > 1) {
           for (int i = 0, s = iedges.size(); i < s; ++i) {
             const Vector_3 v2 = get_tangent(iedges[i].second);
@@ -867,7 +867,7 @@ void RFC_Window_overlay::detect_features() {
 
         h = cos_max.second;
         if (acc.marked(h)) break;
-        HEdge hopp = h.opposite_g();
+        hopp = h.opposite_g();
 
         acc.mark(h);
         h.pane()->set_strong_edge(h);
@@ -915,12 +915,12 @@ void RFC_Window_overlay::detect_features() {
   }
 
   // Compute the bounding boxes of the 1-features
-  for (Feature_list_1::iterator it = _f_list_1.begin(); it != _f_list_1.end();
-       ++it) {
-    it->bbox += Bbox_3(it->front().origin_g().point());
-    for (Feature_1::iterator hi = it->begin(), hiend = it->end(); hi != hiend;
+  for (Feature_list_1::iterator it3 = _f_list_1.begin(); it3 != _f_list_1.end();
+       ++it3) {
+    it3->bbox += Bbox_3(it3->front().origin_g().point());
+    for (Feature_1::iterator hi = it3->begin(), hiend = it3->end(); hi != hiend;
          ++hi) {
-      it->bbox += Bbox_3(hi->destination_g().point());
+      it3->bbox += Bbox_3(hi->destination_g().point());
     }
   }
 

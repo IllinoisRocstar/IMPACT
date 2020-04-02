@@ -27,9 +27,6 @@ int ARGC;
 
 using namespace std;
 
-extern int read_obj(std::istream &is, vector<double> &coors,
-                    vector<int> &elems);
-
 TEST(SurfXTests, TriToTriRefinement) {
   COM_init(&ARGC, &ARGV);
 

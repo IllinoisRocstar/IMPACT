@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
 
   COM_window_init_done("twin");
 
-  Simpal_load_module("TEST");
+  COM_LOAD_MODULE_STATIC_DYNAMIC(Simpal, "TEST");
 
   std::string a1("twin.x"), a2("twin.y"), a3("twin.z"), ap("twin.p"),
       aa("twin.a"), am("twin.m");
@@ -369,7 +369,7 @@ int main(int argc, char *argv[]) {
   std::cout << "\nDeleting windows" << std::endl;
   COM_delete_window("twin");
 
-  Simpal_unload_module("TEST");
+  COM_UNLOAD_MODULE_STATIC_DYNAMIC(Simpal, "TEST");
   std::cout << "Finalizing Roccom" << std::endl;
   COM_finalize();
 }

@@ -254,7 +254,7 @@ TEST_F(COMModuleLoadingTest, CModuleLoadsFModule) {
 
   if (c_func_exists) {
     std::string win3("TestFWin3");
-    const char* win2ptr = win3.c_str();
+    //const char* win2ptr = win3.c_str();
     // CModule function1 recursively loads the FModule.
     COM_call_function(funcH3, &win3);
     int win3_handle = COM_get_window_handle(win3.c_str());

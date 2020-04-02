@@ -288,7 +288,7 @@ class IM_Reader {
     int num_nodes, num_tris, num_quads;
     get_nextline(is, buf);
     std::sscanf(buf, "%d %d %d", &num_nodes, &num_tris, &num_quads);
-    if (num_nodes < 0 && num_tris < 0 || num_quads < 0) {
+    if (num_nodes < 0 || num_tris < 0 || num_quads < 0) {
       std::cerr << "Error: Negative node or element size" << std::endl;
       exit(-1);
     }

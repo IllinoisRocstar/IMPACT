@@ -419,7 +419,7 @@ class ProfilerObj {
   ///
   /// \brief Scalability analysis output for multiple parallel runs
   ///
-  int ScalabilitySummary(ScalaStatMap &scala_statmap, std::ostream &Out);
+  int ScalabilitySummary(ScalaStatMap &scala_statmap, std::ostream &Ost);
 
  private:
   /// whether the profiler has been initialized

@@ -316,8 +316,7 @@ void RFC_Pane_base::read_rocin(const std::string &sdv_wname,
   }
 }
 
-extern "C" void SimIN_load_module(const char *);
-extern "C" void SimIN_unload_module(const char *);
+COM_EXTERN_MODULE(SimIN)
 
 /*! Read in panes in native or HDF format. In native format, each pane
  *  has a separate file with file name \p {prefix}paneID.sdv.
@@ -348,7 +347,7 @@ void RFC_Window_base::read_sdv(const char *prefix, const char *format) {
     }
   } else {
     // Read in using Rocin.
-    SimIN_load_module("RFC_IN");
+    COM_LOAD_MODULE_STATIC_DYNAMIC(SimIN, "RFC_IN");
     int hdl_read = COM_get_function_handle("RFC_IN.read_windows");
     int hdl_obtain = COM_get_function_handle("RFC_IN.obtain_dataitem");
 
@@ -381,12 +380,11 @@ void RFC_Window_base::read_sdv(const char *prefix, const char *format) {
     }
 
     // Unload Rocin
-    SimIN_unload_module("RFC_IN");
+    COM_UNLOAD_MODULE_STATIC_DYNAMIC(SimIN, "RFC_IN");
   }
 }
 
-extern "C" void SimOUT_load_module(const char *);
-extern "C" void SimOUT_unload_module(const char *);
+COM_EXTERN_MODULE(SimOUT)
 
 /*! Write panes in native format or using Rocout's format.
  *  In native format, each pane has a separate file with file name
@@ -437,12 +435,12 @@ void RFC_Window_base::write_sdv(const char *prefix, const char *format) const {
     }
   } else {
     // Output using Rocout's format
-    SimOUT_load_module("RFC_OUT");
+    COM_LOAD_MODULE_STATIC_DYNAMIC(SimOUT, "RFC_OUT");
     int hdl_set_option = COM_get_function_handle("RFC_OUT.set_option");
     int hdl_write = COM_get_function_handle("RFC_OUT.write_dataitem");
 
     COM_call_function(hdl_set_option, "rankwidth", "0");
-    COM_call_function(hdl_set_option, "format", format);
+    //COM_call_function(hdl_set_option, "format", format);
 
     int parent_mesh = COM_get_dataitem_handle((name() + ".pmesh").c_str());
 
@@ -489,7 +487,7 @@ void RFC_Window_base::write_sdv(const char *prefix, const char *format) const {
 
     // Unload Rocout
     COM_delete_window(sdv_wname.c_str());
-    SimOUT_unload_module("RFC_OUT");
+    COM_UNLOAD_MODULE_STATIC_DYNAMIC(SimOUT, "RFC_OUT");
   }
 }
 
@@ -504,13 +502,14 @@ const char *RFC_Window_base::get_prefix_base(const char *prefix) {
 }
 
 int RFC_Window_base::get_sdv_format(const char *format) {
-  if (!format || std::strcmp(format, "OFF") == 0) return SDV_OFF;
+  if (!format) return SDV_SIMIO;
+  if (std::strcmp(format, "OFF") == 0) return SDV_OFF;
   if (std::strcmp(format, "BIN") == 0) return SDV_BINARY;
   if (std::strcmp(format, "HDF") == 0) return SDV_HDF;
   if (std::strcmp(format, "CGNS") == 0) return SDV_CGNS;
 
   RFC_assertion_msg(false, (std::string("Unknown format ") + format).c_str());
-  return SDV_BINARY;  // Default is SDV_BINARY.
+  return SDV_SIMIO;  // Default is SDV_SIMIO.
 }
 
 std::string RFC_Window_base::get_sdv_fname(const char *prefix, int pane_id,
@@ -530,6 +529,9 @@ std::string RFC_Window_base::get_sdv_fname(const char *prefix, int pane_id,
       break;
     case SDV_CGNS:
       fname << prefix << '_' << pane_id << "_sdv.cgns";
+      break;
+  case SDV_SIMIO:
+      fname << prefix << '_' << pane_id << "_sdv";
       break;
     default:
       COM_assertion_msg(false, "Unknown file format");

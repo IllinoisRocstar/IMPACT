@@ -147,9 +147,10 @@ void RFC_Window_overlay::evaluate_normals() {
   Overlay_primitives op;
   Point_2 one(1, 0);
   // Loop throught the sharp halfedges in 1-features
-  for (Feature_list_1::iterator it = _f_list_1.begin(), iend = _f_list_1.end();
-       it != iend; ++it) {
-    for (Feature_1::iterator j = it->begin(); j != it->end(); ++j) {
+  for (Feature_list_1::iterator it2 = _f_list_1.begin(),
+                                iend2 = _f_list_1.end();
+       it2 != iend2; ++it2) {
+    for (Feature_1::iterator j = it2->begin(); j != it2->end(); ++j) {
       HEdge k = *j, kopp = k.opposite_g();
       do {
         if (!k.is_border_l() &&
@@ -184,13 +185,13 @@ void RFC_Window_overlay::evaluate_normals() {
       if (!is_feature_0(k.destination_g())) {
         Feature_1::iterator t = j;
         ++t;
-        if (t == it->end()) t = it->begin();
+        if (t == it2->end()) t = it2->begin();
         HEdge h = (*t).opposite_g();
         h.pane()->add_tangent(h, tng);
       }
       kopp.pane()->add_tangent(kopp, tng);
       if (!is_feature_0(kopp.destination_g())) {
-        Feature_1::iterator t = (j == it->begin()) ? it->end() : j;
+        Feature_1::iterator t = (j == it2->begin()) ? it2->end() : j;
         HEdge h = *(--t);
         h.pane()->add_tangent(h, tng);
       }
@@ -198,9 +199,10 @@ void RFC_Window_overlay::evaluate_normals() {
   }
 
   // Loop through the vertices in 0-features
-  for (Feature_list_0::iterator it = _f_list_0.begin(), iend = _f_list_0.end();
-       it != iend; ++it) {
-    HEdge h = it->vertex().halfedge_g();
+  for (Feature_list_0::iterator it3 = _f_list_0.begin(),
+                                iend3 = _f_list_0.end();
+       it3 != iend3; ++it3) {
+    HEdge h = it3->vertex().halfedge_g();
     RFC_Pane_overlay &pane = *h.pane();
 
     if (!h.is_border_l() && pane._f_n_index[pane.get_index(h)] == -1) {

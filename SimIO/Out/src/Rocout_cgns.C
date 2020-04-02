@@ -122,7 +122,10 @@ class AutoCDer {
  public:
   inline AutoCDer() : m_cwd(getcwd(NULL, 0)) {}
   inline ~AutoCDer() {
-    chdir(m_cwd);
+    if (chdir(m_cwd) != 0)
+      perror(("Rocout_cgns::~AutoCDer chdir() to " + std::string(m_cwd) +
+              " failed")
+                 .c_str());
     free(m_cwd);
   }
 
@@ -188,7 +191,7 @@ static int WriteElements(int fn, int B, int Z, int eType, int nElems,
   int nNodes;
 
   // Determine the number of nodes per element and the CGNS element type.
-  switch (eType) {
+  switch (static_cast<Connectivity::Connectivity_type>(eType)) {
     case Connectivity::BAR2:
       elemType = CGNS_ENUMV(BAR_2);
       nNodes = 2;
@@ -273,7 +276,15 @@ static int WriteElements(int fn, int B, int Z, int eType, int nElems,
       elemType = CGNS_ENUMV(HEXA_27);
       nNodes = 27;
       break;
-  }
+
+    default:
+
+      std::cerr << "ROCOUT ERROR: Unable to determine CGNS type of '" << eType
+                << "'." << std::endl;
+      elemType = CGNS_ENUMV(ElementTypeNull);
+      nNodes = 0;
+      break;
+    }
 
   // Allocate memory for the new connectivity table.
   std::vector<int> buffer;
@@ -880,7 +891,11 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
   AutoCDer autoCD;
   std::string::size_type loc = fname.rfind('/');
   // MS
-  GetCurrentDir(cwd, sizeof(cwd));
+  if (GetCurrentDir(cwd, sizeof(cwd)) == nullptr) {
+    perror(("Rocout_cgns::write_dataitem_CGNS getcwd() to " + std::string(cwd) +
+            " failed")
+               .c_str());
+  }
   // std::cout << __FILE__ << __LINE__ << "\n" << cwd << std::endl;
   std::string prefix = fname.substr(0, loc + 1);
   // original
@@ -1192,7 +1207,11 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
     if (!mfile.empty()) {
       DEBUG_MSG("Writing to mesh file '" << mfile << "', mode == '"
                                          << (mode ? "append'" : "write'"));
-      GetCurrentDir(cwd, sizeof(cwd));
+      if (GetCurrentDir(cwd, sizeof(cwd)) == nullptr) {
+        perror(("Rocout_cgns::write_dataitem_CGNS getcwd() to " +
+                std::string(cwd) + " failed")
+                   .c_str());
+      }
       // std::cout << __FILE__ << __LINE__ << std::endl;
       CG_CHECK(cg_open, ((prefix + mfile).c_str(),
                          mode ? CG_MODE_MODIFY : CG_MODE_WRITE, &mfn));
@@ -1288,7 +1307,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
 
           // Check for null/empty/strided data.
           const void* pData = nc->pointer();
-          bool isNull = false;
+          //bool isNull = false;
           if (numItems <= 0) {
             buf.resize(COM::DataItem::get_sizeof(dType, 1), '\0');
             std::fill(buf.begin(), buf.end(), '\0');
@@ -1301,7 +1320,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
             std::fill(buf.begin(), buf.end(), '\0');
             pData = &(buf[0]);
             // size[0] = size[1] = size[2] = 1;
-            isNull = true;
+            //isNull = true;
             ranges[n] = "NULL";
           } else {
             int stride = nc->stride();
@@ -1492,17 +1511,17 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
         int S, nS;
         CG_CHECK(cg_nsections, (mfn, mB, mZ, &nS));
 
-        char label[33];
+        char label2[33];
         CGNS_ENUMT(ElementType_t) eType;
         int min, max, nBoundary, parent;
         for (S = 1; S <= nS; ++S) {
           CG_CHECK(
               cg_section_read,
-              (mfn, mB, mZ, S, label, &eType, reinterpret_cast<cgsize_t*>(&min),
+              (mfn, mB, mZ, S, label2, &eType, reinterpret_cast<cgsize_t*>(&min),
                reinterpret_cast<cgsize_t*>(&max), &nBoundary, &parent));
 
           CG_CHECK(cg_link_write,
-                   (label, (mfile).c_str(), (path + label).c_str()));
+                   (label2, (mfile).c_str(), (path + label2).c_str()));
         }
       }
     }
@@ -1558,7 +1577,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
   } else if (attr->id() == COM::COM_MESH) {
     // std::cout << __FILE__ << __LINE__ << std::endl;
     attrs.insert(attrs.begin(), pane.dataitem(COM::COM_RIDGES));
-  } else if (COM::COM_PCONN) {
+  } else if (attr->id() == COM::COM_PCONN) {
     // std::cout << __FILE__ << __LINE__ << std::endl;
     attrs.insert(attrs.begin(), pane.dataitem(COM::COM_PCONN));
   } else if (attr->id() == COM::COM_RIDGES) {
@@ -1592,7 +1611,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
               << (*a)->size_of_components() << ", location == '"
               << (*a)->location() << "\', datatype == " << (*a)->data_type());
     goToNextItem = false;
-    int A, size[3], nComp = (*a)->size_of_components(), offset;
+    int A, /*size[3],*/ nComp = (*a)->size_of_components(), offset;
     const void* pData[9];
     dType = (*a)->data_type();
     switch ((*a)->location()) {
@@ -1652,7 +1671,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
                                  .c_str(),
                              std::ios_base::app);
 #endif  // DEBUG_DUMP_PREFIX
-          bool isNull = false;
+          //bool isNull = false;
           pData[A] = pa->pointer();
           if (numItems <= (writeGhost ? 0 : rind[1])) {
             buf.resize(COM::DataItem::get_sizeof(dType, 1), '\0');
@@ -1666,7 +1685,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
                        '\0');
             std::fill(buf.begin(), buf.end(), '\0');
             pData[A] = &(buf[0]);
-            isNull = true;
+            //isNull = true;
             size[0] = 1;
             range = "NULL";
           } else {
@@ -1805,7 +1824,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
                                  .c_str(),
                              std::ios_base::app);
 #endif  // DEBUG_DUMP_PREFIX
-          bool isNull = false;
+          //bool isNull = false;
           pData[A] = pa->pointer();
           if (numItems <= (writeGhost ? 0 : rind[1])) {
             buf.resize(COM::DataItem::get_sizeof(dType, 1), '\0');
@@ -1819,7 +1838,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
                        '\0');
             std::fill(buf.begin(), buf.end(), '\0');
             pData[A] = &(buf[0]);
-            isNull = true;
+            //isNull = true;
             size[0] = 1;
             range = "NULL";
           } else {
@@ -2058,7 +2077,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
                                  .c_str(),
                              std::ios_base::app);
 #endif  // DEBUG_DUMP_PREFIX
-          bool isNull = false;
+          //bool isNull = false;
           pData[A] = pa->pointer();
           if (numItems <= (writeGhost ? 0 : rind[1])) {
             buf.resize(COM::DataItem::get_sizeof(dType, 1), '\0');
@@ -2072,7 +2091,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
                        '\0');
             std::fill(buf.begin(), buf.end(), '\0');
             pData[A] = &(buf[0]);
-            isNull = true;
+            //isNull = true;
             size[0] = 1;
             range = "NULL";
           } else {
@@ -2212,7 +2231,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
                                  .c_str(),
                              std::ios_base::app);
 #endif  // DEBUG_DUMP_PREFIX
-          bool isNull = false;
+          //bool isNull = false;
           pData[A] = pa->pointer();
           if (numItems <= 0) {
             buf.resize(COM::DataItem::get_sizeof(dType, 1), '\0');
@@ -2225,7 +2244,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
                        '\0');
             std::fill(buf.begin(), buf.end(), '\0');
             pData[A] = &(buf[0]);
-            isNull = true;
+            //isNull = true;
             // size[0] = size[1] = size[2] = 1;
             range = "NULL";
           } else {
@@ -2430,7 +2449,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
                                  .c_str(),
                              std::ios_base::app);
 #endif  // DEBUG_DUMP_PREFIX
-          bool isNull = false;
+          //bool isNull = false;
           pData[A] = pa->pointer();
           // std::cout << __FILE__ << __LINE__ << " numItems = " << numItems <<
           // std::endl;
@@ -2447,7 +2466,7 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
                        '\0');
             std::fill(buf.begin(), buf.end(), '\0');
             pData[A] = &(buf[0]);
-            isNull = true;
+            //isNull = true;
             // size[0] = size[1] = size[2] = 1;
             range = "NULL";
           } else {

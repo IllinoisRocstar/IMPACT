@@ -12,9 +12,9 @@
 
 using namespace std;
 
-COM_EXTERN_MODULE(SimOUT);
-COM_EXTERN_MODULE(SurfUtil);
-COM_EXTERN_MODULE(Simpal);
+COM_EXTERN_MODULE(SimOUT)
+COM_EXTERN_MODULE(SurfUtil)
+COM_EXTERN_MODULE(Simpal)
 
 int main(int argc, char *argv[]) {
   COM_init(&argc, &argv);

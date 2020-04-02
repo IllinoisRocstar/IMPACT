@@ -14,10 +14,13 @@
 #ifndef _ROCIN_H_
 #define _ROCIN_H_
 
-#include "HDF4.h"
 #include "com.h"
 #include "com_devel.hpp"
 #include "rocin_block.h"
+
+#ifdef USE_HDF4
+#include "HDF4.h"
+#endif  //USE_HDF4
 
 #ifdef USE_CGNS
 #include "cgnslib.h"
@@ -78,7 +81,7 @@ class Rocin : public COM_Object {
    * \param window_name the name of the window to be created.
    * \param comm The MPI communicator to use. If is NULL, the default
    *        communicator of Roccom will be used.
-   * \param is_local a function pointer which determines wheter a pane
+   * \param is_local a function pointer which determines whether a pane
    *        should be read by a process.
    * \param time_level the time stamp of the dataset to be read.  If time
    *        level is NULL (default) or "", then the first time_level in the
@@ -105,7 +108,7 @@ class Rocin : public COM_Object {
    *        material.
    * \param comm The MPI communicator to use. If is NULL, the default
    *        communicator of Roccom will be used.
-   * \param is_local a function pointer which determines wheter a pane should
+   * \param is_local a function pointer which determines whether a pane should
    *        be read by a process.
    * \param time_level the time stamp of the dataset to be read.  If time
    *        level is NULL (default) or "", then the first time_level in the
@@ -169,8 +172,11 @@ class Rocin : public COM_Object {
   void blockcyclic_local(const int &pid, const int &comm_rank,
                          const int &comm_size, int *il);
 
-  void register_panes(BlockMM_HDF4::iterator hdf4,
+  void register_panes(
+#ifdef USE_HDF4
+                      BlockMM_HDF4::iterator hdf4,
                       const BlockMM_HDF4::iterator &hdf4End,
+#endif  // USE_HDF4
 #ifdef USE_CGNS
                       BlockMM_CGNS::iterator cgns,
                       const BlockMM_CGNS::iterator &cgnsEnd,
@@ -214,7 +220,9 @@ class Rocin : public COM_Object {
   int m_base;
   int m_offset;
 
+#ifdef USE_HDF4
   std::map<int32, COM_Type> m_HDF2COM;
+#endif  // USE_HDF4
 #ifdef USE_CGNS
   std::map<CGNS_ENUMT(DataType_t), COM_Type> m_CGNS2COM;
 #endif  // USE_CGNS

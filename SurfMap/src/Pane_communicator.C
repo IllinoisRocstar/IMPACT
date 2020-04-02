@@ -286,8 +286,11 @@ void Pane_communicator::begin_update(
             //	    tag = tag%32768;
             // COMMPI uses DUMMY_MPI if MPI not initialized
             // MS
-            int ierr = COMMPI_Isend(&pcb->outbuf[0], pcb->outbuf.size(),
-                                    MPI_BYTE, 0, tag, MPI_COMM_SELF, &req);
+#ifndef NDEBUG
+            int ierr =
+#endif
+                COMMPI_Isend(&pcb->outbuf[0], pcb->outbuf.size(), MPI_BYTE, 0,
+                             tag, MPI_COMM_SELF, &req);
             //// switching to MPI itself
             // int ierr=MPI_Isend( &pcb->outbuf[0], pcb->outbuf.size(),
             //           MPI_BYTE, rank, tag, _comm, &req);
@@ -299,8 +302,11 @@ void Pane_communicator::begin_update(
             //	    int ierr=MPI_Isend( &pcb->outbuf[0], pcb->outbuf.size(),
             //MPI_BYTE, 				pcb->rank, pcb->tag, _comm, &req);
             int tag = pcb->tag;
-            int ierr = MPI_Isend(&pcb->outbuf[0], pcb->outbuf.size(), MPI_BYTE,
-                                 pcb->rank, tag, _comm, &req);
+#ifndef NDEBUG
+            int ierr =
+#endif
+                MPI_Isend(&pcb->outbuf[0], pcb->outbuf.size(), MPI_BYTE,
+                          pcb->rank, tag, _comm, &req);
             COM_assertion(ierr == 0);
 
             _reqs_send.push_back(req);
@@ -320,8 +326,11 @@ void Pane_communicator::begin_update(
             if (_panes[i]->id() < vs[pcb->index]) tag += tag_max;
             //	    tag = tag%32768;
             // MS
-            int ierr = COMMPI_Irecv(&pcb->inbuf[0], pcb->inbuf.size(), MPI_BYTE,
-                                    0, tag, MPI_COMM_SELF, &req);
+#ifndef NDEBUG
+            int ierr =
+#endif
+                COMMPI_Irecv(&pcb->inbuf[0], pcb->inbuf.size(), MPI_BYTE, 0,
+                             tag, MPI_COMM_SELF, &req);
             // switching to regular MPI
             // int ierr=MPI_Irecv( &pcb->inbuf[0], pcb->inbuf.size(),
             //           MPI_BYTE, rank, tag, _comm, &req);
@@ -336,8 +345,11 @@ void Pane_communicator::begin_update(
             //	    int ierr=MPI_Irecv( &pcb->inbuf[0], pcb->inbuf.size(),
             //MPI_BYTE, 				pcb->rank,pcb->tag, _comm, &req);
             int tag = pcb->tag;
-            int ierr = MPI_Irecv(&pcb->inbuf[0], pcb->inbuf.size(), MPI_BYTE,
-                                 pcb->rank, tag, _comm, &req);
+#ifndef NDEBUG
+            int ierr =
+#endif
+                MPI_Irecv(&pcb->inbuf[0], pcb->inbuf.size(), MPI_BYTE,
+                          pcb->rank, tag, _comm, &req);
             COM_assertion(ierr == 0);
 
             // Push the receive request into _reqs_recv and _reqs_indices
@@ -376,10 +388,12 @@ void Pane_communicator::end_update() {
   // MS: change to debug
   if (_comm != MPI_COMM_NULL) {
     std::vector<MPI_Status> status(_reqs_send.size());
-    int ierr = 0;
     // original
     if (_reqs_send.size()) {
-      ierr = MPI_Waitall(_reqs_send.size(), &_reqs_send[0], &status[0]);
+#ifndef NDEBUG
+      int ierr =
+#endif
+          MPI_Waitall(_reqs_send.size(), &_reqs_send[0], &status[0]);
       COM_assertion(ierr == 0);
     }
     // MS: using waitany
@@ -462,10 +476,12 @@ void Pane_communicator::reduce_on_shared_nodes(MPI_Op op) {
     // if ( _comm!=MPI_COMM_NULL) {
     // MS: change to debug
     if (_comm != MPI_COMM_NULL) {
-      int ierr = 0;
       MPI_Status status;
-      ierr = MPI_Waitany(_reqs_recv.size(), &_reqs_recv[0], &index, &status);
-      COM_assertion_msg(ierr == MPI_SUCCESS, "MPI_Waitany failed.");
+#ifndef NDEBUG
+      int ierr =
+#endif
+          MPI_Waitany(_reqs_recv.size(), &_reqs_recv[0], &index, &status);
+      COM_assertion_msg(ierr == 0, "MPI_Waitany failed.");
     } else {
       index = _reqs_recv.size() - 1;
     }
@@ -537,11 +553,11 @@ void reduce_minabs(T *a, T *b, int size) {
 
 template <class T>
 void reduce_diff(T *a, T *b, int size) {
-  bool isa_nonzero = 0;
+  //bool isa_nonzero = 0;
 
   for (int i = 0;; ++i) {
     if (a[i] != 0) {
-      isa_nonzero = 1;
+      //isa_nonzero = 1;
       break;
     } else if (i == size)
       return;
@@ -568,7 +584,9 @@ void Pane_communicator::reduce_maxabs_on_shared_nodes() {
     // Wait for any receive request to finish and then process the request
     if (_comm != MPI_COMM_NULL) {
       MPI_Status status;
+#ifndef NDEBUG
       int ierr =
+#endif
           MPI_Waitany(_reqs_recv.size(), &_reqs_recv[0], &index, &status);
       COM_assertion(ierr == 0);
     } else
@@ -635,7 +653,9 @@ void Pane_communicator::reduce_minabs_on_shared_nodes() {
     // Wait for any receive request to finish and then process the request
     if (_comm != MPI_COMM_NULL) {
       MPI_Status status;
+#ifndef NDEBUG
       int ierr =
+#endif
           MPI_Waitany(_reqs_recv.size(), &_reqs_recv[0], &index, &status);
       COM_assertion(ierr == 0);
     } else
@@ -702,7 +722,9 @@ void Pane_communicator::reduce_diff_on_shared_nodes() {
     // Wait for any receive request to finish and then process the request
     if (_comm != MPI_COMM_NULL) {
       MPI_Status status;
+#ifndef NDEBUG
       int ierr =
+#endif
           MPI_Waitany(_reqs_recv.size(), &_reqs_recv[0], &index, &status);
       COM_assertion(ierr == 0);
     } else
@@ -775,7 +797,9 @@ void Pane_communicator::update_ghost_values() {
     // Wait for any receive request to finish and then process the request
     if (_comm != MPI_COMM_NULL) {
       MPI_Status status;
+#ifndef NDEBUG
       int ierr =
+#endif
           MPI_Waitany(_reqs_recv.size(), &_reqs_recv[0], &index, &status);
       COM_assertion(ierr == 0);
     } else

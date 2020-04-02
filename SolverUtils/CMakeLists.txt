@@ -46,12 +46,16 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 #include_directories(include ${IMPACT_INC} ${CMAKE_BINARY_DIR}/include)
 
-add_library(SolverUtils SHARED 
-    ${LIB_SRCS})
+add_library(SolverUtils ${LIB_SRCS})
+
+set_target_properties(SolverUtils PROPERTIES VERSION ${IMPACT_VERSION}
+        SOVERSION ${IMPACT_MAJOR_VERSION})
+
 target_include_directories(SolverUtils 
     PUBLIC
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-      $<INSTALL_INTERFACE:include/impact> )
+      #$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/impact> 
+      )
 if(ENABLE_MPI)
   target_link_libraries(SolverUtils ${MPI_CXX_LIBRARIES} SITCOM SITCOMF)
   set_target_properties(SolverUtils PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
@@ -100,22 +104,25 @@ if(METIS_LIBRARY OR PMETIS_LIBRARY)
   target_include_directories(SolverUtils 
     PRIVATE
       $<BUILD_INTERFACE:${METIS_INCLUDE_PATH}>
-      $<INSTALL_INTERFACE:${PMETIS_INCLUDE_PATH}>)
+      #$<INSTALL_INTERFACE:${PMETIS_INCLUDE_PATH}>
+      )
   add_definitions( -DUSE_METIS )
   if(PMETIS_LIBRARY)
     target_include_directories(SolverUtils 
       PRIVATE 
         $<BUILD_INTERFACE:${PMETIS_INCLUDE_PATH}>
-        $<INSTALL_INTERFACE:${PMETIS_INCLUDE_PATH}>)
+        #$<INSTALL_INTERFACE:${PMETIS_INCLUDE_PATH}>
+        )
     add_definitions( -DPMETIS )
   endif()
 endif()
 
 # install the headers and export the targets
-install(DIRECTORY include/ 
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/include/impact)
-install(TARGETS meshgen2d SolverUtils wrl2mesh gg2mesh t3d2mesh 
-        RUNTIME DESTINATION bin 
-        LIBRARY DESTINATION lib 
-        ARCHIVE DESTINATION lib
-        INCLUDES DESTINATION include)
+#install(DIRECTORY include/ 
+#        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/impact)
+#install(TARGETS meshgen2d SolverUtils wrl2mesh gg2mesh t3d2mesh 
+#        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+#        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+#)

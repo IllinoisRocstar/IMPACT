@@ -1,19 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
 
-# Options
-option(ENABLE_CGNS "Build with CGNS support." OFF)
-
-# Find CGNS package
-#if(ENABLE_CGNS)
-#  find_package(HDF5 REQUIRED)
-#  find_library(CGNS_LIB cgns)
-#  if(NOT CGNS_LIB)
-#    message(FATAL_ERROR "CGNS library not found.")
-#  endif()
-#  find_path(CGNS_INC cgnslib.h)
-#  add_definitions(-DUSE_CGNS)
-#endif()
-
 # rpath settings
 #set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 #set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
@@ -44,23 +30,18 @@ add_library(SurfX
     src/Transfer/Transfer_base.C
 )
 
+set_target_properties(SurfX PROPERTIES VERSION ${IMPACT_VERSION}
+        SOVERSION ${IMPACT_MAJOR_VERSION})
+
 target_include_directories(SurfX
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/Base>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/Overlay>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/Transfer>
-        $<INSTALL_INTERFACE:include/impact>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/impact>
 )
-target_link_libraries(SurfX SurfUtil SimIN SimOUT)
-
-if(ENABLE_CGNS)
-  target_link_libraries(SurfX ${CGNS_LIBRARY} ${HDF5_LIBRARIES})
-  target_include_directories(SurfX
-    PUBLIC
-      ${CGNS_INCLUDE_PATH}
-      ${HDF5_INCLUDE_DIRS}) 
-endif()
+target_link_libraries(SurfX SurfUtil)
 
 add_executable(surfdiver util/surfdiver.C)
 target_link_libraries(surfdiver SurfX)
@@ -73,13 +54,13 @@ target_link_libraries(surfextractor SurfX)
 
 # install the headers and export the targets
 install(DIRECTORY include/Base/ include/Overlay/ include/Transfer/
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/include/impact)
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/impact)
 install(FILES include/Rocface.h
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/include/impact)
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/impact)
 install(TARGETS SurfX surfdiver autosurfer surfjumper surfextractor
         EXPORT IMPACT
-        RUNTIME DESTINATION bin
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        INCLUDES DESTINATION include
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )

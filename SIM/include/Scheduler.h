@@ -1,97 +1,243 @@
-//
-//  Copyright@2013, Illinois Rocstar LLC. All rights reserved.
-//
-//  See LICENSE file included with this source or
-//  (opensource.org/licenses/NCSA) for license information.
-//
+#ifndef _IMPACT_SCHEDULER_H_
+#define _IMPACT_SCHEDULER_H_
 
-#ifndef _SCHEDULER_H_
-#define _SCHEDULER_H_
+#include <cstdio>
 
-#include "SchedulerAction.h"
+#include "Action.h"
 
+class Scheduler;
+typedef void (Scheduler::*Scheduler_voidfn1_t)(double);
+
+/**
+ * A Scheduler manages actions through the lifetime of a simulation process.
+ *
+ * A Scheduler is a container of actions and is responsible for determining the
+ * orders of initialization, execution, and finalization of its actions. An
+ * Action is added to the Scheduler through the add_action() method, invoking
+ * the Action::declare() method, which will callback the reads() and writes()
+ * methods.
+ *
+ * Upon calling schedule(), the Scheduler will determine the order of
+ * initialization, execution, and finalization of all added Action.
+ *
+ * The functions init_actions(), run_actions(), and finalize_actions()
+ * correspond to the Action equivalents.
+ */
 class Scheduler {
-  friend class SchedulerAction;
+public:
+  /**
+   * Construct a Scheduler named "Scheduler"
+   * @param verbose print debugging information (Default: false)
+   */
+  explicit Scheduler(bool verbose = false);
 
- public:
-  Scheduler();
-  virtual ~Scheduler() {}
+  Scheduler(const Scheduler &) = delete;
+  Scheduler &operator=(const Scheduler &) = delete;
+  Scheduler(Scheduler &&) = delete;
+  Scheduler &operator=(Scheduler &&) = delete;
 
-  virtual void add_action(Action *);
+  virtual ~Scheduler();
 
-  void reads(Action *, const char *attr, int idx);
-  void writes(Action *, const char *attr, int idx);
+public:
+  /**
+   * Determines the order Actions will be run. Must be called after
+   * add_actions() and before init_actions(), run_actions(), or
+   * finalize_actions() can be used.
+   */
+  virtual void schedule() = 0;
 
-  virtual void schedule();
+public:
+  /**
+   * Add Action to Scheduler.
+   */
+  void add_action(Action *);
 
+  /**
+   * Action callback routine to declare inputs
+   * @param attr DataItem attribute
+   * @param idx an index to differentiate same attr
+   */
+  void reads(const Action *, const std::string &attr, int idx);
+  /**
+   * Action callback routine to declare outputs
+   * @param attr DataItem attribute
+   * @param idx an index to differentiate same attr
+   */
+  void writes(const Action *, const std::string &attr, int idx);
+
+  /**
+   * Initialize actions at time t
+   * @param t time
+   */
   void init_actions(double t);
-  void run_actions(double t, double dt);
+  /**
+   * Run actions at time t with time step dt.
+   * @param t current time
+   * @param dt time step
+   * @param alpha interpolation sub step
+   */
+  void run_actions(double t, double dt, double alpha);
+  /**
+   * Finalize actions
+   */
   void finalize_actions();
 
-  void print(const char *fname);  // called by user
-  char *print(FILE *f,
-              const char *container_name);  // print a scheduler to file
-  void printDDG(FILE *f);
+  /**
+   * Print to file in GDL.
+   * @param fname file name
+   */
+  void print(const char *fname) const;
+  /**
+   * Print Scheduler to C-style stream.
+   * @param f C-style stream
+   * @param container_name Name of the container
+   * @return name of the scheduler in the container
+   */
+  char *print(FILE *f, const char *container_name) const;
 
-  const char *name() { return scheduler_name.c_str(); }
-  void set_name(const char *name) { scheduler_name = name; }
+  /**
+   * Get the name of the scheduler. Default "Scheduler".
+   * @return name
+   */
+  const std::string &name() const { return scheduler_name; }
+  /**
+   * Set the name of the scheduler.
+   * @param name new name
+   */
+  void set_name(const std::string &name) { scheduler_name = name; }
 
-  void restarting(double t) { inited = 0; }  // clear init state for restarting
-  void set_alpha(double alpha) { alphaT = alpha; }
-  bool isEmpty() { return actions.empty(); }
+  /**
+   * Clear the inited state. Used for restarting.
+   * @param t unused
+   */
+  void restarting(double t) { inited = false; }
 
-  void print_toposort(FILE *f);
+  /**
+   * Checks if the Scheduler contain actions.
+   * @return
+   */
+  bool isEmpty() const { return actions.empty(); }
 
- protected:
-  std::string scheduler_name;
+  /**
+   * Print topological sort information to C-style stream.
+   * @param f C stream
+   */
+  void print_toposort(FILE *f) const;
 
+protected:
   struct ActionItem;
   typedef std::vector<ActionItem *> ActionList;
 
+  /**
+   * ActionItem stores an Action and its input/output links to other Action.
+   */
   struct ActionItem {
+    explicit ActionItem(Action *a) : myaction(a), print_flag(0) {}
+
+    /**
+     * Access contained action
+     * @return pointer to action
+     */
+    inline const Action *action() const { return myaction; }
+    /**
+     * Access contained action
+     * @return pointer to action
+     */
+    inline Action *action() { return myaction; }
+
+    /**
+     * Get number of input actions.
+     * @return number of input actions
+     */
+    inline int n_write() const { return write_attr.size(); }
+    /**
+     * Get number of output actions.
+     * @return number of output actions
+     */
+    inline int n_read() const { return read_attr.size(); }
+    /**
+     * Get name of action.
+     * @return name of action.
+     */
+    inline const std::string &name() const { return myaction->name(); }
+    /**
+     * Are all input actions identified?
+     * @return True if all input actions are identified.
+     */
+    bool fulfilledInput() const;
+    /**
+     * Are all output actions identified?
+     * @return True if all output actions are identified.
+     */
+    bool fulfilledOutput() const;
+    /**
+     * Are all input and output actions identified?
+     * @return True if all input and output actions are identified.
+     */
+    bool fulfilled() const;
+    /**
+     * Returns position id in read_attr, read_idx, and input vectors.
+     * Returns -1 if not found.
+     *
+     * @param attr Action attribute
+     * @param idx Action index
+     * @return position in the read_attr, read_idx, and input vectors.
+     */
+    int hasInput(const std::string &attr, int idx) const;
+    /**
+     * Returns position id in write_attr, write_idx, and output vectors.
+     * Returns -1 if not found.
+     *
+     * @param attr Action attribute
+     * @param idx Action index
+     * @return position in the write_attr, write_idx, and output vectors.
+     */
+    int hasOutput(const std::string &attr, int idx) const;
+    /**
+     * Print state to C I/O stream.
+     * @param f pointer to C I/O stream (e.g., stdout)
+     */
+    void print(FILE *f) const;
+
     Action *myaction;
 
-    std::vector<const char *> read_attr;
+    std::vector<std::string> read_attr;
     std::vector<int> read_idx;
-    ActionList input;  // read_n
+    ActionList input; // read_n
 
-    std::vector<const char *> write_attr;
+    std::vector<std::string> write_attr;
     std::vector<int> write_idx;
-    ActionList output;  // write_n
+    ActionList output; // write_n
 
-    int print_flag;  // for print
-
-    ActionItem(Action *a) : myaction(a) {}
-
-    inline unsigned int n_write() { return write_attr.size(); }
-    inline unsigned int n_read() { return read_attr.size(); }
-    inline const char *name() { return myaction->name(); }
-    inline Action *action() { return myaction; }
-    int fulfilled();  // all output action identified
-    int hasInput(const char *attr, int idx);
-    int hasOutput(const char *attr, int idx);
-    void print(FILE *f);
+    mutable int print_flag; // for print
   };
 
-  ActionList actions;  // all actions registered
-  ActionList roots;    // forest
-  ActionList sort;     // topological sort order
+protected:
+  /**
+   * For debugging, prints Actions to C-style stream
+   * @param f C stream
+   */
+  void printActions(FILE *f) const;
 
-  double alphaT;  //
+protected:
+  std::string scheduler_name; ///< name of the Scheduler
 
-  int scheduled;  // flag: if has been scheduled
-  int inited;     // flag: true if init called
- protected:
-  void buildDDG();
+  ActionList actions; ///< all actions registered
+  ActionList roots;   ///< forest
+  ActionList sort;    ///< topological sort order
 
- private:
-  void discoverSets(ActionList& pool); // returns true if disjoint sets discovered
-  void topological_sort();
-  void sanityCheck();
-  void print_helper(FILE *f, ActionItem *aitem);
-  void printActions();  // for debugging
+  bool scheduled; ///< flag: if has been scheduled
+  bool inited;    ///< flag: true if init called
+
+  bool verbose; ///< flag: verbosity (Default: false)
+
+private:
+  /**
+   * Helper function to print ActionItem to C-style stream
+   * @param f C stream
+   * @param aitem ActionItem
+   */
+  static void print_helper(FILE *f, const ActionItem *aitem);
 };
 
-typedef void (Scheduler::*Scheduler_voidfn1_t)(double);
-
-#endif
+#endif // _IMPACT_SCHEDULER_H_

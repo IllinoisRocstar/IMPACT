@@ -28,6 +28,7 @@ int nProc = 1;
 COM_EXTERN_MODULE(SimOut)
 COM_EXTERN_MODULE(SurfX)
 
+/*
 // methods for splitting a string
 static std::vector<std::string> &split(const std::string &s, char delim,
                                        std::vector<std::string> &elems) {
@@ -44,6 +45,7 @@ static std::vector<std::string> split(const std::string &s, char delim) {
   split(s, delim, elems);
   return elems;
 }
+*/
 
 // read IMPACT windows
 static void read_file_rocin(const char *fname, const std::string &wname,
@@ -57,7 +59,7 @@ static void read_file_rocin(const char *fname, const std::string &wname,
 
   // Read in HDF or CGNS format
   COM_LOAD_MODULE_STATIC_DYNAMIC(SimIN, "IN");
-  int IN_read;
+  int IN_read = -1;
   // Read in HDF format using Rocin::read_window or ::read_by_control_file
   if (strcmp(lastdot, ".hdf") == 0 || strcmp(lastdot, ".cgns") == 0) {
     IN_read = COM_get_function_handle("IN.read_window");
@@ -99,18 +101,18 @@ static void read_file_rocin(const char *fname, const std::string &wname,
 
 static void read_file(const char *fname, const std::string &wname,
                       std::ostream &Inf, MPI_Comm comm) {
-  const char *lastdot = strrchr(fname, '.');
+  //const char *lastdot = strrchr(fname, '.');
 
   read_file_rocin(fname, wname, Inf, comm);
 }
 
-static void showPaneIds(int myRank, std::string winName) {
+static void showPaneIds(int myRnk, std::string winName) {
   // shows registered pane ids for a given window for
   // specific rank
   int nPane;
   int *paneList;
   COM_get_panes(winName.c_str(), &nPane, &paneList);
-  std::cout << "\n ****** Rank " << myRank << " window " << winName
+  std::cout << "\n ****** Rank " << myRnk << " window " << winName
             << " Number of panes = " << nPane << " Pane List = ";
   for (int i = 0; i < nPane; ++i) std::cout << paneList[i] << " ";
   std::cout << std::endl;
@@ -167,16 +169,16 @@ static void findWinName(std::string fnameIn, std::string &wname) {
 // console applications
 int main(int argc, char *argv[]) {
   // constants
-  const char separator = ' ';
-  const int nameWidth = 12;
-  const int numWidth = 12;
+  //const char separator = ' ';
+  //const int nameWidth = 12;
+  //const int numWidth = 12;
   std::ostream Inf(NULL);
 
   // initializing the MPI communicator
   MPI_Init(&argc, &argv);
   MPI_Comm comm = MPI_COMM_WORLD;
   MPI_Comm commNull = MPI_COMM_NULL;
-  MPI_Comm transComm = MPI_COMM_SELF;  // will be used for transfer
+  //MPI_Comm transComm = MPI_COMM_SELF;  // will be used for transfer
   MPI_Comm_rank(comm, &myRank);
   MPI_Comm_size(comm, &nProc);
   bool isTrans = myRank == 0;
@@ -235,14 +237,14 @@ int main(int argc, char *argv[]) {
       COM_get_function_handle(("RFC" + std::string(".write_overlay")).c_str());
   int RFC_read =
       COM_get_function_handle(("RFC" + std::string(".read_overlay")).c_str());
-  int RFC_load =
-      COM_get_function_handle(("RFC" + std::string(".load_transfer")).c_str());
-  int RFC_clear =
-      COM_get_function_handle(("RFC" + std::string(".clear_overlay")).c_str());
+  // int RFC_load =
+  //     COM_get_function_handle(("RFC" + std::string(".load_transfer")).c_str());
+  // int RFC_clear =
+  //     COM_get_function_handle(("RFC" + std::string(".clear_overlay")).c_str());
   int RFC_transfer = COM_get_function_handle(
       ("RFC" + std::string(".least_squares_transfer")).c_str());
-  int RFC_interpolate =
-      COM_get_function_handle(("RFC" + std::string(".interpolate")).c_str());
+  // int RFC_interpolate =
+  //     COM_get_function_handle(("RFC" + std::string(".interpolate")).c_str());
 
   // set profiling
   // COM_set_profiling_barrier( RFC_transfer, comm);
@@ -348,10 +350,10 @@ int main(int argc, char *argv[]) {
   spcDataItmName.push_back("nc");
   dataVec.resize(2);
   int dataItemSize;
-  int dataItemNComp = 3;
+  //int dataItemNComp = 3;
   std::string dataItemUnits;
-  COM_Type dataItemType;
-  char dataItemLoc;
+  //COM_Type dataItemType;
+  //char dataItemLoc;
   int stride = 0;
   int cap = 0;
   double *dataAry = NULL;
@@ -380,7 +382,7 @@ int main(int argc, char *argv[]) {
                       paneList[iWin][iPane], &dataAry, &stride, &cap);
         COM_get_size((wnames[iWin] + "." + attLst[iWin]).c_str(),
                      paneList[iWin][iPane], &dataItemSize);
-        int isize = cap * stride;
+        //int isize = cap * stride;
         Inf << "\n\tRank #" << myRank << " size = " << dataItemSize;
         Inf << "\n\tRank #" << myRank << " cap = " << cap;
         Inf << "\n\tRank #" << myRank << " stride = " << stride;
@@ -390,9 +392,8 @@ int main(int argc, char *argv[]) {
     }
 
     // make sure dataitems are registered
-    int data0 = COM_get_dataitem_handle(wnames[0] + "." + attLst[0].c_str());
-    int data1 = COM_get_dataitem_handle(wnames[1] + "." + attLst[1].c_str());
-    COM_assertion(data0 > 0 && data1 > 0);
+    COM_assertion(COM_get_dataitem_handle(wnames[0] + "." + attLst[0]) > 0 &&
+                  COM_get_dataitem_handle(wnames[1] + "." + attLst[1]) > 0);
   }
 
   // read the overlay

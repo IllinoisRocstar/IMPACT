@@ -26,8 +26,8 @@ TEST(COMGetModuleTest, GetModule) {
       << "Module list has initial values when it should not" << std::endl;
   EXPECT_TRUE(window_names.empty())
       << "Window list has initial values when it should not" << std::endl;
-  bool module_names_works = false;
-  bool window_names_works = false;
+  //bool module_names_works = false;
+  //bool window_names_works = false;
   std::vector<std::string>::iterator ni = module_names.begin();
 
   // push string names of windows and modules into vectors
@@ -117,13 +117,13 @@ TEST(COMGetModuleTest, GetModule) {
   // in the case where modules and windows were not properly unloaded, print out
   // the remaining windows and modules
   if (!module_names.empty() && !(module_names == imods)) {
-    module_names_works = false;
+    //module_names_works = false;
     ni = module_names.begin();
     std::cout << "Final module list:" << std::endl;
     while (ni != module_names.end()) std::cout << *ni++ << std::endl;
   }
   if (!window_names.empty() && !(window_names == iwins)) {
-    window_names_works = false;
+    //window_names_works = false;
     ni = window_names.begin();
     std::cout << "Final window list:" << std::endl;
     while (ni != window_names.end()) std::cout << *ni++ << std::endl;
