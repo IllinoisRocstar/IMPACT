@@ -18,7 +18,7 @@ breaking changes to behavior.
 ## Getting Started ##
 To acquire IMPACT, you can clone it with the following command:
 ```
-$ git clone git@git.illinois.rocstar:IR/IMPACT-NO-IRAD.git
+$ git clone git@github.com:IllinoisRocstar/IMPACT.git
 ```
 ## Build Instructions ##
 ### Dependencies ###
