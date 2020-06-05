@@ -19,7 +19,8 @@
 #include "Agent.h"
 #include "Coupling.h"
 #include "Interpolate.h"
-#include "RocBlas.h"
+#include "RocBlas-SIM.h"
+#include <array>
 
 // TODO: a new debug verbosity macro will be implemented to 
 //       replace these local macros

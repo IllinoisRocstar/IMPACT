@@ -318,7 +318,7 @@ class Vector_2 {
   }
 
   bool operator<(const Vector_2 &v) const {
-    return _x < v._x || _x == v._x && _y < v._y;
+    return (_x < v._x || (_x == v._x && _y < v._y));
   }
 
   bool is_null() const { return _x == 0 && _y == 0; }

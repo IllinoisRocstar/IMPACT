@@ -65,7 +65,7 @@ class COMCModuleFuctionTest : public ::testing::Test {
     for (int i = 0; i < ARGC; ++i) {
       delete v[i];
     }
-    delete v;
+    delete[] v;
     COM_LOAD_MODULE_STATIC_DYNAMIC(COMTESTMOD, "TestCWin");
 
     // Get function handle and execute functions 0-4
@@ -115,7 +115,7 @@ class COMFModuleFunctionTest : public ::testing::Test {
     for (int i = 0; i < ARGC; ++i) {
       delete v[i];
     }
-    delete v;
+    delete[] v;
     COM_LOAD_MODULE_STATIC_DYNAMIC(COMFTESTMOD, "TestFWin");
 
     // Get function handle and execute functions 0-4

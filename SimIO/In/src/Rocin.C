@@ -49,9 +49,8 @@
 USE_COM_NAME_SPACE
 #endif
 
-// #define DEBUG_DUMP_PREFIX "."
-// #define DEBUG_MSG(x) std::cout << "ROCIN DEBUG: " << __LINE__ << ": " << x <<
-// std::endl
+//#define DEBUG_DUMP_PREFIX "./dbg_"
+//#define DEBUG_MSG(x) std::cout << "ROCIN DEBUG: " << __LINE__ << ": " << x << std::endl;
 #define DEBUG_MSG(x)
 
 #ifdef DEBUG_DUMP_PREFIX
@@ -2132,7 +2131,7 @@ static void load_data_CGNS(BlockMM_CGNS::iterator p,
       } else {
         COM_get_array(name.c_str(), 0, &data);
       }
-
+      
       switch ((*q).m_position) {
         case 'w':
           CG_CHECK_RET(cg_goto,

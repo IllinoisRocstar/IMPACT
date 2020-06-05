@@ -67,7 +67,7 @@ class Environment : public std::vector<std::pair<std::string, std::string>> {
   Environment();
   int SetEnv(const std::string &, const std::string &, bool);
   void UnSetEnv(const std::string &);
-#ifndef DARWIN
+#ifndef __APPLE__
   int ClearEnv();
 #endif
   const std::string GetEnv(const std::string &) const;

@@ -2,7 +2,7 @@
 
 #include "Interpolate.h"
 
-#include "RocBlas.h"
+#include "RocBlas-SIM.h"
 
 #include "Agent.h"
 #include "Coupling.h"
