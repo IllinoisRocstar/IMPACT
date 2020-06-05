@@ -984,6 +984,10 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
     // Write/rewrite the time values to the BaseIterativeData_t node.
     CG_CHECK(cg_biter_write, (fn, B, "TimeIterValues", nSteps));
     CG_CHECK(cg_goto, (fn, B, "BaseIterativeData_t", 1, "end"));
+    std::cout << "nSteps = " << nSteps << "\n";
+    std::cout << "times[0] = " << times[0] << "\n";
+    for (const auto &t : times)
+        std::cout << t << std::endl;
     CG_CHECK(cg_array_write,
              ("TimeValues", CGNS_ENUMV(RealDouble), 1,
               reinterpret_cast<const cgsize_t*>(&nSteps), &(times[0])));

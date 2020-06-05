@@ -77,7 +77,7 @@ TEST(COMGetModuleTest, GetModule) {
   while (ni != swins.end()) {
     std::vector<std::string>::iterator mni =
         std::find(window_names.begin(), window_names.end(), *ni);
-    EXPECT_NE(mni, module_names.end()) << "Couldn't find expected window: "
+    EXPECT_NE(mni, window_names.end()) << "Couldn't find expected window: "
                                        << "\"" << *ni << "\"" << std::endl;
     ni++;
   }
