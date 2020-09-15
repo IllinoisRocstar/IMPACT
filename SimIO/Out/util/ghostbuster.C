@@ -22,15 +22,15 @@
 
 using namespace std;
 
-#define CG_CHECK(routine, args)                                        \
-  {                                                                    \
-    int ier = routine args;                                            \
-    if (ier != 0) {                                                    \
-      cerr << "ghostbuster: " #routine " (line " << __LINE__ << " in " \
-           << __FILE__ << ") failed: " << cg_get_error() << std::endl; \
-      return -1;                                                       \
-    }                                                                  \
-  }
+#define CG_CHECK(routine, args)                                                \
+  do {                                                                         \
+    int ier = routine args;                                                    \
+    if (ier != 0) {                                                            \
+      cerr << "ghostbuster: " #routine " (line " << __LINE__ << " in "         \
+           << __FILE__ << ") failed: " << cg_get_error() << std::endl;         \
+      return -1;                                                               \
+    }                                                                          \
+  } while (0)
 
 class AutoCloser {
  public:

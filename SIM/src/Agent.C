@@ -22,7 +22,7 @@
 #include "RocBlas-SIM.h"
 #include <array>
 
-// TODO: a new debug verbosity macro will be implemented to 
+// TODO: a new debug verbosity macro will be implemented to
 //       replace these local macros
 #define MAN_DEBUG(l, x) ((void)0)
 
@@ -78,7 +78,7 @@ CloneDataItem::CloneDataItem(Agent *ag, bool cond, std::string target_window_,
 
 void CloneDataItem::create(const std::string &bufname) {
   if (parent_window.empty()) // filling
-    parent_window = agent->get_surface_window();
+    parent_window = agent->get_surf_win();
 
   if (COM_get_dataitem_handle(bufname + attr) > 0) {
     char loc1, loc2;
@@ -113,7 +113,7 @@ void CloneDataItem::create(const std::string &bufname) {
 
   if (!ptnname.empty())
     if (ptnname[0] == '.')
-      ptnname = agent->get_surface_window() + ptnname;
+      ptnname = agent->get_surf_win() + ptnname;
 
   COM_clone_dataitem(bufname + attr, parent_window + parent_attr, wg, ptnname,
                      val);
@@ -130,7 +130,7 @@ UseDataItem::UseDataItem(Agent *ag, std::string target_window_,
 
 void UseDataItem::create(const std::string &bufname) {
   if (parent_window.empty())
-    parent_window = agent->get_surface_window();
+    parent_window = agent->get_surf_win();
 
   if (COM_get_dataitem_handle(bufname + attr) > 0) {
     char loc1, loc2;
@@ -285,6 +285,10 @@ void Agent::create_buffer_internal() {
   // create_registered_dataitems(surf_all);
   create_registered_window_dataitems(surf_all);
   COM_window_init_done(surf_all);
+
+  // Split surface windows
+  if (has_bcflag)
+    split_surface_window(surf_all, surf_i, surf_nb, surf_b, surf_ni);
 }
 
 void Agent::assign_dataitems() {
@@ -365,6 +369,17 @@ void Agent::init_function_handles() {
   obtain_attr_handle = COM_get_function_handle("IN.obtain_dataitem");
   write_attr_handle = COM_get_function_handle("OUT.write_dataitem");
   write_ctrl_handle = COM_get_function_handle("OUT.write_rocin_control_file");
+
+  COM_assertion_msg(read_files_handle > 0,
+                    "ERROR: Agent::init_function_handles.\n");
+  COM_assertion_msg(read_by_control_handle > 0,
+                    "ERROR: Agent::init_function_handles.\n");
+  COM_assertion_msg(obtain_attr_handle > 0,
+                    "ERROR: Agent::init_function_handles.\n");
+  COM_assertion_msg(write_attr_handle > 0,
+                    "ERROR: Agent::init_function_handles.\n");
+  COM_assertion_msg(write_ctrl_handle > 0,
+                    "ERROR: Agent::init_function_handles.\n");
 
   COM_set_profiling_barrier(read_files_handle, communicator);
   COM_set_profiling_barrier(read_by_control_handle, communicator);
@@ -455,27 +470,23 @@ void Agent::split_surface_window(const std::string &surf_all,
                                  const std::string &surf_b,
                                  const std::string &surf_ni) {
   std::string bcflag = surf_all + ".bcflag";
-  std::string atts = surf_all + ".all";
+  std::string all = surf_all + ".all";
 
-  if (COM_get_window_handle(surf_i) <= 0)
-    COM_new_window(surf_i); // bcflag == 0 or bcflag == 1
-  COM_use_dataitem(surf_i, atts, 0, bcflag, 0);
-  COM_use_dataitem(surf_i, atts, 0, bcflag, 1);
+  COM_new_window(surf_i); // bcflag == 0 or bcflag == 1
+  COM_use_dataitem(surf_i, all, 1, bcflag, 0);
+  COM_use_dataitem(surf_i, all, 1, bcflag, 1);
   COM_window_init_done(surf_i);
 
-  if (COM_get_window_handle(surf_nb) <= 0)
-    COM_new_window(surf_nb); // bcflag == 0
-  COM_use_dataitem(surf_nb, atts, 1, bcflag, 0);
+  COM_new_window(surf_nb); // bcflag == 0
+  COM_use_dataitem(surf_nb, all, 1, bcflag, 0);
   COM_window_init_done(surf_nb);
 
-  if (COM_get_window_handle(surf_b) <= 0)
-    COM_new_window(surf_b); // bcflag == 1
-  COM_use_dataitem(surf_b, atts, 1, bcflag, 1);
+  COM_new_window(surf_b); // bcflag == 1
+  COM_use_dataitem(surf_b, all, 1, bcflag, 1);
   COM_window_init_done(surf_b);
 
-  if (COM_get_window_handle(surf_ni) <= 0)
-    COM_new_window(surf_ni); // bcflag == 2
-  COM_use_dataitem(surf_ni, atts, 1, bcflag, 2);
+  COM_new_window(surf_ni); // bcflag == 2
+  COM_use_dataitem(surf_ni, all, 1, bcflag, 2);
   COM_window_init_done(surf_ni);
 }
 
@@ -497,9 +508,6 @@ void Agent::init_module(double t) {
   COM_call_function(init_handle, &t, &communicator, &ic_handle,
                     surf_window_in.c_str(), vol_window_in.c_str(),
                     &obtain_attr_handle);
-
-  // Split surface windows
-  split_surface_window(surf_all, surf_i, surf_nb, surf_b, surf_ni);
 
   // Delete input buffer windows
   COM_delete_window(surf_window_in);
@@ -524,9 +532,13 @@ void Agent::output_restart_files(double t) {
     COM_call_function(pre_out_handle);
 
   // Write out surface sub-windows
-  write_data_files(t, surf_b, surf_b + ".all");
-  write_data_files(t, surf_nb, surf_nb + ".all");
-  write_data_files(t, surf_ni, surf_ni + ".all");
+  if (has_bcflag) {
+    write_data_files(t, surf_b, surf_b + ".all");
+    write_data_files(t, surf_nb, surf_nb + ".all");
+    write_data_files(t, surf_ni, surf_ni + ".all");
+  } else {
+    write_data_files(t, surf_all, surf_all + ".all");
+  }
   write_control_file(t, surf_name + "*", surf_window);
 
   // Write out volume window
@@ -721,6 +733,9 @@ void Agent::init_callback(const char *surf_win, const char *vol_win,
 
   surf_window = surf_win;
   vol_window = vol_win;
+
+  if (COM_get_dataitem_handle(surf_window + ".bcflag") > 0)
+    has_bcflag = true;
 
   // create a window buffer to inherit from surface window
   // they are like ifluid_all, iburn_all, etc

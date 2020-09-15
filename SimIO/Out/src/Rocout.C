@@ -58,67 +58,18 @@ struct WriteAttrInfo {
   const bool m_cloned;
 };
 
-#define SwitchOnDataType(dType, funcCall) \
-  switch (dType) {                        \
-    case COM_CHAR:                        \
-    case COM_BYTE: {                      \
-      typedef char TT;                    \
-      funcCall;                           \
-    } break;                              \
-    case COM_UNSIGNED_CHAR: {             \
-      typedef unsigned char TT;           \
-      funcCall;                           \
-    } break;                              \
-    case COM_SHORT: {                     \
-      typedef short TT;                   \
-      funcCall;                           \
-    } break;                              \
-    case COM_UNSIGNED_SHORT: {            \
-      typedef unsigned short TT;          \
-      funcCall;                           \
-    } break;                              \
-    case COM_INT: {                       \
-      typedef int TT;                     \
-      funcCall;                           \
-    } break;                              \
-    case COM_UNSIGNED: {                  \
-      typedef unsigned int TT;            \
-      funcCall;                           \
-    } break;                              \
-    case COM_LONG: {                      \
-      typedef long TT;                    \
-      funcCall;                           \
-    } break;                              \
-    case COM_UNSIGNED_LONG: {             \
-      typedef unsigned long TT;           \
-      funcCall;                           \
-    } break;                              \
-    case COM_FLOAT: {                     \
-      typedef float TT;                   \
-      funcCall;                           \
-    } break;                              \
-    case COM_DOUBLE: {                    \
-      typedef double TT;                  \
-      funcCall;                           \
-    } break;                              \
-    case COM_LONG_DOUBLE: {               \
-      typedef long double TT;             \
-      funcCall;                           \
-    } break;                              \
-  }
-
-#define ERROR_MSG(msg)                          \
-  {                                             \
-    if (_options["errorhandle"] != "ignore") {  \
-      std::cerr << msg << std::endl;            \
-      if (_options["errorhandle"] == "abort") { \
-        if (COMMPI_Initialized())               \
-          MPI_Abort(MPI_COMM_WORLD, 0);         \
-        else                                    \
-          abort();                              \
-      }                                         \
-    }                                           \
-  }
+#define ERROR_MSG(msg)                                                         \
+  do {                                                                         \
+    if (_options["errorhandle"] != "ignore") {                                 \
+      std::cerr << msg << std::endl;                                           \
+      if (_options["errorhandle"] == "abort") {                                \
+        if (COMMPI_Initialized())                                              \
+          MPI_Abort(MPI_COMM_WORLD, 0);                                        \
+        else                                                                   \
+          abort();                                                             \
+      }                                                                        \
+    }                                                                          \
+  } while (0)
 
 #ifdef USE_PTHREADS
 Semaphore Rocout::_writesem(MAX_ASYNC_WRITES, MAX_ASYNC_WRITES);

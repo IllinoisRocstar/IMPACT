@@ -24,10 +24,11 @@
 USE_COM_NAME_SPACE
 #endif
 
-// #define DEBUG_DUMP_PREFIX "/turing/home/jnorris/rocout/"
-// #define DEBUG_MSG(x) std::cout << "ROCOUT DEBUG: " << __LINE__ << ": " << x
-// << std::endl
-#define DEBUG_MSG(x)
+/*
+#define DEBUG_MSG(x) std::cout << "ROCOUT DEBUG: " << __LINE__ << ": " << x
+    << std::endl
+*/
+#define DEBUG_MSG(x) (void(0))
 
 #ifdef DEBUG_DUMP_PREFIX
 static std::string s_material;
@@ -900,30 +901,31 @@ static void hdf_error_message(const char* s, int i,
 
 /** New informative error-checking macro to replace hdf_error_message().
  */
-#define HDF_CHECK(routine, args)                                             \
-  {                                                                          \
-    intn status = HDF4::routine args;                                        \
-    if (status == FAIL && errorhandle != "ignore") {                         \
-      std::cerr << "Rocout::write_dataitem: " #routine " (line " << __LINE__ \
-                << " in " << __FILE__ << ") failed: " << HDF4::error_msg()   \
-                << '\n'                                                      \
-                << "in write_data( fname == '" << fname << "', label == '"   \
-                << label << "', units == '" << units                         \
-                << "', ... , rank == " << rank << ", shape[] == { "          \
-                << shape[0];                                                 \
-      {                                                                      \
-        int x;                                                               \
-        for (x = 1; x < rank; ++x) std::cerr << ", " << shape[x];            \
-      }                                                                      \
-      std::cerr << " }, ... )" << std::endl;                                 \
-      if (errorhandle == "abort") {                                          \
-        if (COMMPI_Initialized())                                            \
-          MPI_Abort(MPI_COMM_WORLD, 0);                                      \
-        else                                                                 \
-          abort();                                                           \
-      }                                                                      \
-    }                                                                        \
-  }
+#define HDF_CHECK(routine, args)                                               \
+  do {                                                                         \
+    intn status = HDF4::routine args;                                          \
+    if (status == FAIL && errorhandle != "ignore") {                           \
+      std::cerr << "Rocout::write_dataitem: " #routine " (line " << __LINE__   \
+                << " in " << __FILE__ << ") failed: " << HDF4::error_msg()     \
+                << '\n'                                                        \
+                << "in write_data( fname == '" << fname << "', label == '"     \
+                << label << "', units == '" << units                           \
+                << "', ... , rank == " << rank << ", shape[] == { "            \
+                << shape[0];                                                   \
+      {                                                                        \
+        int x;                                                                 \
+        for (x = 1; x < rank; ++x)                                             \
+          std::cerr << ", " << shape[x];                                       \
+      }                                                                        \
+      std::cerr << " }, ... )" << std::endl;                                   \
+      if (errorhandle == "abort") {                                            \
+        if (COMMPI_Initialized())                                              \
+          MPI_Abort(MPI_COMM_WORLD, 0);                                        \
+        else                                                                   \
+          abort();                                                             \
+      }                                                                        \
+    }                                                                          \
+  } while (0)
 
 static int write_data(const char *fname, const char *label, const char *units,
                       const char *format, const char *coordsys, const int _rank,
