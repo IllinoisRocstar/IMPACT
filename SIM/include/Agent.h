@@ -257,15 +257,30 @@ public:
    */
   ///@{
   /**
-   * Get name of solver surface window.
+   * Get name of surface interface window.
    * @return surface window name
    */
-  const std::string &get_surface_window() const { return surf_window; }
+  const std::string &get_surf_win() const { return surf_all; }
   /**
-   * Get name of solver volume window.
-   * @return volume window name
+   * Get name of interacting surface interface window.
+   * @return surface window name
    */
-  const std::string &get_volume_window() const { return vol_window; }
+  const std::string &get_surf_win_i() const { return surf_i; }
+  /**
+   * Get name of interacting, non-burning surface interface window.
+   * @return surface window name
+   */
+  const std::string &get_surf_win_nb() const { return surf_nb; }
+  /**
+   * Get name of interacting, burning surface interface window.
+   * @return surface window name
+   */
+  const std::string &get_surf_win_b() const { return surf_b; }
+  /**
+   * Get name of non-interacting surface interface window.
+   * @return surface window name
+   */
+  const std::string &get_surf_win_ni() const { return surf_ni; }
   /**
    * Get the update solution method of the physics module
    * @return PhysicsAction pointer
@@ -662,6 +677,8 @@ protected:
   const std::string surf_nb;  ///< Non-burning surface window (bcflag = 0)
   const std::string surf_b;   ///< Burning surface window (bcflag = 1)
   const std::string surf_ni;  ///< Non-interacting surface window (bcflag = 2)
+
+  bool has_bcflag{false}; ///< Flag if surf_window.bcflag exists
   ///@}
 
 private:
