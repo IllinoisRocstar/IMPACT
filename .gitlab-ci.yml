@@ -1,3 +1,7 @@
+stages:
+  - test
+  - deploy
+
 test:ubuntu16:
   image: ilrocstar/impact-test-img-ubuntu16:v1
   tags:
@@ -51,6 +55,10 @@ test:ubuntu18:
       -DCMAKE_Fortran_COMPILER=mpif90.mpich ..
     - make -j$(nproc)
     - ctest --output-on-failure
+    - cpack
+  artifacts:
+    paths:
+      - "/builds/IR/IMPACT-NO-IRAD/build/*.deb"
 
 test:centos7:
   image: ilrocstar/impact-centos7:v1
@@ -75,3 +83,28 @@ test:centos7:
       -DMFHDF_LIB=/usr/lib64/hdf/libmfhdf.a ..
     - make -j$(nproc)
     - ctest3 --output-on-failure
+    - cpack3 -G RPM
+  artifacts:
+    paths:
+      - "/builds/IR/IMPACT-NO-IRAD/build/*.rpm"
+
+deploy:all:
+  stage: deploy
+  only:
+    - master@IR/IMPACT-NO-IRAD
+  script: 
+    - apt-get install -y openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+
+    ##
+    ## Create the SSH directory and give it the right permissions
+    ##
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+    - scp -r /builds/IR/IMPACT-NO-IRAD/build/*.deb nemosys@192.168.1.122:/home/nemosys/repo
+    - scp -r /builds/IR/IMPACT-NO-IRAD/build/*.rpm nemosys@192.168.1.122:/home/nemosys/rpmrepo
+  dependencies:
+    - test:ubuntu18
+    - test:centos7
