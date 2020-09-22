@@ -1,4 +1,4 @@
-#include "RocBlas.h"
+#include "RocBlas-SIM.h"
 #include "com.h"
 
 COM_EXTERN_MODULE(Simpal)

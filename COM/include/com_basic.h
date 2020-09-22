@@ -100,7 +100,7 @@ typedef void (COM_Object::*COM_Member_func_ptr)();
 #endif
 
 /** The maximum length of name string passed by users. */
-#define MAX_NAMELEN 128
+const int MAX_NAMELEN = 128;
 
 typedef int COM_Type;       /**< Indices for derived data types.*/
 typedef void (*Func_ptr)(); /**< Pointer of functions. */

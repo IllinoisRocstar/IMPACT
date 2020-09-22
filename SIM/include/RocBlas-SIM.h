@@ -1,5 +1,5 @@
-#ifndef _ROCBLAS_H_
-#define _ROCBLAS_H_
+#ifndef _ROCBLAS_SIM_H_
+#define _ROCBLAS_SIM_H_
 
 class RocBlas {
 public:
@@ -31,4 +31,4 @@ public:
   static int maxof_scalar;
 };
 
-#endif //_ROCBLAS_H_
+#endif //_ROCBLAS_SIM_H_

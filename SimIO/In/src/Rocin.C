@@ -49,10 +49,12 @@
 USE_COM_NAME_SPACE
 #endif
 
-// #define DEBUG_DUMP_PREFIX "."
-// #define DEBUG_MSG(x) std::cout << "ROCIN DEBUG: " << __LINE__ << ": " << x <<
-// std::endl
-#define DEBUG_MSG(x)
+/*
+#define DEBUG_DUMP_PREFIX "./dbg_"
+#define DEBUG_MSG(x)                                                           \
+  std::cout << "ROCIN DEBUG: " << __LINE__ << ": " << x << std::endl;
+*/
+#define DEBUG_MSG(x) (void(0))
 
 #ifdef DEBUG_DUMP_PREFIX
 static void DebugDump(std::ofstream &fout, int n, int dType, void *data) {
@@ -118,7 +120,7 @@ inline T cast_err_func(int (*glob)(const char *, int, T, glob_t *),
  ** \param val The return value. (Input)
  **/
 #define HDF4_CHECK_RET(routine, args, retval)                                  \
-  {                                                                            \
+  do {                                                                         \
     if ((routine args) == FAIL) {                                              \
       sleep(1);                                                                \
       if ((routine args) == FAIL) {                                            \
@@ -134,17 +136,16 @@ inline T cast_err_func(int (*glob)(const char *, int, T, glob_t *),
         }                                                                      \
       }                                                                        \
     }                                                                          \
-  }
+  } while (0)
 /*
-#define HDF4_CHECK_RET(routine, args, retval)	\
-{ \
-  if ((routine args) == FAIL) {  \
-    std::cerr << "ROCIN ERROR: " #routine " (line " \
-              << __LINE__ << " in " << __FILE__ << ") failed: " \
-              << HDF4::error_msg() << std::endl; \
-    retval; \
-  } \
-}
+#define HDF4_CHECK_RET(routine, args, retval)                                  \
+  do {                                                                         \
+    if ((routine args) == FAIL) {                                              \
+      std::cerr << "ROCIN ERROR: " #routine " (line " << __LINE__ << " in "    \
+                << __FILE__ << ") failed: " << HDF4::error_msg() << std::endl; \
+      retval;                                                                  \
+    }                                                                          \
+  } while (0)
 */
 #define HDF4_CHECK(routine, args) HDF4_CHECK_RET(routine, args, )
 
@@ -177,16 +178,16 @@ class AutoCloser {
  ** \param args The argument list, in parentheses. (Input)
  ** \param val The return value. (Input)
  **/
-#define CG_CHECK_RET(routine, args, retval)                              \
-  {                                                                      \
-    int ier = routine args;                                              \
-    if (ier != 0) {                                                      \
-      std::cerr << "SimIO::INPUT ERROR: " #routine " (line " << __LINE__ \
-                << " in " << __FILE__ << ") failed: " << cg_get_error()  \
-                << std::endl;                                            \
-      retval;                                                            \
-    }                                                                    \
-  }
+#define CG_CHECK_RET(routine, args, retval)                                    \
+  do {                                                                         \
+    int ier = routine args;                                                    \
+    if (ier != 0) {                                                            \
+      std::cerr << "SimIO::INPUT ERROR: " #routine " (line " << __LINE__       \
+                << " in " << __FILE__ << ") failed: " << cg_get_error()        \
+                << std::endl;                                                  \
+      retval;                                                                  \
+    }                                                                          \
+  } while (0)
 #define CG_CHECK(routine, args) CG_CHECK_RET(routine, args, )
 
 /**
@@ -286,16 +287,16 @@ bool elementType_to_string(CGNS_ENUMT(ElementType_t) etype,
  ** \param args The argument list, in parentheses. (Input)
  ** \param val The return value. (Input)
  **/
-#define VTK_CHECK_RET(routine, args, retval)                             \
-  {                                                                      \
-    int ier = routine args;                                              \
-    if (ier != 0) {                                                      \
-      std::cerr << "SimIO::INPUT ERROR: " #routine " (line " << __LINE__ \
-                << " in " << __FILE__ << ") failed: " << cg_get_error()  \
-                << std::endl;                                            \
-      retval;                                                            \
-    }                                                                    \
-  }
+#define VTK_CHECK_RET(routine, args, retval)                                   \
+  do {                                                                         \
+    int ier = routine args;                                                    \
+    if (ier != 0) {                                                            \
+      std::cerr << "SimIO::INPUT ERROR: " #routine " (line " << __LINE__       \
+                << " in " << __FILE__ << ") failed: " << cg_get_error()        \
+                << std::endl;                                                  \
+      retval;                                                                  \
+    }                                                                          \
+  } while (0)
 #define CG_CHECK(routine, args) CG_CHECK_RET(routine, args, )
 
 /**
@@ -2132,7 +2133,7 @@ static void load_data_CGNS(BlockMM_CGNS::iterator p,
       } else {
         COM_get_array(name.c_str(), 0, &data);
       }
-
+      
       switch ((*q).m_position) {
         case 'w':
           CG_CHECK_RET(cg_goto,

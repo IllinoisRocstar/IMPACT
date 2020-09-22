@@ -9,6 +9,7 @@
 #ifndef _COMLINE_H_
 #define _COMLINE_H_
 #include <istream>
+#include <sstream>
 #include <map>
 #include <ostream>
 #include <string>
