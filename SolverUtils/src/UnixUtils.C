@@ -235,7 +235,7 @@ void Environment::UnSetEnv(const std::string &var) {
   this->init();
 }
 
-#ifndef DARWIN
+#ifndef __APPLE__
 int Environment::ClearEnv() {
   clearenv();
   this->init();

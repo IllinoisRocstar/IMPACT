@@ -31,9 +31,11 @@ USE_COM_NAME_SPACE
 #endif
 
 // #define DEBUG_DUMP_PREFIX "."
-//#define DEBUG_MSG(x) std::cout << "ROCOUT DEBUG: " << __LINE__ << ": " << x <<
-//std::endl
-#define DEBUG_MSG(x)
+/*
+#define DEBUG_MSG(x)                                                           \
+  std::cout << "ROCOUT DEBUG: " << __LINE__ << ": " << x << std::endl
+*/
+#define DEBUG_MSG(x) (void(0))
 
 /**
  ** Perform CGNS error-checking.
@@ -44,21 +46,21 @@ USE_COM_NAME_SPACE
  ** \param routine The CGNS function to call. (Input)
  ** \param args The argument list, in parentheses. (Input)
  **/
-#define CG_CHECK(routine, args)                                              \
-  {                                                                          \
-    int ier = routine args;                                                  \
-    if (ier != 0 && errorhandle != "ignore") {                               \
-      std::cerr << "Rocout::write_dataitem: " #routine " (line " << __LINE__ \
-                << " in " << __FILE__ << ") failed: " << cg_get_error()      \
-                << std::endl;                                                \
-      if (errorhandle == "abort") {                                          \
-        if (COMMPI_Initialized())                                            \
-          MPI_Abort(MPI_COMM_WORLD, 0);                                      \
-        else                                                                 \
-          abort();                                                           \
-      }                                                                      \
-    }                                                                        \
-  }
+#define CG_CHECK(routine, args)                                                \
+  do {                                                                         \
+    int ier = routine args;                                                    \
+    if (ier != 0 && errorhandle != "ignore") {                                 \
+      std::cerr << "Rocout::write_dataitem: " #routine " (line " << __LINE__   \
+                << " in " << __FILE__ << ") failed: " << cg_get_error()        \
+                << std::endl;                                                  \
+      if (errorhandle == "abort") {                                            \
+        if (COMMPI_Initialized())                                              \
+          MPI_Abort(MPI_COMM_WORLD, 0);                                        \
+        else                                                                   \
+          abort();                                                             \
+      }                                                                        \
+    }                                                                          \
+  } while (0)
 
 /**
  ** Call a templated function based on a Roccom data type.
@@ -69,33 +71,35 @@ USE_COM_NAME_SPACE
  ** \param dType The Roccom data type. (Input)
  ** \param funcCall The templated function, with arguments. (Input)
  **/
-#define SwitchOnCOMDataType(dType, funcCall) \
-  switch (dType) {                           \
-    case COM_CHAR:                           \
-    case COM_CHARACTER: {                    \
-      typedef char COM_TT;                   \
-      funcCall;                              \
-      break;                                 \
-    }                                        \
-    case COM_INT:                            \
-    case COM_INTEGER: {                      \
-      typedef int COM_TT;                    \
-      funcCall;                              \
-      break;                                 \
-    }                                        \
-    case COM_FLOAT:                          \
-    case COM_REAL: {                         \
-      typedef float COM_TT;                  \
-      funcCall;                              \
-      break;                                 \
-    }                                        \
-    case COM_DOUBLE:                         \
-    case COM_DOUBLE_PRECISION: {             \
-      typedef double COM_TT;                 \
-      funcCall;                              \
-      break;                                 \
-    }                                        \
-  }
+#define SwitchOnCOMDataType(dType, funcCall)                                   \
+  do {                                                                         \
+    switch (dType) {                                                           \
+    case COM_CHAR:                                                             \
+    case COM_CHARACTER: {                                                      \
+      typedef char COM_TT;                                                     \
+      funcCall;                                                                \
+      break;                                                                   \
+    }                                                                          \
+    case COM_INT:                                                              \
+    case COM_INTEGER: {                                                        \
+      typedef int COM_TT;                                                      \
+      funcCall;                                                                \
+      break;                                                                   \
+    }                                                                          \
+    case COM_FLOAT:                                                            \
+    case COM_REAL: {                                                           \
+      typedef float COM_TT;                                                    \
+      funcCall;                                                                \
+      break;                                                                   \
+    }                                                                          \
+    case COM_DOUBLE:                                                           \
+    case COM_DOUBLE_PRECISION: {                                               \
+      typedef double COM_TT;                                                   \
+      funcCall;                                                                \
+      break;                                                                   \
+    }                                                                          \
+    }                                                                          \
+  } while (0)
 
 /**
  ** Automatically close a CGNS file.
@@ -984,6 +988,12 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
     // Write/rewrite the time values to the BaseIterativeData_t node.
     CG_CHECK(cg_biter_write, (fn, B, "TimeIterValues", nSteps));
     CG_CHECK(cg_goto, (fn, B, "BaseIterativeData_t", 1, "end"));
+    /*
+    std::cout << "nSteps = " << nSteps << "\n";
+    std::cout << "times[0] = " << times[0] << "\n";
+    for (const auto &t : times)
+        std::cout << t << std::endl;
+    */
     CG_CHECK(cg_array_write,
              ("TimeValues", CGNS_ENUMV(RealDouble), 1,
               reinterpret_cast<const cgsize_t*>(&nSteps), &(times[0])));
@@ -1922,7 +1932,8 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
           // Create CGNS connectivity node.
         } else if ((*a)->id() == COM::COM_RIDGES) {
           DEBUG_MSG("Special COM_RIDGES handling: zType == "
-                    << (zType == Structured ? "Structured" : "Unstructured")
+                    << (zType == CGNS_ENUMV(Structured) ? "Structured"
+                                                        : "Unstructured")
                     << ", size_of_components() == "
                     << (*a)->size_of_components()
                     << ", size_of_items() == " << (*a)->size_of_items());
@@ -2294,12 +2305,13 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
           if (writeGhost) {
             DEBUG_MSG("Calling cg_array_write( name == '"
                       << label << "', dataType == "
-                      << (COM2CGNS(dType) == RealSingle
+                      << (COM2CGNS(dType) == CGNS_ENUMV(RealSingle)
                               ? "float"
-                              : (COM2CGNS(dType) == RealDouble
+                              : (COM2CGNS(dType) == CGNS_ENUMV(RealDouble)
                                      ? "double"
-                                     : (COM2CGNS(dType) == Character ? "char"
-                                                                     : "int?")))
+                                     : (COM2CGNS(dType) == CGNS_ENUMV(Character)
+                                            ? "char"
+                                            : "int?")))
                       << ", rank == " << rank << ", size[] = { " << size[0]
                       << ", " << size[1] << ", " << size[2] << " } )");
             CG_CHECK(cg_array_write,
@@ -2308,12 +2320,13 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
           } else {
             DEBUG_MSG("Calling cg_array_core_write( name == '"
                       << label << "', dataType == "
-                      << (COM2CGNS(dType) == RealSingle
+                      << (COM2CGNS(dType) == CGNS_ENUMV(RealSingle)
                               ? "float"
-                              : (COM2CGNS(dType) == RealDouble
+                              : (COM2CGNS(dType) == CGNS_ENUMV(RealDouble)
                                      ? "double"
-                                     : (COM2CGNS(dType) == Character ? "char"
-                                                                     : "int?")))
+                                     : (COM2CGNS(dType) == CGNS_ENUMV(Character)
+                                            ? "char"
+                                            : "int?")))
                       << ", rank == " << rank << ", rind[] = { " << rind[0]
                       << ", " << rind[1] << ", " << rind[2] << ", " << rind[3]
                       << ", " << rind[4] << ", " << rind[5] << " }, size[] = { "
@@ -2521,12 +2534,13 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
           if (writeGhost) {
             DEBUG_MSG("Calling cg_array_write( name == '"
                       << label << "', dataType == "
-                      << (COM2CGNS(dType) == RealSingle
+                      << (COM2CGNS(dType) == CGNS_ENUMV(RealSingle)
                               ? "float"
-                              : (COM2CGNS(dType) == RealDouble
+                              : (COM2CGNS(dType) == CGNS_ENUMV(RealDouble)
                                      ? "double"
-                                     : (COM2CGNS(dType) == Character ? "char"
-                                                                     : "int?")))
+                                     : (COM2CGNS(dType) == CGNS_ENUMV(Character)
+                                            ? "char"
+                                            : "int?")))
                       << ", rank == " << rank << ", size[] = { " << size[0]
                       << ", " << size[1] << ", " << size[2] << " } )");
             CG_CHECK(cg_array_write,
@@ -2535,12 +2549,13 @@ void write_dataitem_CGNS(const std::string& fname_in, const std::string& mfile,
           } else {
             DEBUG_MSG("Calling cg_array_core_write( name == '"
                       << label << "', dataType == "
-                      << (COM2CGNS(dType) == RealSingle
+                      << (COM2CGNS(dType) == CGNS_ENUMV(RealSingle)
                               ? "float"
-                              : (COM2CGNS(dType) == RealDouble
+                              : (COM2CGNS(dType) == CGNS_ENUMV(RealDouble)
                                      ? "double"
-                                     : (COM2CGNS(dType) == Character ? "char"
-                                                                     : "int?")))
+                                     : (COM2CGNS(dType) == CGNS_ENUMV(Character)
+                                            ? "char"
+                                            : "int?")))
                       << ", rank == " << rank << ", rind[] = { " << rind[0]
                       << ", " << rind[1] << ", " << rind[2] << ", " << rind[3]
                       << ", " << rind[4] << ", " << rind[5] << " }, size[] = { "
