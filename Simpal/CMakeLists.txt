@@ -11,10 +11,6 @@ add_library(Simpal
 set_target_properties(Simpal PROPERTIES VERSION ${IMPACT_VERSION}
         SOVERSION ${IMPACT_MAJOR_VERSION})
 
-# rpath settings
-#set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
 target_include_directories(Simpal
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
