@@ -1,9 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
 
-# rpath settings
-#set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
 add_library(SurfX
     src/Rocface.C
     src/Base/rfc_assertions.C
