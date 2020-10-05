@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.1)
 
 set(IMPACT_MAJOR_VERSION 2)
 set(IMPACT_MINOR_VERSION 1)
-set(IMPACT_PATCH_VERSION 3)
+set(IMPACT_PATCH_VERSION 4)
 set(IMPACT_EXTRA_VERSION "" CACHE STRING "IMPACT extra version string")
 set(IMPACT_VERSION "${IMPACT_MAJOR_VERSION}.${IMPACT_MINOR_VERSION}")
 set(IMPACT_VERSION
@@ -82,16 +82,16 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Woverloaded-virtual -Wnon-virtual-dtor")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wstrict-null-sentinel -Wredundant-decls")
   # -Wshadow gives false positives for gcc versions <= 4.8
-  if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.9)
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.9)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wshadow")
-  endif (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.9)
+  endif(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.9)
   #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wfloat-conversion")
 endif()
 
 #mark_as_advanced(LIBRARY_OUTPUT_PATH EXECUTABLE_OUTPUT_PATH)
 
 # set up RPATH
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # Finding libraries ############################################################
@@ -175,10 +175,10 @@ write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/IMPACTVersion.cmake
     VERSION ${IMPACT_VERSION}
     COMPATIBILITY SameMajorVersion)
 install(FILES IMPACTConfig.cmake ${CMAKE_CURRENT_BINARY_DIR}/IMPACTVersion.cmake
-        DESTINATION lib/cmake/IMPACT)
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/IMPACT)
 install(EXPORT IMPACT
-        NAMESPACE IMPACT::
-        DESTINATION lib/cmake/IMPACT)
+    NAMESPACE IMPACT::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/IMPACT)
 
 # Documentation ################################################################
 
@@ -199,7 +199,7 @@ if(BUILD_DOCUMENTATION)
       COMMENT "Generating documentation")
   add_custom_target(docs ALL DEPENDS ${documentation})
   install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs
-          DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/IMPACT)
+      DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/IMPACT)
 endif()
 
 # Packaging ####################################################################
@@ -219,21 +219,21 @@ set(CPACK_PACKAGE_CONTACT "${IMPACT_AUTHOR_EMAIL}")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
 set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
 
-if (APPLE)
-    #TODO
-elseif (UNIX)
-    file(READ "/etc/os-release" OS_INFO)
-    string(REGEX MATCH "Ubuntu|CentOS" DIST ${OS_INFO})
-    if (DIST STREQUAL "Ubuntu")
-      set(Debian TRUE)
-    elseif (DIST STREQUAL "CentOS")
-      set(CentOS TRUE)
-    endif ()
-endif ()
+if(APPLE)
+  #TODO
+elseif(UNIX)
+  file(READ "/etc/os-release" OS_INFO)
+  string(REGEX MATCH "Ubuntu|CentOS" DIST ${OS_INFO})
+  if(DIST STREQUAL "Ubuntu")
+    set(Debian TRUE)
+  elseif(DIST STREQUAL "CentOS")
+    set(CentOS TRUE)
+  endif()
+endif()
 
 if(WIN32)
   set(CPACK_GENERATOR NSIS)
-elseif (Debian)
+elseif(Debian)
   if(CMAKE_VERSION VERSION_LESS 3.10)
     message(WARNING "CMake 3.10 or above is required to build a DEB package.")
   else()
@@ -271,7 +271,7 @@ elseif (Debian)
     #set(CPACK_DEBIAN_ARCHIVE_TYPE "gnutar")  # CMake 3.7
     #set(CPACK_DEBIAN_PACKAGE_EPOCH "")  # Cmake 3.10
   endif()
-elseif (CentOS)
+elseif(CentOS)
   set(CPACK_GENERATOR RPM)
 
   # set RPM package settings
@@ -316,9 +316,9 @@ elseif (CentOS)
   # set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST "")
   # set(CPACK_RPM_DEFAULT_USER "") User & group should always be root
   # set(CPACK_RPM_DEFAULT_GROUP "")
-else ()
-    message(WARNING "Package generation is currently only supported on CentOS and Ubuntu distributions")
-endif ()
+else()
+  message(WARNING "Package generation is currently only supported on CentOS and Ubuntu distributions")
+endif()
 # Lists exe and text label used for Start Menu shortcuts
 #set(CPACK_PACKAGE_EXECUTABLES "")
 # Must have matching Start Menu shortcut to create a Desktop link

@@ -1,11 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
 
-#find_library(DL_LIB dl)
-
-# rpath settings
-#set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
 add_library(SurfUtil
     src/Rocsurf.C
     src/Manifold_2.C

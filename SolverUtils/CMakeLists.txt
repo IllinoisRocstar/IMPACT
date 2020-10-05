@@ -15,10 +15,6 @@ cmake_minimum_required (VERSION 3.1)
 #  add_definitions( -DMPICH_IGNORE_CXX_SEEK )
 #endif()
 
-set (EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single directory for all executables.")
-set (LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib CACHE PATH "Single directory for all libraries and archives.")
-mark_as_advanced (LIBRARY_OUTPUT_PATH EXECUTABLE_OUTPUT_PATH)
-
 file(GLOB CPP_SRCS "src/*.C")
 set (ALL_SRCS "${CPP_SRCS}" )
 set_source_files_properties(${ALL_SRCS} PROPERTIES COMPILE_FLAGS "-fPIC ${MPI_CXX_COMPILE_FLAGS}" )
@@ -34,17 +30,6 @@ set (LIB_SRCS src/GeoPrimitives.C
               src/COMM.C 
               src/Profiler.C 
               src/UnixUtils.C)
-# rpath settings
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-#find_path(IMPACT_INC com.h HINTS ../COM/include)
-#file(GLOB H_FILES include/*.H)
-#file(GLOB h_FILES include/*.h)
-#file(GLOB hpp_FILES include/*.hpp)
-#set(SolverUtil_INC_FILES ${H_FILES} ${h_FILES} ${hpp_FILES})
-
-#include_directories(include ${IMPACT_INC} ${CMAKE_BINARY_DIR}/include)
 
 add_library(SolverUtils ${LIB_SRCS})
 

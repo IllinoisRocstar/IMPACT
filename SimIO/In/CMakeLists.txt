@@ -7,10 +7,6 @@ if(NOGLOB)
   add_definitions(-D_NO_GLOB_)
 endif()
 
-# rpath settings
-#set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
 add_library(SimIN
     src/Rocin.C
     src/read_parameter_file.C

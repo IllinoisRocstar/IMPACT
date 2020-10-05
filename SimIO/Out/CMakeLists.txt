@@ -10,10 +10,6 @@ if(USE_PTHREADS)
   endif()
 endif()
 
-# rpath settings
-#set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
 add_library(SimOUT
     src/Rocout.C
     src/write_parameter_file.C
