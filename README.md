@@ -4,7 +4,7 @@ IMPACT
 Multiphysics application coupling toolkit
 
 ## Version ##
-Version 2.1.3
+Version 2.1.4
 
 IMPACT follows semantic versioning. The version will be major.minor.patch.
 We will:
